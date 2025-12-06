@@ -17,8 +17,8 @@ export const metadata: Metadata = {
     canonical: '/'
   },
   title: {
-    default: 'Kuladeep Bhushan Mantri',
-    template: '%s | Kuladeep Bhushan Mantri'
+    default: 'Kuladeep Mantri',
+    template: '%s | Kuladeep Mantri'
   },
   description: 'Cybersecurity, Secure Cloud Architecture, and AI Research.',
 };
