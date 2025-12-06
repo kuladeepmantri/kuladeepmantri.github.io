@@ -1,15 +1,8 @@
 'use client'
+import Image from 'next/image'
 import { motion } from 'motion/react'
-import { XIcon } from 'lucide-react'
 import { Spotlight } from '@/components/ui/spotlight'
 import { Magnetic } from '@/components/ui/magnetic'
-import {
-  MorphingDialog,
-  MorphingDialogTrigger,
-  MorphingDialogContent,
-  MorphingDialogClose,
-  MorphingDialogContainer,
-} from '@/components/ui/morphing-dialog'
 
 import {
   PROJECTS,
@@ -40,47 +33,26 @@ const TRANSITION_SECTION = {
 type ProjectImageProps = {
   src: string
   alt: string
+  link: string
 }
 
-function ProjectImage({ src, alt }: ProjectImageProps) {
+function ProjectImage({ src, alt, link }: ProjectImageProps) {
   return (
-    <MorphingDialog
-      transition={{
-        type: 'spring',
-        bounce: 0,
-        duration: 0.3,
-      }}
+    <a
+      href={link}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="block w-full cursor-pointer"
     >
-      <MorphingDialogTrigger>
-        <img
-          src={src}
-          alt={alt}
-          className="aspect-video w-full cursor-zoom-in rounded-xl object-cover"
-        />
-      </MorphingDialogTrigger>
-      <MorphingDialogContainer>
-        <MorphingDialogContent className="relative aspect-video rounded-2xl bg-zinc-50 p-1 ring-1 ring-zinc-200/50 ring-inset dark:bg-zinc-950 dark:ring-zinc-800/50">
-          <img
-            src={src}
-            alt={alt}
-            className="aspect-video h-[50vh] w-full rounded-xl object-cover md:h-[70vh]"
-          />
-        </MorphingDialogContent>
-        <MorphingDialogClose
-          className="fixed top-6 right-6 h-fit w-fit rounded-full bg-white p-1"
-          variants={{
-            initial: { opacity: 0 },
-            animate: {
-              opacity: 1,
-              transition: { delay: 0.3, duration: 0.1 },
-            },
-            exit: { opacity: 0, transition: { duration: 0 } },
-          }}
-        >
-          <XIcon className="h-5 w-5 text-zinc-500" />
-        </MorphingDialogClose>
-      </MorphingDialogContainer>
-    </MorphingDialog>
+      <Image
+        src={src}
+        alt={alt}
+        width={640}
+        height={360}
+        className="aspect-video w-full rounded-xl object-cover"
+        priority
+      />
+    </a>
   )
 }
 
@@ -95,6 +67,8 @@ function MagneticSocialLink({
     <Magnetic springOptions={{ bounce: 0 }} intensity={0.3}>
       <a
         href={link}
+        target="_blank"
+        rel="noopener noreferrer"
         className="group relative inline-flex shrink-0 items-center gap-[1px] rounded-full bg-zinc-100 px-2.5 py-1 text-sm text-black transition-colors duration-200 hover:bg-zinc-950 hover:text-zinc-50 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700"
       >
         {children}
@@ -146,7 +120,11 @@ export default function Personal() {
           {PROJECTS.map((project) => (
             <div key={project.name} className="space-y-2">
               <div className="relative rounded-2xl bg-zinc-50/40 p-1 ring-1 ring-zinc-200/50 ring-inset dark:bg-zinc-950/40 dark:ring-zinc-800/50">
-                <ProjectImage src={project.image} alt={project.name} />
+                <ProjectImage
+                  src={project.image}
+                  alt={project.name}
+                  link={project.link}
+                />
               </div>
               <div className="px-1">
                 <a
