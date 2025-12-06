@@ -4,6 +4,10 @@ import createMDX from '@next/mdx';
 const nextConfig = {
   reactStrictMode: true,
   pageExtensions: ['js', 'jsx', 'ts', 'tsx', 'md', 'mdx'],
+  output: 'export',
+  images: {
+    unoptimized: true,
+  },
 };
 
 const withMDX = createMDX({
