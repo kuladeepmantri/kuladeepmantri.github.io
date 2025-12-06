@@ -1,6 +1,6 @@
 # Kuladeep Mantri Portfolio
 
-Personal portfolio website for Kuladeep Mantri, Security Researcher and Systems Engineer.
+Personal portfolio website for Kuladeep Mantri, Security Researcher
 
 ## Tech Stack
 
