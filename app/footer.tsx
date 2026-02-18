@@ -68,9 +68,9 @@ function ThemeSwitch() {
 
 export function Footer() {
   return (
-    <footer className="mt-24 border-t border-zinc-100 px-0 py-4 dark:border-zinc-800">
-      <div className="flex items-center justify-between">
-        <div className="text-xs text-zinc-500">
+    <footer className="mt-16 border-t border-zinc-100 py-4 sm:mt-20 lg:mt-24 dark:border-zinc-800">
+      <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-between">
+        <div className="text-center text-xs text-zinc-500 sm:text-left">
           © {new Date().getFullYear()} Kuladeep Mantri. All rights reserved.
         </div>
         <div className="text-xs text-zinc-400">

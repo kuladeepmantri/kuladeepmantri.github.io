@@ -70,7 +70,7 @@ function MagneticSocialLink({
         href={link}
         target="_blank"
         rel="noopener noreferrer"
-        className="group relative inline-flex shrink-0 items-center gap-[1px] rounded-full bg-zinc-100 px-2.5 py-1 text-sm text-black transition-colors duration-200 hover:bg-zinc-950 hover:text-zinc-50 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700"
+        className="group relative inline-flex shrink-0 items-center gap-[1px] rounded-full bg-zinc-100 px-2.5 py-1 text-xs text-black transition-colors duration-200 hover:bg-zinc-950 hover:text-zinc-50 sm:text-sm dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700"
       >
         {children}
         <svg
@@ -96,17 +96,18 @@ function MagneticSocialLink({
 export default function Personal() {
   return (
     <motion.main
-      className="space-y-24"
+      className="space-y-14 pb-8 sm:space-y-20 sm:pb-10 lg:space-y-24"
       variants={VARIANTS_CONTAINER}
       initial="hidden"
       animate="visible"
     >
       <motion.section
+        className="max-w-3xl"
         variants={VARIANTS_SECTION}
         transition={TRANSITION_SECTION}
       >
         <div className="flex-1">
-          <p className="text-zinc-600 dark:text-zinc-400">
+          <p className="text-sm leading-relaxed text-zinc-600 sm:text-base dark:text-zinc-400">
             I’m a security researcher who loves to build. I explore the intersection of low-level systems, artificial intelligence, and modern design to create tools that are secure by default and intuitive to use. My work bridges the gap between offensive research and defensive architecture, translating complex security principles into clean, resilient implementations.
           </p>
         </div>
@@ -116,8 +117,10 @@ export default function Personal() {
         variants={VARIANTS_SECTION}
         transition={TRANSITION_SECTION}
       >
-        <h3 className="mb-5 text-lg font-medium">Selected Projects</h3>
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+        <h3 className="mb-4 text-lg font-medium sm:mb-5 sm:text-xl">
+          Selected Projects
+        </h3>
+        <div className="grid grid-cols-1 gap-6 sm:gap-8 lg:grid-cols-2">
           {PROJECTS.map((project, index) => (
             <div key={project.name} className="space-y-2">
               <div className="relative rounded-2xl bg-zinc-50/40 p-1 ring-1 ring-zinc-200/50 ring-inset dark:bg-zinc-950/40 dark:ring-zinc-800/50">
@@ -130,7 +133,7 @@ export default function Personal() {
               </div>
               <div className="px-1">
                 <a
-                  className="font-base group relative inline-block font-[450] text-zinc-900 dark:text-zinc-50"
+                  className="font-base group relative inline-block text-base font-[450] text-zinc-900 sm:text-lg dark:text-zinc-50"
                   href={project.link}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -151,8 +154,10 @@ export default function Personal() {
         variants={VARIANTS_SECTION}
         transition={TRANSITION_SECTION}
       >
-        <h3 className="mb-5 text-lg font-medium">Certifications</h3>
-        <div className="flex flex-col space-y-4">
+        <h3 className="mb-4 text-lg font-medium sm:mb-5 sm:text-xl">
+          Certifications
+        </h3>
+        <div className="grid grid-cols-1 gap-4 sm:gap-5 lg:grid-cols-2">
           {CERTIFICATIONS.map((cert) => (
             <div
               key={cert.id}
@@ -162,7 +167,7 @@ export default function Personal() {
                 className="from-zinc-900 via-zinc-800 to-zinc-700 blur-2xl dark:from-zinc-100 dark:via-zinc-200 dark:to-zinc-50"
                 size={64}
               />
-              <div className="relative h-full w-full rounded-[15px] bg-white p-4 dark:bg-zinc-950">
+              <div className="relative h-full w-full rounded-[15px] bg-white p-4 sm:p-5 dark:bg-zinc-950">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-2">
                   <h4 className="font-medium dark:text-zinc-100">
                     {cert.name}
@@ -188,20 +193,19 @@ export default function Personal() {
         </div>
       </motion.section>
 
-
-
       <motion.section
+        className="max-w-3xl"
         variants={VARIANTS_SECTION}
         transition={TRANSITION_SECTION}
       >
-        <h3 className="mb-5 text-lg font-medium">Connect</h3>
-        <p className="mb-5 text-zinc-600 dark:text-zinc-400">
+        <h3 className="mb-4 text-lg font-medium sm:mb-5 sm:text-xl">Connect</h3>
+        <p className="mb-5 text-sm text-zinc-600 sm:text-base dark:text-zinc-400">
           Feel free to contact me at{' '}
           <a className="underline dark:text-zinc-300" href={`mailto:${EMAIL}`}>
             {EMAIL}
           </a>
         </p>
-        <div className="flex items-center justify-start space-x-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           {SOCIAL_LINKS.map((link) => (
             <MagneticSocialLink key={link.label} link={link.link}>
               {link.label}
