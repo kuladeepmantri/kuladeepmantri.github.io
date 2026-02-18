@@ -1,9 +1,9 @@
 import type { Metadata, Viewport } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
 import './globals.css'
 import { Header } from './header'
 import { Footer } from './footer'
 import { ThemeProvider } from 'next-themes'
+import { WEBSITE_URL } from '@/lib/constants'
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -12,26 +12,42 @@ export const viewport: Viewport = {
 }
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://kuladeepmantri.github.io/'),
+  metadataBase: new URL(WEBSITE_URL),
   alternates: {
-    canonical: '/'
+    canonical: '/',
   },
   title: {
     default: 'Kuladeep Mantri',
-    template: '%s | Kuladeep Mantri'
+    template: '%s | Kuladeep Mantri',
   },
   description: 'Cybersecurity, Secure Cloud Architecture, and AI Research.',
-};
+  openGraph: {
+    type: 'website',
+    url: WEBSITE_URL,
+    title: 'Kuladeep Mantri',
+    description: 'Cybersecurity, Secure Cloud Architecture, and AI Research.',
+    siteName: 'Kuladeep Mantri',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Kuladeep Mantri',
+    description: 'Cybersecurity, Secure Cloud Architecture, and AI Research.',
+  },
+}
 
-const geist = Geist({
-  variable: '--font-geist',
-  subsets: ['latin'],
-})
-
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
-  subsets: ['latin'],
-})
+const CSP = [
+  "default-src 'self'",
+  "base-uri 'self'",
+  "frame-ancestors 'none'",
+  "object-src 'none'",
+  "form-action 'self'",
+  "script-src 'self' 'unsafe-inline'",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: https:",
+  "font-src 'self' data:",
+  "connect-src 'self'",
+  'upgrade-insecure-requests',
+].join('; ')
 
 export default function RootLayout({
   children,
@@ -41,21 +57,16 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <meta
-          httpEquiv="Content-Security-Policy"
-          content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self';"
-        />
+        <meta httpEquiv="Content-Security-Policy" content={CSP} />
       </head>
-      <body
-        className={`${geist.variable} ${geistMono.variable} bg-white tracking-tight antialiased dark:bg-zinc-950`}
-      >
+      <body className="bg-white font-sans tracking-tight antialiased dark:bg-zinc-950">
         <ThemeProvider
           enableSystem={true}
           attribute="class"
           storageKey="theme"
           defaultTheme="system"
         >
-          <div className="flex min-h-screen w-full flex-col font-[family-name:var(--font-inter-tight)]">
+          <div className="flex min-h-screen w-full flex-col">
             <div className="relative mx-auto w-full max-w-screen-sm flex-1 px-4 pt-20">
               <Header />
               {children}

@@ -34,9 +34,10 @@ type ProjectImageProps = {
   src: string
   alt: string
   link: string
+  priority?: boolean
 }
 
-function ProjectImage({ src, alt, link }: ProjectImageProps) {
+function ProjectImage({ src, alt, link, priority = false }: ProjectImageProps) {
   return (
     <a
       href={link}
@@ -50,7 +51,7 @@ function ProjectImage({ src, alt, link }: ProjectImageProps) {
         width={640}
         height={360}
         className="aspect-video w-full rounded-xl object-cover"
-        priority
+        priority={priority}
       />
     </a>
   )
@@ -117,13 +118,14 @@ export default function Personal() {
       >
         <h3 className="mb-5 text-lg font-medium">Selected Projects</h3>
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-          {PROJECTS.map((project) => (
+          {PROJECTS.map((project, index) => (
             <div key={project.name} className="space-y-2">
               <div className="relative rounded-2xl bg-zinc-50/40 p-1 ring-1 ring-zinc-200/50 ring-inset dark:bg-zinc-950/40 dark:ring-zinc-800/50">
                 <ProjectImage
                   src={project.image}
                   alt={project.name}
                   link={project.link}
+                  priority={index === 0}
                 />
               </div>
               <div className="px-1">

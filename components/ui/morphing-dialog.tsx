@@ -97,7 +97,13 @@ function MorphingDialogTrigger({
   style,
   triggerRef,
 }: MorphingDialogTriggerProps) {
-  const { setIsOpen, isOpen, uniqueId } = useMorphingDialog()
+  const {
+    setIsOpen,
+    isOpen,
+    uniqueId,
+    triggerRef: contextTriggerRef,
+  } = useMorphingDialog()
+  const resolvedRef = triggerRef ?? contextTriggerRef
 
   const handleClick = useCallback(() => {
     setIsOpen(!isOpen)
@@ -115,12 +121,13 @@ function MorphingDialogTrigger({
 
   return (
     <motion.div
-      ref={triggerRef}
+      ref={resolvedRef}
       layoutId={`dialog-${uniqueId}`}
       className={cn('relative cursor-pointer', className)}
       onClick={handleClick}
       onKeyDown={handleKeyDown}
       style={style}
+      tabIndex={0}
       role="button"
       aria-haspopup="dialog"
       aria-expanded={isOpen}
@@ -208,6 +215,7 @@ function MorphingDialogContent({
     <motion.div
       ref={containerRef}
       layoutId={`dialog-${uniqueId}`}
+      id={`motion-ui-morphing-dialog-content-${uniqueId}`}
       className={cn('overflow-hidden', className)}
       style={style}
       role="dialog"
@@ -277,6 +285,7 @@ function MorphingDialogTitle({
       className={className}
       style={style}
       layout
+      id={`motion-ui-morphing-dialog-title-${uniqueId}`}
     >
       {children}
     </motion.div>
@@ -339,7 +348,7 @@ function MorphingDialogDescription({
       initial="initial"
       animate="animate"
       exit="exit"
-      id={`dialog-description-${uniqueId}`}
+      id={`motion-ui-morphing-dialog-description-${uniqueId}`}
     >
       {children}
     </motion.div>
