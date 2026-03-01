@@ -1,53 +1,46 @@
 import type { Metadata, Viewport } from 'next'
+import { Inter } from 'next/font/google'
 import './globals.css'
 import { Header } from './header'
-import { Footer } from './footer'
-import { ThemeProvider } from 'next-themes'
+import { LayoutShell } from '@/components/layout-shell'
 import { WEBSITE_URL } from '@/lib/constants'
+
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-inter',
+  display: 'swap',
+})
 
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  themeColor: '#ffffff',
+  themeColor: '#050505',
 }
 
 export const metadata: Metadata = {
   metadataBase: new URL(WEBSITE_URL),
-  alternates: {
-    canonical: '/',
-  },
+  alternates: { canonical: '/' },
   title: {
     default: 'Kuladeep Mantri',
     template: '%s | Kuladeep Mantri',
   },
-  description: 'Cybersecurity, Secure Cloud Architecture, and AI Research.',
+  description:
+    'Security researcher and builder. Apps, tools, and experiments at the intersection of security, systems, and design.',
   openGraph: {
     type: 'website',
     url: WEBSITE_URL,
     title: 'Kuladeep Mantri',
-    description: 'Cybersecurity, Secure Cloud Architecture, and AI Research.',
+    description:
+      'Security researcher and builder. Apps, tools, and experiments at the intersection of security, systems, and design.',
     siteName: 'Kuladeep Mantri',
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Kuladeep Mantri',
-    description: 'Cybersecurity, Secure Cloud Architecture, and AI Research.',
+    description:
+      'Security researcher and builder. Apps, tools, and experiments at the intersection of security, systems, and design.',
   },
 }
-
-const CSP = [
-  "default-src 'self'",
-  "base-uri 'self'",
-  "frame-ancestors 'none'",
-  "object-src 'none'",
-  "form-action 'self'",
-  "script-src 'self' 'unsafe-inline'",
-  "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: https:",
-  "font-src 'self' data:",
-  "connect-src 'self'",
-  'upgrade-insecure-requests',
-].join('; ')
 
 export default function RootLayout({
   children,
@@ -55,25 +48,20 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <head>
-        <meta httpEquiv="Content-Security-Policy" content={CSP} />
-      </head>
-      <body className="bg-white font-sans tracking-tight antialiased dark:bg-zinc-950">
-        <ThemeProvider
-          enableSystem={true}
-          attribute="class"
-          storageKey="theme"
-          defaultTheme="system"
-        >
+    <html lang="en" className={`dark ${inter.variable}`}>
+      <body className="bg-[var(--bg)] font-[var(--font-inter),system-ui,-apple-system,sans-serif] antialiased">
+        <LayoutShell>
           <div className="flex min-h-screen w-full flex-col">
-            <div className="relative mx-auto w-full max-w-6xl flex-1 px-4 pt-12 sm:px-6 sm:pt-16 lg:px-8 lg:pt-20">
-              <Header />
-              {children}
-              <Footer />
-            </div>
+            <a
+              href="#main-content"
+              className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:rounded-lg focus:bg-[var(--accent)] focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-[var(--bg)]"
+            >
+              Skip to content
+            </a>
+            <Header />
+            <main id="main-content" className="flex-1">{children}</main>
           </div>
-        </ThemeProvider>
+        </LayoutShell>
       </body>
     </html>
   )
