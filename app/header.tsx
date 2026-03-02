@@ -47,7 +47,7 @@ export function Header() {
               : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
           }`}
         >
-          Apps
+          Projects
         </Link>
         <button
           onClick={() =>

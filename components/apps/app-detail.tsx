@@ -29,7 +29,7 @@ export function AppDetail({ app }: { app: AppProject }) {
         className="mb-8 flex items-center gap-1 text-sm text-[var(--text-muted)] transition-colors hover:text-[var(--text-secondary)]"
       >
         <ArrowLeft className="h-4 w-4" />
-        All Apps
+        All Projects
       </Link>
 
       {/* Hero area */}
