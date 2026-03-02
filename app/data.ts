@@ -36,7 +36,7 @@ export const PROJECTS: AppProject[] = [
     name: 'Kintsugi',
     tagline: 'On-device Recovery Tracker',
     description:
-      'iOS app with neuroscience-backed streak tracking, 3-level panic mode escalation, NLP-powered journal sentiment analysis, and 21 achievement badges. Built with SwiftUI and iOS 26 Liquid Glass design.',
+      'Recovery tracker with streak tracking, a panic mode for tough moments, and journaling with mood analysis. Built with SwiftUI and iOS 26 Liquid Glass.',
     link: null,
     image: null,
     video: '/videos/kintsugi.mp4',
@@ -51,7 +51,7 @@ export const PROJECTS: AppProject[] = [
     name: 'ShipCrew',
     tagline: 'Multi-Agent AI Dev Team',
     description:
-      '5 AI agents working simultaneously in a Slack-like interface. Real-time streaming messages, Kanban board, autonomous task execution, and sandboxed Docker environments.',
+      'AI dev team that runs multiple agents in parallel through a Slack-like interface. Live message streaming, Kanban board, and sandboxed Docker execution.',
     link: null,
     image: '/images/shipmate.png',
     video: null,
@@ -66,7 +66,7 @@ export const PROJECTS: AppProject[] = [
     name: 'Auris',
     tagline: 'ARM64 Linux Security Toolkit',
     description:
-      'Syscall tracer and security analyzer for ARM64 Linux. Blue Team defense with behavioral profiling and anomaly detection. Red Team offense with process injection and ROP gadget scanning.',
+      'Syscall tracer and security analyzer for ARM64 Linux. Covers both defense (behavioral profiling, anomaly detection) and offense (process injection, ROP gadget scanning).',
     link: 'https://auris.kuladeepmantri.com/',
     image: '/images/auris.png',
     video: null,
@@ -81,7 +81,7 @@ export const PROJECTS: AppProject[] = [
     name: 'untilithappens.org',
     tagline: 'Digital Safety Platform',
     description:
-      'Making digital safety accessible. Practical tools and guides that help people protect themselves online without needing a security degree.',
+      'Practical digital safety guides and tools. Plain-language security without the jargon.',
     link: 'https://untilithappens.kuladeepmantri.com/',
     image: '/images/untilithappens.png',
     video: null,

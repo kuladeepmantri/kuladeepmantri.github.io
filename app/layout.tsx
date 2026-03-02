@@ -25,20 +25,20 @@ export const metadata: Metadata = {
     template: '%s | Kuladeep Mantri',
   },
   description:
-    'Security researcher and builder. Apps, tools, and experiments at the intersection of security, systems, and design.',
+    'Security engineer and software developer. Projects in security, systems, and design.',
   openGraph: {
     type: 'website',
     url: WEBSITE_URL,
     title: 'Kuladeep Mantri',
     description:
-      'Security researcher and builder. Apps, tools, and experiments at the intersection of security, systems, and design.',
+      'Security engineer and software developer. Projects in security, systems, and design.',
     siteName: 'Kuladeep Mantri',
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Kuladeep Mantri',
     description:
-      'Security researcher and builder. Apps, tools, and experiments at the intersection of security, systems, and design.',
+      'Security engineer and software developer. Projects in security, systems, and design.',
   },
 }
 

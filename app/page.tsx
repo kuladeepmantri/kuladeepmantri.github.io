@@ -276,9 +276,8 @@ export default function Home() {
               }}
             >
               <p className="text-sm leading-relaxed text-[var(--text-secondary)]">
-                I make apps -- sometimes for myself, sometimes for others,
-                mostly because I got curious about something and couldn&apos;t
-                stop until it worked.
+                Curious about how things work, and how they can work
+                better.
               </p>
               <p className="mt-2 text-xs text-[var(--text-muted)]">
                 {CERTIFICATIONS[0].name}, {CERTIFICATIONS[0].issuer}
