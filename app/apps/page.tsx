@@ -3,8 +3,8 @@ import { PROJECTS } from '@/app/data'
 import { AppCard } from '@/components/apps/app-card'
 
 export const metadata: Metadata = {
-  title: 'Apps',
-  description: 'Apps and tools built by Kuladeep Mantri.',
+  title: 'Projects',
+  description: 'Projects and tools built by Kuladeep Mantri.',
 }
 
 export default function AppsPage() {
@@ -16,11 +16,9 @@ export default function AppsPage() {
     <div className="pb-16 pt-24">
       <div className="mx-auto max-w-6xl px-6">
         <h1 className="text-3xl font-bold text-[var(--text)] sm:text-4xl">
-          Apps I&apos;ve Built
+          Projects
         </h1>
-        <p className="mt-2 mb-12 text-base text-[var(--text-secondary)]">
-          From iOS apps to security toolkits.
-        </p>
+        <div className="mb-12" />
 
         {/* Personal Use */}
         {personal.length > 0 && (

@@ -93,11 +93,11 @@ export function CommandPalette({ open, setOpen }: CommandPaletteProps) {
           </Command.Item>
           <Command.Item onSelect={() => navigate('/apps')}>
             <Layout size={16} />
-            <span>Apps</span>
+            <span>Projects</span>
           </Command.Item>
         </Command.Group>
 
-        <Command.Group heading="Apps">
+        <Command.Group heading="Projects">
           <Command.Item onSelect={() => navigate('/apps/kintsugi')}>
             <Smartphone size={16} />
             <span>Kintsugi</span>
