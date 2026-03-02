@@ -354,12 +354,12 @@ export default function Home() {
           >
             {emailCopied ? (
               <motion.span
-                className="flex items-center gap-3 text-green-400"
-                initial={{ scale: 0.8 }}
-                animate={{ scale: 1 }}
-                transition={{ type: 'spring', stiffness: 500, damping: 15 }}
+                className="flex items-center gap-3 text-[var(--text-secondary)]"
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2, ease: 'easeOut' }}
               >
-                <Check size={24} /> Copied!
+                <Check size={20} /> Copied
               </motion.span>
             ) : (
               EMAIL
