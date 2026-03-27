@@ -188,23 +188,10 @@ function Scene({ onLoad }: { onLoad?: () => void }) {
 }
 
 export function CarPreview() {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const [visible, setVisible] = useState(false)
   const [loaded, setLoaded] = useState(false)
 
-  useEffect(() => {
-    const el = containerRef.current
-    if (!el) return
-    const observer = new IntersectionObserver(
-      ([entry]) => setVisible(entry.isIntersecting),
-      { threshold: 0 }
-    )
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [])
-
   return (
-    <div ref={containerRef} style={{ width: '100%', height: '100%', position: 'absolute', inset: 0 }}>
+    <div style={{ width: '100%', height: '100%', position: 'absolute', inset: 0 }}>
       {!loaded && (
         <div
           style={{
@@ -247,7 +234,6 @@ export function CarPreview() {
         }}
         style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
         dpr={[1, 1.5]}
-        frameloop={visible ? 'always' : 'never'}
       >
         <Scene onLoad={() => setLoaded(true)} />
       </Canvas>
