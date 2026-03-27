@@ -30,13 +30,6 @@ const SOCIAL_ICONS: Record<string, React.ReactNode> = {
 
 // ── Helpers ──
 
-function getStripLabel(project: AppProject): string {
-  if (project.collaborator) return `with ${project.collaborator.name}`
-  if (project.status === 'live') return 'Live'
-  if (project.status === 'personal') return 'On-device'
-  return 'In Development'
-}
-
 function truncate(text: string, max: number): string {
   if (text.length <= max) return text
   const cut = text.lastIndexOf(' ', max)
@@ -70,8 +63,6 @@ function ProjectStrip({
     }
   })
 
-  const label = getStripLabel(project)
-
   return (
     <div ref={ref}>
       <motion.div
@@ -82,16 +73,6 @@ function ProjectStrip({
         {/* Collapsed header */}
         <div className="flex h-[70px] items-center justify-between px-6 sm:px-8">
           <h3 className="text-lg font-bold sm:text-xl">{project.name}</h3>
-          <div className="flex items-center gap-3">
-            {project.collaborator && (
-              <Users size={12} className="text-[var(--text-muted)]" />
-            )}
-            <span className="text-xs text-[var(--text-muted)]">{label}</span>
-            <span
-              className="h-2 w-2 rounded-full"
-              style={{ backgroundColor: project.accentColor }}
-            />
-          </div>
         </div>
 
         {/* Accent line */}
