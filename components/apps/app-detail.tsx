@@ -3,22 +3,9 @@
 import Link from 'next/link'
 import { motion } from 'motion/react'
 import { ArrowLeft, ExternalLink, Users } from 'lucide-react'
+import { STATUS_DOT, STATUS_LABEL } from '@/app/data'
 import type { AppProject } from '@/app/data'
 import { DeviceFrame } from '@/components/ui/device-frame'
-
-const STATUS_DOT: Record<AppProject['status'], string> = {
-  live: 'bg-emerald-400',
-  beta: 'bg-yellow-400',
-  building: 'bg-zinc-500',
-  personal: 'bg-violet-400',
-}
-
-const STATUS_LABEL: Record<AppProject['status'], string> = {
-  live: 'Live',
-  beta: 'Beta',
-  building: 'In Development',
-  personal: 'Personal Use',
-}
 
 export function AppDetail({ app }: { app: AppProject }) {
   return (
@@ -96,22 +83,54 @@ export function AppDetail({ app }: { app: AppProject }) {
         </div>
       </div>
 
-      {/* Device mockup */}
+      {/* Device mockup / Embed */}
       <div className="mt-12 flex justify-center sm:mt-16">
         <motion.div
-          className={app.deviceType === 'browser' ? 'w-full max-w-3xl' : ''}
+          className={app.embedUrl ? 'w-full' : app.deviceType === 'browser' ? 'w-full max-w-3xl' : ''}
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
         >
-          <DeviceFrame
-            type={app.deviceType}
-            imageSrc={app.image}
-            videoSrc={app.video}
-            appName={app.name}
-            accentColor={app.accentColor}
-          />
+          {app.embedUrl ? (
+            <div
+              className="overflow-hidden rounded-2xl border border-zinc-700 bg-zinc-900 shadow-2xl"
+              style={{
+                boxShadow: `0 20px 60px -10px ${app.accentColor}25`,
+              }}
+            >
+              {/* Browser chrome */}
+              <div className="flex h-10 items-center border-b border-zinc-700 px-4">
+                <div className="flex gap-2">
+                  <div className="h-3 w-3 rounded-full bg-[#ff5f57]" />
+                  <div className="h-3 w-3 rounded-full bg-[#febc2e]" />
+                  <div className="h-3 w-3 rounded-full bg-[#28c840]" />
+                </div>
+                <div className="mx-4 flex-1">
+                  <div className="mx-auto h-6 max-w-xs rounded-md bg-zinc-800 px-3 text-center text-[11px] leading-6 text-zinc-500">
+                    {app.embedUrl.replace(/^https?:\/\//, '').replace(/\/$/, '')}
+                  </div>
+                </div>
+              </div>
+              {/* Iframe */}
+              <iframe
+                src={app.embedUrl}
+                title={app.name}
+                loading="lazy"
+                sandbox="allow-scripts allow-same-origin"
+                className="w-full border-0"
+                style={{ height: 'min(75vh, 700px)' }}
+              />
+            </div>
+          ) : (
+            <DeviceFrame
+              type={app.deviceType}
+              imageSrc={app.image}
+              videoSrc={app.video}
+              appName={app.name}
+              accentColor={app.accentColor}
+            />
+          )}
         </motion.div>
       </div>
 
