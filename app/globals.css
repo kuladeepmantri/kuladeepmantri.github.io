@@ -84,6 +84,11 @@ html.lenis body {
   background: var(--text-muted);
 }
 
+/* ── Performance ── */
+.contain-layout {
+  contain: layout style;
+}
+
 /* ── Command Palette (cmdk) ── */
 [cmdk-overlay] {
   position: fixed;
