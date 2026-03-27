@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useMemo, useEffect, useRef } from 'react'
+import { Suspense, useMemo, useEffect, useRef, useState } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { useGLTF, ContactShadows, Environment } from '@react-three/drei'
 import * as THREE from 'three'
@@ -8,7 +8,7 @@ import type { GLTF } from 'three-stdlib'
 
 const MODEL_PATH = '/models/accord.glb'
 
-function AccordModel() {
+function AccordModel({ onLoad }: { onLoad?: () => void }) {
   const { scene: originalScene } = useGLTF(MODEL_PATH) as GLTF
 
   const materials = useMemo(() => ({
@@ -55,9 +55,10 @@ function AccordModel() {
   }, [originalScene, materials])
 
   useEffect(() => {
+    onLoad?.()
     const mats = materials
     return () => { Object.values(mats).forEach((m) => m.dispose()) }
-  }, [materials])
+  }, [materials, onLoad])
 
   return <primitive object={model} />
 }
@@ -107,14 +108,16 @@ function CinematicCamera() {
   const { camera } = useThree()
   const posVec = useRef(new THREE.Vector3())
   const lookVec = useRef(new THREE.Vector3())
+  // Start partway through the first keyframe so the camera begins at a close angle
+  const timeRef = useRef(4)
   const totalDuration = useMemo(
     () => CAMERA_KEYFRAMES.reduce((sum, kf) => sum + kf.duration, 0),
     []
   )
 
-  useFrame(({ clock }) => {
-    const elapsed = clock.getElapsedTime()
-    const t = elapsed % totalDuration
+  useFrame((_, delta) => {
+    timeRef.current += delta
+    const t = timeRef.current % totalDuration
     let accumulated = 0
     let fromIdx = 0
 
@@ -152,7 +155,7 @@ function CinematicCamera() {
   return null
 }
 
-function Scene() {
+function Scene({ onLoad }: { onLoad?: () => void }) {
   return (
     <>
       <Environment preset="night" background={false} />
@@ -166,7 +169,7 @@ function Scene() {
 
       <Suspense fallback={null}>
         <group position={[-1.2, -0.6, 0]}>
-          <AccordModel />
+          <AccordModel onLoad={onLoad} />
         </group>
 
         <ContactShadows
@@ -185,8 +188,54 @@ function Scene() {
 }
 
 export function CarPreview() {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [visible, setVisible] = useState(false)
+  const [loaded, setLoaded] = useState(false)
+
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+    const observer = new IntersectionObserver(
+      ([entry]) => setVisible(entry.isIntersecting),
+      { threshold: 0 }
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+
   return (
-    <div style={{ width: '100%', height: '100%', position: 'absolute', inset: 0 }}>
+    <div ref={containerRef} style={{ width: '100%', height: '100%', position: 'absolute', inset: 0 }}>
+      {!loaded && (
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: '#050505',
+            zIndex: 1,
+            pointerEvents: 'none',
+          }}
+        >
+          <div
+            style={{
+              width: 10,
+              height: 10,
+              borderRadius: '50%',
+              background: '#f0f0f0',
+              opacity: 0.4,
+              animation: 'car-preview-pulse 1.4s ease-in-out infinite',
+            }}
+          />
+          <style>{`
+            @keyframes car-preview-pulse {
+              0%, 100% { opacity: 0.15; transform: scale(0.8); }
+              50% { opacity: 0.5; transform: scale(1.2); }
+            }
+          `}</style>
+        </div>
+      )}
       <Canvas
         camera={{ position: [2.5, 0.6, 3.5], fov: 32, near: 0.1, far: 100 }}
         gl={{
@@ -197,10 +246,13 @@ export function CarPreview() {
           toneMappingExposure: 1.2,
         }}
         style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
-        dpr={[1, 2]}
+        dpr={[1, 1.5]}
+        frameloop={visible ? 'always' : 'never'}
       >
-        <Scene />
+        <Scene onLoad={() => setLoaded(true)} />
       </Canvas>
     </div>
   )
 }
+
+useGLTF.preload(MODEL_PATH)

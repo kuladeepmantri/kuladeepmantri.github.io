@@ -75,8 +75,8 @@ function ProjectStrip({
   return (
     <div ref={ref}>
       <motion.div
-        style={{ height }}
-        className="relative flex cursor-pointer flex-col overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--bg-elevated)] transition-colors hover:border-[var(--border-hover)]"
+        style={{ height, willChange: 'height' }}
+        className="relative flex cursor-pointer flex-col overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--bg-elevated)] transition-colors hover:border-[var(--border-hover)] contain-layout"
         onClick={() => router.push(`/apps/${project.id}`)}
       >
         {/* Collapsed header */}
@@ -242,7 +242,8 @@ function ProjectStrip({
 
 export default function Home() {
   const [emailCopied, setEmailCopied] = useState(false)
-  const [activeColor, setActiveColor] = useState('transparent')
+  const activeColorRef = useRef('transparent')
+  const glowRef = useRef<HTMLDivElement>(null)
 
   // Glow reset when scrolling past all strips
   const stripsRef = useRef<HTMLDivElement>(null)
@@ -252,11 +253,22 @@ export default function Home() {
   })
 
   useMotionValueEvent(stripsProgress, 'change', (v) => {
-    if (v > 0.8) setActiveColor('transparent')
+    if (v > 0.8) {
+      activeColorRef.current = 'transparent'
+      if (glowRef.current) {
+        glowRef.current.style.background = 'transparent'
+      }
+    }
   })
 
   const handleProjectActive = useCallback((color: string) => {
-    setActiveColor(color)
+    if (activeColorRef.current === color) return
+    activeColorRef.current = color
+    if (glowRef.current) {
+      glowRef.current.style.background = color !== 'transparent'
+        ? `radial-gradient(ellipse 80% 50% at 50% 50%, ${color}12 0%, transparent 70%)`
+        : 'transparent'
+    }
   }, [])
 
   async function copyEmail() {
@@ -273,13 +285,8 @@ export default function Home() {
     <>
       {/* Background color bleed */}
       <div
-        className="pointer-events-none fixed inset-0 -z-10 transition-all duration-[600ms]"
-        style={{
-          background:
-            activeColor !== 'transparent'
-              ? `radial-gradient(ellipse 80% 50% at 50% 50%, ${activeColor}12 0%, transparent 70%)`
-              : 'transparent',
-        }}
+        ref={glowRef}
+        className="pointer-events-none fixed inset-0 -z-10 transition-all duration-300"
       />
 
       {/* ── Hero ── */}
