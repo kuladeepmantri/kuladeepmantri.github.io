@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { Command } from 'cmdk'
 import { useRouter } from 'next/navigation'
 import { DialogTitle } from '@radix-ui/react-dialog'
@@ -14,7 +14,7 @@ import {
   Mail,
   Github,
 } from 'lucide-react'
-import { EMAIL, SOCIAL_LINKS } from '@/app/data'
+import { EMAIL, SOCIAL_LINKS, PROJECTS } from '@/app/data'
 
 interface CommandPaletteProps {
   open: boolean
@@ -24,19 +24,21 @@ interface CommandPaletteProps {
 export function CommandPalette({ open, setOpen }: CommandPaletteProps) {
   const router = useRouter()
   const [emailCopied, setEmailCopied] = useState(false)
+  const openRef = useRef(open)
+  openRef.current = open
 
   // Keyboard shortcut (Cmd/Ctrl + K)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
         e.preventDefault()
-        setOpen(!open)
+        setOpen(!openRef.current)
       }
     }
 
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [open, setOpen])
+  }, [setOpen])
 
   // Custom event from nav button
   useEffect(() => {
@@ -57,13 +59,17 @@ export function CommandPalette({ open, setOpen }: CommandPaletteProps) {
     [router, setOpen],
   )
 
-  const copyEmail = useCallback(() => {
-    navigator.clipboard.writeText(EMAIL)
-    setEmailCopied(true)
-    setTimeout(() => {
-      setEmailCopied(false)
-      setOpen(false)
-    }, 1000)
+  const copyEmail = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(EMAIL)
+      setEmailCopied(true)
+      setTimeout(() => {
+        setEmailCopied(false)
+        setOpen(false)
+      }, 1000)
+    } catch {
+      // Fallback: clipboard API denied
+    }
   }, [setOpen])
 
   const openGithub = useCallback(() => {
@@ -98,22 +104,18 @@ export function CommandPalette({ open, setOpen }: CommandPaletteProps) {
         </Command.Group>
 
         <Command.Group heading="Projects">
-          <Command.Item onSelect={() => navigate('/apps/kintsugi')}>
-            <Smartphone size={16} />
-            <span>Kintsugi</span>
-          </Command.Item>
-          <Command.Item onSelect={() => navigate('/apps/shipcrew')}>
-            <Users size={16} />
-            <span>ShipCrew</span>
-          </Command.Item>
-          <Command.Item onSelect={() => navigate('/apps/auris')}>
-            <Shield size={16} />
-            <span>Auris</span>
-          </Command.Item>
-          <Command.Item onSelect={() => navigate('/apps/untilithappens')}>
-            <Globe size={16} />
-            <span>untilithappens</span>
-          </Command.Item>
+          {PROJECTS.map((project) => {
+            const Icon = project.deviceType === 'iphone' ? Smartphone
+              : project.status === 'live' ? Globe
+              : project.collaborator ? Users
+              : Shield
+            return (
+              <Command.Item key={project.id} onSelect={() => navigate(`/apps/${project.id}`)}>
+                <Icon size={16} />
+                <span>{project.name}</span>
+              </Command.Item>
+            )
+          })}
         </Command.Group>
 
         <Command.Group heading="Connect">

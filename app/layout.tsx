@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import { Header } from './header'
+import { Footer } from './footer'
 import { LayoutShell } from '@/components/layout-shell'
 import { WEBSITE_URL } from '@/lib/constants'
 
@@ -60,6 +61,7 @@ export default function RootLayout({
             </a>
             <Header />
             <main id="main-content" className="flex-1">{children}</main>
+            <Footer />
           </div>
         </LayoutShell>
       </body>
