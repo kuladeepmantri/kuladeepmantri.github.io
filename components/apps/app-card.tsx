@@ -142,28 +142,24 @@ export function AppCard({ app, index, variant = 'compact' }: AppCardProps) {
                 <p className="mt-3 flex items-center gap-1.5 text-xs text-[var(--text-muted)]">
                   <Users size={12} />
                   with{' '}
-                  <a
-                    href={collaborator.github}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="underline underline-offset-2 hover:text-[var(--text)]"
-                    onClick={(e) => e.stopPropagation()}
+                  <span
+                    role="link"
+                    className="cursor-pointer underline underline-offset-2 hover:text-[var(--text)]"
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); window.open(collaborator.github, '_blank') }}
                   >
                     {collaborator.name}
-                  </a>
+                  </span>
                 </p>
               )}
 
               {link && (
-                <a
-                  href={link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-2 inline-flex items-center gap-1 text-xs text-[var(--text-muted)] hover:text-[var(--text)]"
-                  onClick={(e) => e.stopPropagation()}
+                <span
+                  role="link"
+                  className="mt-2 inline-flex cursor-pointer items-center gap-1 text-xs text-[var(--text-muted)] hover:text-[var(--text)]"
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); window.open(link, '_blank') }}
                 >
                   <ExternalLink size={10} /> Visit site
-                </a>
+                </span>
               )}
             </div>
           </div>
