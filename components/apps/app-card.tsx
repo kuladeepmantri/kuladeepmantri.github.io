@@ -211,15 +211,11 @@ export function AppCard({ app, index, variant = 'compact' }: AppCardProps) {
               {name}
             </span>
             {link && (
-              <a
-                href={link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1 text-xs text-[var(--text-muted)] hover:text-[var(--text)]"
-                onClick={(e) => e.stopPropagation()}
+              <span
+                className="flex items-center gap-1 text-xs text-[var(--text-muted)]"
               >
                 <ExternalLink size={10} /> Live
-              </a>
+              </span>
             )}
           </div>
           <p className="mt-1 text-sm text-[var(--text-secondary)]">
