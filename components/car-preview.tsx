@@ -114,7 +114,7 @@ function CinematicCamera() {
 
   useFrame(({ clock }) => {
     const elapsed = clock.getElapsedTime()
-    let t = elapsed % totalDuration
+    const t = elapsed % totalDuration
     let accumulated = 0
     let fromIdx = 0
 
