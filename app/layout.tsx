@@ -4,6 +4,8 @@ import './globals.css'
 import { Header } from './header'
 import { Footer } from './footer'
 import { LayoutShell } from '@/components/layout-shell'
+import { LoadingScreen } from '@/components/loading-screen'
+import { PageTransition } from '@/components/page-transition'
 import { WEBSITE_URL } from '@/lib/constants'
 
 const inter = Inter({
@@ -52,6 +54,7 @@ export default function RootLayout({
     <html lang="en" className={`dark ${inter.variable}`}>
       <body className="bg-[var(--bg)] font-[var(--font-inter),system-ui,-apple-system,sans-serif] antialiased">
         <LayoutShell>
+          <LoadingScreen />
           <div className="flex min-h-screen w-full flex-col">
             <a
               href="#main-content"
@@ -60,7 +63,9 @@ export default function RootLayout({
               Skip to content
             </a>
             <Header />
-            <main id="main-content" className="flex-1">{children}</main>
+            <main id="main-content" className="flex-1">
+              <PageTransition>{children}</PageTransition>
+            </main>
             <Footer />
           </div>
         </LayoutShell>

@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { motion } from 'motion/react'
 import { Users, ExternalLink } from 'lucide-react'
 import { STATUS_DOT, STATUS_LABEL } from '@/app/data'
@@ -30,14 +30,32 @@ export function AppCard({ app, index, variant = 'compact' }: AppCardProps) {
     link,
   } = app
   const [hovered, setHovered] = useState(false)
+  const videoRef = useRef<HTMLVideoElement>(null)
+
+  useEffect(() => {
+    const video = videoRef.current
+    if (!video) return
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          video.play().catch(() => {})
+        } else {
+          video.pause()
+        }
+      },
+      { threshold: 0.25 }
+    )
+    observer.observe(video)
+    return () => observer.disconnect()
+  }, [])
 
   if (variant === 'featured') {
     return (
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.4, delay: index * 0.1 }}
+        viewport={{ once: true, margin: '-50px' }}
+        transition={{ duration: 0.3, delay: index * 0.05 }}
       >
         <Link
           href={`/apps/${id}`}
@@ -59,7 +77,7 @@ export function AppCard({ app, index, variant = 'compact' }: AppCardProps) {
                 </div>
               ) : video ? (
                 <video
-                  autoPlay
+                  ref={videoRef}
                   loop
                   muted
                   playsInline
@@ -159,8 +177,8 @@ export function AppCard({ app, index, variant = 'compact' }: AppCardProps) {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.4, delay: index * 0.1 }}
+      viewport={{ once: true, margin: '-50px' }}
+      transition={{ duration: 0.3, delay: index * 0.05 }}
     >
       <Link
         href={`/apps/${id}`}
