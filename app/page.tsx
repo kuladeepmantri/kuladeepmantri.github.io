@@ -21,6 +21,13 @@ import {
 } from 'lucide-react'
 import type { AppProject } from './data'
 
+import { CarPreview } from '@/components/car-preview'
+
+const SOCIAL_ICONS: Record<string, React.ReactNode> = {
+  GitHub: <Github size={18} />,
+  Instagram: <Instagram size={18} />,
+}
+
 // ── Helpers ──
 
 function getStripLabel(project: AppProject): string {
@@ -52,8 +59,9 @@ function ProjectStrip({
     offset: ['start 85%', 'start 30%'],
   })
 
-  const height = useTransform(scrollYProgress, [0, 1], [70, 580])
+  const height = useTransform(scrollYProgress, [0, 1], [70, 480])
   const contentOpacity = useTransform(scrollYProgress, [0.55, 0.85], [0, 1])
+  const contentPointerEvents = useTransform(contentOpacity, (v) => v > 0.1 ? 'auto' : 'none')
   const accentWidth = useTransform(scrollYProgress, [0, 1], ['40px', '100%'])
 
   useMotionValueEvent(scrollYProgress, 'change', (v) => {
@@ -68,7 +76,7 @@ function ProjectStrip({
     <div ref={ref}>
       <motion.div
         style={{ height }}
-        className="relative cursor-pointer overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--bg-elevated)] transition-colors hover:border-[var(--border-hover)]"
+        className="relative flex cursor-pointer flex-col overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--bg-elevated)] transition-colors hover:border-[var(--border-hover)]"
         onClick={() => router.push(`/apps/${project.id}`)}
       >
         {/* Collapsed header */}
@@ -95,34 +103,76 @@ function ProjectStrip({
           }}
         />
 
+        {/* Full-bleed 3D car (behind everything, spans the whole strip) */}
+        {project.embedUrl && (
+          <>
+            <motion.div
+              className="pointer-events-none absolute inset-0"
+              style={{ opacity: contentOpacity }}
+            >
+              <CarPreview />
+            </motion.div>
+          </>
+        )}
+
         {/* Expanded content */}
         <motion.div
-          className="flex flex-col-reverse gap-6 px-6 pb-8 sm:grid sm:grid-cols-2 sm:px-8"
-          style={{ opacity: contentOpacity }}
+          className="flex min-h-0 flex-1 flex-col-reverse gap-6 px-6 pb-8 sm:grid sm:grid-cols-2 sm:px-8"
+          style={{
+            opacity: contentOpacity,
+            pointerEvents: contentPointerEvents as unknown as undefined,
+          }}
         >
-          {/* Device Frame */}
+          {/* Device Frame (non-embed projects only) */}
+          {!project.embedUrl && (
           <div className="flex items-center justify-center">
-            <div
-              className={
-                project.deviceType === 'iphone'
-                  ? 'w-full max-w-[240px]'
-                  : 'w-full'
-              }
-              style={{
-                filter: `drop-shadow(0 0 30px ${project.accentColor}20)`,
-              }}
-            >
-              <DeviceFrame
-                type={project.deviceType}
-                imageSrc={project.image}
-                videoSrc={project.video}
-                appName={project.name}
-                accentColor={project.accentColor}
-              />
-            </div>
+              <div
+                className={
+                  project.deviceType === 'iphone'
+                    ? 'w-full max-w-[240px]'
+                    : 'w-full'
+                }
+                style={{
+                  filter: `drop-shadow(0 0 30px ${project.accentColor}20)`,
+                }}
+              >
+                <DeviceFrame
+                  type={project.deviceType}
+                  imageSrc={project.image}
+                  videoSrc={project.video}
+                  appName={project.name}
+                  accentColor={project.accentColor}
+                />
+              </div>
           </div>
+          )}
 
           {/* Info */}
+          {project.embedUrl ? (
+            <div className="absolute bottom-12 right-6 z-10 sm:right-8 rounded-lg bg-[rgba(10,10,10,0.55)] backdrop-blur-md px-4 py-3 border border-[rgba(255,255,255,0.06)]">
+              <p className="text-xs text-[var(--text-secondary)]">
+                {project.tagline}
+              </p>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {project.tags.slice(0, 4).map((tag) => (
+                  <span
+                    key={tag}
+                    className="rounded-full border border-[rgba(255,255,255,0.08)] px-2 py-0.5 text-[9px] text-[var(--text-muted)]"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+              <div
+                className="mt-2 flex items-center gap-1 text-xs transition-colors"
+                style={{ color: 'var(--text-muted)' }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = project.accentColor)}
+                onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}
+              >
+                View project <ArrowUpRight size={12} />
+              </div>
+            </div>
+          ) : (
           <div className="flex flex-col justify-center">
             <h4 className="text-2xl font-bold">{project.name}</h4>
             <p className="mt-1 text-sm text-[var(--text-secondary)]">
@@ -172,10 +222,16 @@ function ProjectStrip({
               ))}
             </div>
 
-            <div className="mt-4 flex items-center gap-1.5 text-sm text-[var(--text-muted)]">
+            <div
+              className="mt-4 flex items-center gap-1.5 text-sm transition-colors"
+              style={{ color: 'var(--text-muted)' }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = project.accentColor)}
+              onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}
+            >
               View project <ArrowUpRight size={14} />
             </div>
           </div>
+          )}
         </motion.div>
       </motion.div>
     </div>
@@ -203,10 +259,14 @@ export default function Home() {
     setActiveColor(color)
   }, [])
 
-  function copyEmail() {
-    navigator.clipboard.writeText(EMAIL)
-    setEmailCopied(true)
-    setTimeout(() => setEmailCopied(false), 2000)
+  async function copyEmail() {
+    try {
+      await navigator.clipboard.writeText(EMAIL)
+      setEmailCopied(true)
+      setTimeout(() => setEmailCopied(false), 2000)
+    } catch {
+      // Fallback: select text if clipboard API is denied
+    }
   }
 
   return (
@@ -313,7 +373,7 @@ export default function Home() {
                 className="object-cover"
                 style={{
                   objectPosition: 'center 35%',
-                  filter: 'grayscale(1) brightness(0.7) contrast(1.1)',
+                  filter: 'grayscale(1) brightness(0.85) contrast(1.1)',
                 }}
                 sizes="(max-width: 1024px) 100vw, 1024px"
                 priority
@@ -324,7 +384,7 @@ export default function Home() {
             <div
               className="pointer-events-none absolute inset-0 z-[1] rounded-2xl"
               style={{
-                boxShadow: 'inset 0 0 60px rgba(5,5,5,0.5)',
+                boxShadow: 'inset 0 0 60px rgba(5,5,5,0.3)',
               }}
             />
           </motion.div>
@@ -349,7 +409,7 @@ export default function Home() {
         <section className="flex flex-col items-center gap-6 py-16 text-center">
           <motion.button
             onClick={copyEmail}
-            className="text-2xl font-bold transition-colors hover:text-[var(--text-secondary)] sm:text-4xl"
+            className="rounded-xl border border-[var(--border)] px-6 py-3 text-2xl font-bold transition-colors hover:border-[var(--border-hover)] hover:text-[var(--text-secondary)] sm:text-4xl"
             whileTap={{ scale: 0.95 }}
           >
             {emailCopied ? (
@@ -377,18 +437,11 @@ export default function Home() {
                 aria-label={social.label}
                 className="flex h-9 w-9 items-center justify-center rounded-full text-[var(--text-muted)] transition-colors hover:text-[var(--text)]"
               >
-                {social.label === 'GitHub' ? (
-                  <Github size={18} />
-                ) : (
-                  <Instagram size={18} />
-                )}
+                {SOCIAL_ICONS[social.label as keyof typeof SOCIAL_ICONS]}
               </a>
             ))}
           </div>
 
-          <p className="mt-8 text-xs text-[var(--text-muted)]">
-            &copy; 2026 Kuladeep Mantri
-          </p>
         </section>
       </div>
     </>

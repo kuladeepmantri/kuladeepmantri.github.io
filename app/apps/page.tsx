@@ -18,21 +18,21 @@ export default function AppsPage() {
         <h1 className="text-3xl font-bold text-[var(--text)] sm:text-4xl">
           Projects
         </h1>
-        <div className="mb-12" />
+        <div className="mt-12" />
 
-        {/* On-device */}
-        {personal.length > 0 && (
+        {/* Live */}
+        {live.length > 0 && (
           <section className="mb-14">
             <h2 className="mb-6 text-[10px] font-medium tracking-[0.2em] uppercase text-[var(--text-muted)]">
-              On-device
+              Live
             </h2>
-            <div className="space-y-4">
-              {personal.map((app, i) => (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              {live.map((app, i) => (
                 <AppCard
                   key={app.id}
                   app={app}
                   index={i}
-                  variant="featured"
+                  variant="compact"
                 />
               ))}
             </div>
@@ -58,19 +58,19 @@ export default function AppsPage() {
           </section>
         )}
 
-        {/* Live */}
-        {live.length > 0 && (
+        {/* On-device */}
+        {personal.length > 0 && (
           <section>
             <h2 className="mb-6 text-[10px] font-medium tracking-[0.2em] uppercase text-[var(--text-muted)]">
-              Live
+              On-device
             </h2>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {live.map((app, i) => (
+            <div className="space-y-4">
+              {personal.map((app, i) => (
                 <AppCard
                   key={app.id}
                   app={app}
                   index={i}
-                  variant="compact"
+                  variant="featured"
                 />
               ))}
             </div>

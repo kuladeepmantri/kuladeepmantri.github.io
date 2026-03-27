@@ -5,21 +5,9 @@ import Image from 'next/image'
 import { useState } from 'react'
 import { motion } from 'motion/react'
 import { Users, ExternalLink } from 'lucide-react'
+import { STATUS_DOT, STATUS_LABEL } from '@/app/data'
+import { CarPreview } from '@/components/car-preview'
 import type { AppProject } from '@/app/data'
-
-const STATUS_DOT: Record<AppProject['status'], string> = {
-  live: 'bg-emerald-400',
-  beta: 'bg-yellow-400',
-  building: 'bg-zinc-500',
-  personal: 'bg-violet-400',
-}
-
-const STATUS_LABEL: Record<AppProject['status'], string> = {
-  live: 'Live',
-  beta: 'Beta',
-  building: 'In Development',
-  personal: 'On-device',
-}
 
 type AppCardProps = {
   app: AppProject
@@ -35,6 +23,7 @@ export function AppCard({ app, index, variant = 'compact' }: AppCardProps) {
     description,
     image,
     video,
+    embedUrl,
     accentColor,
     status,
     collaborator,
@@ -62,15 +51,19 @@ export function AppCard({ app, index, variant = 'compact' }: AppCardProps) {
           onMouseLeave={() => setHovered(false)}
         >
           <div className="grid grid-cols-1 sm:grid-cols-2">
-            {/* Image/Video */}
+            {/* Image/Video/3D Preview */}
             <div className="relative aspect-[16/10] overflow-hidden">
-              {video ? (
+              {embedUrl ? (
+                <div className="h-full w-full" style={{ pointerEvents: 'none' }}>
+                  <CarPreview />
+                </div>
+              ) : video ? (
                 <video
                   autoPlay
                   loop
                   muted
                   playsInline
-                  preload="auto"
+                  preload="metadata"
                   className="h-full w-full object-cover"
                   style={{ objectPosition: 'center 15%' }}
                 >
@@ -179,7 +172,11 @@ export function AppCard({ app, index, variant = 'compact' }: AppCardProps) {
         onMouseLeave={() => setHovered(false)}
       >
         <div className="relative aspect-[16/10] overflow-hidden">
-          {image ? (
+          {embedUrl ? (
+            <div className="h-full w-full" style={{ pointerEvents: 'none' }}>
+              <CarPreview />
+            </div>
+          ) : image ? (
             <Image
               src={image}
               alt={name}

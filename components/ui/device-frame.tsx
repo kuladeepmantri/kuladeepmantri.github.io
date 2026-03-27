@@ -7,8 +7,10 @@ type DeviceFrameProps = {
   type: 'iphone' | 'browser'
   imageSrc: string | null
   videoSrc?: string | null
+  embedUrl?: string | null
   appName: string
   accentColor: string
+  interactive?: boolean
   className?: string
 }
 
@@ -71,9 +73,15 @@ function IPhoneFrame({
 function BrowserFrame({
   imageSrc,
   videoSrc,
+  embedUrl,
   appName,
   accentColor,
+  interactive,
 }: Omit<DeviceFrameProps, 'type' | 'className'>) {
+  const displayUrl = embedUrl
+    ? embedUrl.replace(/^https?:\/\//, '').replace(/\/$/, '')
+    : `${appName.toLowerCase().replace(/\s/g, '')}.com`
+
   return (
     <div className="w-full">
       <div className="overflow-hidden rounded-2xl border border-zinc-700 bg-zinc-900 shadow-2xl">
@@ -86,13 +94,22 @@ function BrowserFrame({
           </div>
           <div className="mx-4 flex-1">
             <div className="mx-auto h-6 max-w-xs rounded-md bg-zinc-800 px-3 text-center text-[11px] leading-6 text-zinc-500">
-              {appName.toLowerCase().replace(/\s/g, '')}.com
+              {displayUrl}
             </div>
           </div>
         </div>
         {/* Content */}
-        <div className="relative aspect-[16/10] bg-black">
-          {videoSrc ? (
+        <div className={cn('relative bg-black', embedUrl ? 'aspect-[16/10]' : 'aspect-[16/10]')}>
+          {embedUrl ? (
+            <iframe
+              src={embedUrl}
+              title={appName}
+              loading="lazy"
+              sandbox="allow-scripts allow-same-origin"
+              className="h-full w-full border-0"
+              style={{ pointerEvents: interactive ? 'auto' : 'none' }}
+            />
+          ) : videoSrc ? (
             <video
               autoPlay
               loop
@@ -138,15 +155,17 @@ export function DeviceFrame({
   type,
   imageSrc,
   videoSrc,
+  embedUrl,
   appName,
   accentColor,
+  interactive,
   className,
 }: DeviceFrameProps) {
   return (
     <div style={{ perspective: 1000 }}>
     <motion.div
       className={cn('', className)}
-      whileHover={{
+      whileHover={embedUrl && interactive ? undefined : {
         rotateY: type === 'iphone' ? -3 : -5,
         rotateX: 2,
         scale: 1.02,
@@ -164,8 +183,10 @@ export function DeviceFrame({
         <BrowserFrame
           imageSrc={imageSrc}
           videoSrc={videoSrc}
+          embedUrl={embedUrl}
           appName={appName}
           accentColor={accentColor}
+          interactive={interactive}
         />
       )}
     </motion.div>
