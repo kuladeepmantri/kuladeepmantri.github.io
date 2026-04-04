@@ -8,7 +8,6 @@ import {
   useMotionValueEvent,
 } from 'motion/react'
 import { useRouter } from 'next/navigation'
-import Image from 'next/image'
 import { PROJECTS, EMAIL, SOCIAL_LINKS, CERTIFICATIONS } from './data'
 import { DeviceFrame } from '@/components/ui/device-frame'
 import {
@@ -351,49 +350,6 @@ export default function Home() {
             </motion.div>
           </div>
 
-          {/* Photo */}
-          <motion.div
-            className="relative mt-10 h-56 overflow-hidden rounded-2xl sm:h-72 lg:h-80"
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{
-              duration: 1.2,
-              delay: 0.6,
-              ease: [0.25, 0.1, 0, 1],
-            }}
-          >
-            <motion.div
-              className="absolute inset-0"
-              initial={{ scale: 1.08 }}
-              animate={{ scale: 1 }}
-              transition={{
-                duration: 1.8,
-                delay: 0.6,
-                ease: [0.25, 0.1, 0, 1],
-              }}
-            >
-              <Image
-                src="/images/1.JPG"
-                alt="Kuladeep Mantri"
-                fill
-                className="object-cover"
-                style={{
-                  objectPosition: 'center 35%',
-                  filter: 'grayscale(1) brightness(0.85) contrast(1.1)',
-                }}
-                sizes="(max-width: 1024px) 100vw, 1024px"
-                priority
-              />
-            </motion.div>
-
-            {/* Inset shadow for edge blending */}
-            <div
-              className="pointer-events-none absolute inset-0 z-[1] rounded-2xl"
-              style={{
-                boxShadow: 'inset 0 0 60px rgba(5,5,5,0.3)',
-              }}
-            />
-          </motion.div>
 
         </div>
       </section>
