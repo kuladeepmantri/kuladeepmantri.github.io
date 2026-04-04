@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useMemo, useEffect, useRef, useState } from 'react'
+import { Suspense, useMemo, useEffect, useRef, useState, useCallback } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { useGLTF, ContactShadows, Environment } from '@react-three/drei'
 import * as THREE from 'three'
@@ -8,34 +8,66 @@ import type { GLTF } from 'three-stdlib'
 
 const MODEL_PATH = '/models/accord.glb'
 
-function AccordModel({ onLoad }: { onLoad?: () => void }) {
+function useIsTouchDevice() {
+  const [isTouch, setIsTouch] = useState(false)
+  useEffect(() => {
+    setIsTouch(window.matchMedia('(hover: none) and (pointer: coarse)').matches)
+  }, [])
+  return isTouch
+}
+
+function AccordModel({ onLoad, mobile }: { onLoad?: () => void; mobile: boolean }) {
   const { scene: originalScene } = useGLTF(MODEL_PATH) as GLTF
 
-  const materials = useMemo(() => ({
-    body: new THREE.MeshPhysicalMaterial({
-      color: new THREE.Color(0x3a3a42),
-      metalness: 0.8,
-      roughness: 0.2,
-      clearcoat: 1.0,
-      clearcoatRoughness: 0.1,
-      envMapIntensity: 1.5,
-    }),
-    glass: new THREE.MeshPhysicalMaterial({
-      color: new THREE.Color(0x111115),
-      metalness: 0.1,
-      roughness: 0.05,
-      transmission: 0.6,
-      thickness: 0.5,
-      envMapIntensity: 2.0,
-      ior: 1.5,
-    }),
-    dark: new THREE.MeshPhysicalMaterial({
-      color: new THREE.Color(0x1a1a1e),
-      metalness: 0.6,
-      roughness: 0.4,
-      envMapIntensity: 0.8,
-    }),
-  }), [])
+  const materials = useMemo(() => {
+    if (mobile) {
+      return {
+        body: new THREE.MeshStandardMaterial({
+          color: new THREE.Color(0x3a3a42),
+          metalness: 0.8,
+          roughness: 0.25,
+          envMapIntensity: 1.2,
+        }),
+        glass: new THREE.MeshStandardMaterial({
+          color: new THREE.Color(0x111115),
+          metalness: 0.3,
+          roughness: 0.1,
+          envMapIntensity: 1.5,
+        }),
+        dark: new THREE.MeshStandardMaterial({
+          color: new THREE.Color(0x1a1a1e),
+          metalness: 0.6,
+          roughness: 0.4,
+          envMapIntensity: 0.6,
+        }),
+      }
+    }
+    return {
+      body: new THREE.MeshPhysicalMaterial({
+        color: new THREE.Color(0x3a3a42),
+        metalness: 0.8,
+        roughness: 0.2,
+        clearcoat: 1.0,
+        clearcoatRoughness: 0.1,
+        envMapIntensity: 1.5,
+      }),
+      glass: new THREE.MeshPhysicalMaterial({
+        color: new THREE.Color(0x111115),
+        metalness: 0.1,
+        roughness: 0.05,
+        transmission: 0.6,
+        thickness: 0.5,
+        envMapIntensity: 2.0,
+        ior: 1.5,
+      }),
+      dark: new THREE.MeshPhysicalMaterial({
+        color: new THREE.Color(0x1a1a1e),
+        metalness: 0.6,
+        roughness: 0.4,
+        envMapIntensity: 0.8,
+      }),
+    }
+  }, [mobile])
 
   const model = useMemo(() => {
     const clone = originalScene.clone(true)
@@ -104,18 +136,18 @@ const CAMERA_KEYFRAMES: { pos: [number, number, number]; lookAt: [number, number
   { pos: [3.2, 1.2, 2.8], lookAt: [-1.2, 0.1, 0], duration: 5 },
 ]
 
-function CinematicCamera() {
+function CinematicCamera({ ready }: { ready: boolean }) {
   const { camera } = useThree()
   const posVec = useRef(new THREE.Vector3())
   const lookVec = useRef(new THREE.Vector3())
-  // Start partway through the first keyframe so the camera begins at a close angle
-  const timeRef = useRef(4)
+  const timeRef = useRef(0)
   const totalDuration = useMemo(
     () => CAMERA_KEYFRAMES.reduce((sum, kf) => sum + kf.duration, 0),
     []
   )
 
   useFrame((_, delta) => {
+    if (!ready) return
     timeRef.current += delta
     const t = timeRef.current % totalDuration
     let accumulated = 0
@@ -155,43 +187,50 @@ function CinematicCamera() {
   return null
 }
 
-function Scene({ onLoad }: { onLoad?: () => void }) {
+function Scene({ onLoad, ready, mobile }: { onLoad?: () => void; ready: boolean; mobile: boolean }) {
   return (
     <>
       <Environment preset="night" background={false} />
-      <ambientLight intensity={0.3} />
+      <ambientLight intensity={mobile ? 0.4 : 0.3} />
       <directionalLight position={[6, 5, -2]} intensity={3} color="#ffffff" />
-      <directionalLight position={[-5, 4, 3]} intensity={1.5} color="#d8d8ff" />
-      <directionalLight position={[-1, 3, 7]} intensity={1.5} color="#e0e0ff" />
-
-      {/* Diagnostic heartbeat -- subtle green pulse */}
-      <DiagnosticPulse />
+      {!mobile && (
+        <>
+          <directionalLight position={[-5, 4, 3]} intensity={1.5} color="#d8d8ff" />
+          <directionalLight position={[-1, 3, 7]} intensity={1.5} color="#e0e0ff" />
+          <DiagnosticPulse />
+        </>
+      )}
 
       <Suspense fallback={null}>
         <group position={[-1.2, -0.6, 0]}>
-          <AccordModel onLoad={onLoad} />
+          <AccordModel onLoad={onLoad} mobile={mobile} />
         </group>
 
-        <ContactShadows
-          position={[-1.2, -0.65, 0]}
-          opacity={0.25}
-          scale={12}
-          blur={2.5}
-          far={4}
-          color="#000000"
-        />
+        {!mobile && (
+          <ContactShadows
+            position={[-1.2, -0.65, 0]}
+            opacity={0.25}
+            scale={12}
+            blur={2.5}
+            far={4}
+            color="#000000"
+          />
+        )}
       </Suspense>
 
-      <CinematicCamera />
+      <CinematicCamera ready={ready} />
     </>
   )
 }
 
 export function CarPreview() {
   const [loaded, setLoaded] = useState(false)
+  const mobile = useIsTouchDevice()
+  const handleLoad = useCallback(() => setLoaded(true), [])
 
   return (
     <div style={{ width: '100%', height: '100%', position: 'absolute', inset: 0 }}>
+      {/* Loading pulse -- sits on top, fades out when model is ready */}
       {!loaded && (
         <div
           style={{
@@ -226,16 +265,16 @@ export function CarPreview() {
       <Canvas
         camera={{ position: [2.5, 0.6, 3.5], fov: 32, near: 0.1, far: 100 }}
         gl={{
-          antialias: true,
+          antialias: !mobile,
           alpha: true,
           powerPreference: 'high-performance',
           toneMapping: THREE.ACESFilmicToneMapping,
           toneMappingExposure: 1.2,
         }}
-        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
-        dpr={[1, 1.5]}
+        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'transparent' }}
+        dpr={mobile ? [1, 1] : [1, 1.5]}
       >
-        <Scene onLoad={() => setLoaded(true)} />
+        <Scene onLoad={handleLoad} ready={loaded} mobile={mobile} />
       </Canvas>
     </div>
   )
