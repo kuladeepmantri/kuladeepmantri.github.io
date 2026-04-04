@@ -8,12 +8,9 @@ import {
   useMotionValueEvent,
 } from 'motion/react'
 import { useRouter } from 'next/navigation'
-import { PROJECTS, EMAIL, SOCIAL_LINKS, CERTIFICATIONS } from './data'
+import { PROJECTS, CERTIFICATIONS } from './data'
 import { DeviceFrame } from '@/components/ui/device-frame'
 import {
-  Check,
-  Github,
-  Instagram,
   ArrowUpRight,
   Users,
   ExternalLink,
@@ -21,11 +18,6 @@ import {
 import type { AppProject } from './data'
 
 import { CarPreview } from '@/components/car-preview'
-
-const SOCIAL_ICONS: Record<string, React.ReactNode> = {
-  GitHub: <Github size={18} />,
-  Instagram: <Instagram size={18} />,
-}
 
 // ── Helpers ──
 
@@ -239,7 +231,6 @@ function ProjectStrip({
 
 export default function Home() {
   const isMobile = useIsMobile()
-  const [emailCopied, setEmailCopied] = useState(false)
   const activeColorRef = useRef('transparent')
   const glowRef = useRef<HTMLDivElement>(null)
 
@@ -268,16 +259,6 @@ export default function Home() {
         : 'transparent'
     }
   }, [])
-
-  async function copyEmail() {
-    try {
-      await navigator.clipboard.writeText(EMAIL)
-      setEmailCopied(true)
-      setTimeout(() => setEmailCopied(false), 2000)
-    } catch {
-      // Fallback: select text if clipboard API is denied
-    }
-  }
 
   return (
     <>
@@ -368,44 +349,6 @@ export default function Home() {
           ))}
         </section>
 
-        {/* ─── Contact ─── */}
-        <section className="flex flex-col items-center gap-6 py-16 text-center">
-          <motion.button
-            onClick={copyEmail}
-            className="rounded-xl border border-[var(--border)] px-6 py-3 text-2xl font-bold transition-colors hover:border-[var(--border-hover)] hover:text-[var(--text-secondary)] sm:text-4xl"
-            whileTap={{ scale: 0.95 }}
-          >
-            {emailCopied ? (
-              <motion.span
-                className="flex items-center gap-3 text-[var(--text-secondary)]"
-                initial={{ opacity: 0, y: 4 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.2, ease: 'easeOut' }}
-              >
-                <Check size={20} /> Copied
-              </motion.span>
-            ) : (
-              EMAIL
-            )}
-          </motion.button>
-          <p className="text-sm text-[var(--text-muted)]">Click to copy</p>
-
-          <div className="flex gap-3">
-            {SOCIAL_LINKS.map((social) => (
-              <a
-                key={social.label}
-                href={social.link}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={social.label}
-                className="flex h-9 w-9 items-center justify-center rounded-full text-[var(--text-muted)] transition-colors hover:text-[var(--text)]"
-              >
-                {SOCIAL_ICONS[social.label as keyof typeof SOCIAL_ICONS]}
-              </a>
-            ))}
-          </div>
-
-        </section>
       </div>
     </>
   )
