@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import {
   motion,
   useScroll,
@@ -30,6 +30,18 @@ const SOCIAL_ICONS: Record<string, React.ReactNode> = {
 
 // ── Helpers ──
 
+function useIsMobile(breakpoint = 640) {
+  const [isMobile, setIsMobile] = useState(false)
+  useEffect(() => {
+    const mql = window.matchMedia(`(max-width: ${breakpoint - 1}px)`)
+    setIsMobile(mql.matches)
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches)
+    mql.addEventListener('change', handler)
+    return () => mql.removeEventListener('change', handler)
+  }, [breakpoint])
+  return isMobile
+}
+
 function truncate(text: string, max: number): string {
   if (text.length <= max) return text
   const cut = text.lastIndexOf(' ', max)
@@ -41,9 +53,11 @@ function truncate(text: string, max: number): string {
 function ProjectStrip({
   project,
   onActive,
+  isMobile,
 }: {
   project: AppProject
   onActive: (color: string) => void
+  isMobile: boolean
 }) {
   const ref = useRef<HTMLDivElement>(null)
   const router = useRouter()
@@ -52,15 +66,19 @@ function ProjectStrip({
     offset: ['start 85%', 'start 30%'],
   })
 
-  const height = useTransform(scrollYProgress, [0, 1], [70, 480])
+  // Embed projects (3D car) use absolute positioning, so they don't need extra height.
+  // Non-embed projects stack vertically on mobile and need more room.
+  const expandedHeight = project.embedUrl ? 480 : (isMobile ? 560 : 480)
+  const height = useTransform(scrollYProgress, [0, 1], [70, expandedHeight])
   const contentOpacity = useTransform(scrollYProgress, [0.55, 0.85], [0, 1])
-  const contentPointerEvents = useTransform(contentOpacity, (v) => v > 0.1 ? 'auto' : 'none')
-  const accentWidth = useTransform(scrollYProgress, [0, 1], ['40px', '100%'])
+  const [expanded, setExpanded] = useState(false)
 
   useMotionValueEvent(scrollYProgress, 'change', (v) => {
     if (v > 0.1 && v < 0.95) {
       onActive(project.accentColor)
     }
+    const shouldExpand = v > 0.3
+    if (shouldExpand !== expanded) setExpanded(shouldExpand)
   })
 
   return (
@@ -76,10 +94,10 @@ function ProjectStrip({
         </div>
 
         {/* Accent line */}
-        <motion.div
-          className="absolute bottom-0 left-0 h-[2px]"
+        <div
+          className="absolute bottom-0 left-0 h-[2px] transition-all duration-500 ease-out"
           style={{
-            width: accentWidth,
+            width: expanded ? '100%' : '40px',
             backgroundColor: project.accentColor,
           }}
         />
@@ -98,15 +116,15 @@ function ProjectStrip({
 
         {/* Expanded content */}
         <motion.div
-          className="flex min-h-0 flex-1 flex-col-reverse gap-6 px-6 pb-8 sm:grid sm:grid-cols-2 sm:px-8"
+          className="flex min-h-0 flex-1 flex-col-reverse justify-end gap-6 px-6 pb-8 sm:grid sm:grid-cols-2 sm:justify-start sm:px-8"
           style={{
             opacity: contentOpacity,
-            pointerEvents: contentPointerEvents as unknown as undefined,
+            pointerEvents: expanded ? 'auto' : 'none',
           }}
         >
           {/* Device Frame (non-embed projects only) */}
           {!project.embedUrl && (
-          <div className="flex items-center justify-center">
+          <div className="flex items-center justify-center max-h-[180px] sm:max-h-none overflow-hidden">
               <div
                 className={
                   project.deviceType === 'iphone'
@@ -154,9 +172,8 @@ function ProjectStrip({
               </div>
             </div>
           ) : (
-          <div className="flex flex-col justify-center">
-            <h4 className="text-2xl font-bold">{project.name}</h4>
-            <p className="mt-1 text-sm text-[var(--text-secondary)]">
+          <div className="flex flex-col sm:justify-center">
+            <p className="text-sm text-[var(--text-secondary)]">
               {project.tagline}
             </p>
             <p className="mt-3 text-xs leading-relaxed text-[var(--text-muted)]">
@@ -222,6 +239,7 @@ function ProjectStrip({
 // ── Home Page ──
 
 export default function Home() {
+  const isMobile = useIsMobile()
   const [emailCopied, setEmailCopied] = useState(false)
   const activeColorRef = useRef('transparent')
   const glowRef = useRef<HTMLDivElement>(null)
@@ -267,7 +285,7 @@ export default function Home() {
       {/* Background color bleed */}
       <div
         ref={glowRef}
-        className="pointer-events-none fixed inset-0 -z-10 transition-all duration-300"
+        className="pointer-events-none fixed inset-0 -z-10 transition-[background] duration-300"
       />
 
       {/* ── Hero ── */}
@@ -389,6 +407,7 @@ export default function Home() {
               key={project.id}
               project={project}
               onActive={handleProjectActive}
+              isMobile={isMobile}
             />
           ))}
         </section>
