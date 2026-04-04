@@ -110,11 +110,11 @@ export function AppCard({ app, index, variant = 'compact' }: AppCardProps) {
                   </span>
                 </div>
               )}
-              <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-[var(--bg-elevated)] to-transparent" />
+              <div className="absolute inset-x-0 bottom-0 h-1/4 sm:h-1/3 bg-gradient-to-t from-[var(--bg-elevated)] to-transparent" />
             </div>
 
             {/* Info */}
-            <div className="flex flex-col justify-center p-6">
+            <div className="flex flex-col justify-center p-4 sm:p-6">
               <div className="mb-3 flex items-center gap-2">
                 <span
                   className={`h-1.5 w-1.5 rounded-full ${STATUS_DOT[status]}`}
@@ -124,7 +124,7 @@ export function AppCard({ app, index, variant = 'compact' }: AppCardProps) {
                 </span>
               </div>
               <h3
-                className="text-xl font-bold transition-colors"
+                className="text-lg sm:text-xl font-bold transition-colors"
                 style={{ color: hovered ? accentColor : 'var(--text)' }}
               >
                 {name}
