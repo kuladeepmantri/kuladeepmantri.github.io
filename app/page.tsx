@@ -288,7 +288,7 @@ export default function Home() {
       />
 
       {/* ── Hero ── */}
-      <section className="relative pt-32 pb-16 sm:pt-40">
+      <section className="relative flex min-h-[85vh] flex-col justify-center pt-24 pb-16 sm:pt-32">
         {/* Dot grid */}
         <div
           className="pointer-events-none absolute inset-0 opacity-[0.04]"
