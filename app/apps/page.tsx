@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { PROJECTS } from '@/app/data'
+import { SIGNALS as PROJECTS } from '@/app/signals'
 import { AppCard } from '@/components/apps/app-card'
 
 export const metadata: Metadata = {

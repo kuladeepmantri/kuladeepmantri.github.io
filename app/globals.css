@@ -1,36 +1,68 @@
 @import 'tailwindcss';
 
-/* ── Design Tokens ── */
+/* ── View Transitions ──
+ * Soft 140ms cross-fade between routes on browsers that support it (Chrome 111+,
+ * Safari 18+, Firefox TP). Unsupported browsers just navigate normally. */
+@view-transition {
+  navigation: auto;
+}
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 140ms;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
+  }
+}
+
+/* ── Design Tokens (OKLCH, light-mode only) ──
+ * Warm paper palette, recalibrated for high-contrast reading on light.
+ * Darker inks. Deeper accents. All colors in OKLCH so color-mix() below
+ * produces perceptually-smooth tints per-signal. No dark mode. */
 :root {
-  --bg: #050505;
-  --bg-elevated: #0a0a0a;
-  --bg-subtle: #111111;
-  --accent: #a78bfa;
-  --accent-dim: #a78bfa1a;
-  --accent-hover: #c4b5fd;
-  --border: #1a1a1a;
-  --border-hover: #2a2a2a;
-  --text: #f0f0f0;
-  --text-secondary: #999999;
-  --text-muted: #808080;
+  color-scheme: light;
+
+  /* Backgrounds — warm paper tones, not sterile white */
+  --bg: oklch(0.985 0.004 85);
+  --bg-elevated: oklch(0.96 0.004 85);
+  --bg-subtle: oklch(0.93 0.004 85);
+
+  /* Text — deep warm ink, WCAG AAA on --bg */
+  --text: oklch(0.18 0.008 80);              /* was 0.24 — darker */
+  --text-secondary: oklch(0.32 0.006 80);    /* was 0.42 */
+  --text-muted: oklch(0.50 0.004 80);        /* was 0.58 (failed AA) */
+
+  /* Borders — soft ledger lines */
+  --border: oklch(0.84 0.004 85);
+  --border-hover: oklch(0.70 0.005 85);
+
+  /* Accent — deep lab-green, passes AA for text */
+  --accent: oklch(0.46 0.15 155);
+  --accent-dim: oklch(0.46 0.15 155 / 0.12);
+  --accent-hover: oklch(0.40 0.15 155);
+
+  /* Signal lifecycle semantics — WCAG-AA compliant on --bg */
+  --status-active: oklch(0.46 0.15 155);   /* lab-green: alive, pinging */
+  --status-shipped: oklch(0.42 0.14 245);  /* deep slate-blue: filed, done */
+  --status-paused: oklch(0.52 0.14 60);    /* warm amber: waiting */
+  --status-archived: oklch(0.55 0.005 80); /* dim ink: cold */
 }
 
-/* ── Lenis Smooth Scroll ── */
-html.lenis,
-html.lenis body {
-  height: auto;
+/* ── Signal state chips ── */
+[data-state='active'] {
+  color: var(--status-active);
 }
-
-.lenis.lenis-smooth {
-  scroll-behavior: auto !important;
+[data-state='shipped'] {
+  color: var(--status-shipped);
 }
-
-.lenis.lenis-smooth [data-lenis-prevent] {
-  overscroll-behavior: contain;
+[data-state='paused'] {
+  color: var(--status-paused);
 }
-
-.lenis.lenis-stopped {
-  overflow: hidden;
+[data-state='archived'] {
+  color: var(--status-archived);
 }
 
 /* ── Base ── */
@@ -44,25 +76,79 @@ html.lenis body {
   }
 
   html {
-    color-scheme: dark;
+    color-scheme: light;
   }
 
   body {
     background-color: var(--bg);
     color: var(--text);
+    font-family: var(--font-mono), ui-monospace, 'SFMono-Regular', 'JetBrains Mono', Menlo, monospace;
+    font-size: 16.5px;
+    line-height: 1.6;
+    font-weight: 500; /* mono at weight 500 reads bolder on paper — needed for light mode */
+    letter-spacing: -0.005em;
+    /* Modern text-wrap algorithms (2024+): balance headings, avoid orphans in paragraphs. */
+    text-wrap: pretty;
+    /* tnum: tabular numerals so columns of IDs/dates align like a ledger.
+     * zero: slashed zero (distinguishes 0 from O in KM IDs).
+     * ss02, cv11: IBM Plex Mono stylistic alternates (cleaner zero, italic a). */
+    font-feature-settings: 'tnum' 1, 'zero' 1, 'ss02' 1, 'cv11' 1;
+    /* Faint paper noise — adds warmth + tactility without looking textured.
+     * Uses two radial gradients via color-mix; keep opacity < 3% or it becomes decoration. */
+    background-image:
+      radial-gradient(
+        circle at 20% 10%,
+        color-mix(in oklch, var(--text) 2.5%, transparent) 0,
+        transparent 40%
+      ),
+      radial-gradient(
+        circle at 80% 80%,
+        color-mix(in oklch, var(--text) 1.8%, transparent) 0,
+        transparent 45%
+      );
   }
 
   ::selection {
     background-color: var(--accent);
     color: var(--bg);
   }
+
+  /* Headings get balanced wrapping so line breaks feel intentional. */
+  h1, h2, h3, h4 {
+    text-wrap: balance;
+  }
 }
 
-/* ── Focus Visible ── */
-:focus-visible {
+/* ── Focus Visible ──
+ * Link-like focusables get an inverted block-cursor so keyboard position is
+ * unmistakable. Text inputs get a different treatment: natural ink color +
+ * a subtle accent outline, so typed text stays readable. */
+a:focus-visible,
+button:focus-visible,
+[role="button"]:focus-visible,
+[tabindex="0"]:focus-visible {
+  outline: none;
+  background: var(--focus-tint, var(--accent));
+  color: var(--bg) !important;
+  box-shadow: 0 0 0 3px var(--focus-tint, var(--accent));
+  border-radius: 2px;
+}
+
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
-  border-radius: 4px;
+  background: transparent;
+  color: var(--text);
+}
+a:focus-visible *,
+button:focus-visible * {
+  color: inherit !important;
+}
+a:focus-visible,
+button:focus-visible {
+  transition: background 60ms ease, color 60ms ease, box-shadow 60ms ease;
 }
 
 /* ── Scrollbar ── */
@@ -84,12 +170,52 @@ html.lenis body {
   background: var(--text-muted);
 }
 
+::selection {
+  background: color-mix(in oklch, var(--accent) 20%, transparent);
+  color: var(--text);
+}
+
+/* ── Signal-specific styling ──
+ * Each SignalEntry <article> can set --signal-color inline from data.
+ * Title hover uses it; a thin colored bar sits in the row-number gutter.
+ * Nothing decorative — the color is the project's, not ours. */
+.signal-entry {
+  position: relative;
+  transition: background 200ms ease;
+}
+.signal-entry::before {
+  content: '';
+  position: absolute;
+  left: -12px;
+  top: 24px;
+  bottom: 24px;
+  width: 2px;
+  background: color-mix(in oklch, var(--signal-color, var(--accent)) 55%, transparent);
+  opacity: 0;
+  transition: opacity 180ms ease;
+}
+.signal-entry:hover::before,
+.signal-entry:focus-within::before {
+  opacity: 1;
+}
+.signal-entry:hover {
+  background: color-mix(in oklch, var(--signal-color, var(--accent)) 4%, transparent);
+}
+.signal-title:hover,
+a.signal-title:hover,
+.signal-title-hover {
+  color: color-mix(in oklch, var(--signal-color, var(--accent)) 85%, var(--text));
+}
+
 /* ── Performance ── */
 .contain-layout {
   contain: layout style;
 }
 
-/* ── Reduced Motion ── */
+/* ── Reduced Motion ──
+ * CSS side: kill animations and transitions. JS side: the arrow-nav hook and
+ * scroll helpers also read window.matchMedia() to pass scroll behavior:'auto'
+ * rather than 'smooth' when this media query matches. */
 @media (prefers-reduced-motion: reduce) {
   *,
   ::before,

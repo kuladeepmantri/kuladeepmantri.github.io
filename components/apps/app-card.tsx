@@ -5,9 +5,9 @@ import Image from 'next/image'
 import { useState, useRef, useEffect } from 'react'
 import { motion } from 'motion/react'
 import { Users, ExternalLink } from 'lucide-react'
-import { STATUS_DOT, STATUS_LABEL } from '@/app/data'
+import { STATUS_DOT, STATUS_LABEL } from '@/app/signals'
 import { CarPreview } from '@/components/car-preview'
-import type { AppProject } from '@/app/data'
+import type { AppProject } from '@/app/signals'
 
 type AppCardProps = {
   app: AppProject
@@ -17,7 +17,7 @@ type AppCardProps = {
 
 export function AppCard({ app, index, variant = 'compact' }: AppCardProps) {
   const {
-    id,
+    slug,
     name,
     tagline,
     description,
@@ -58,7 +58,7 @@ export function AppCard({ app, index, variant = 'compact' }: AppCardProps) {
         transition={{ duration: 0.3, delay: index * 0.05 }}
       >
         <Link
-          href={`/apps/${id}`}
+          href={`/apps/${slug}`}
           className="group block overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-elevated)] transition-all duration-300 hover:border-[var(--border-hover)]"
           style={{
             boxShadow: hovered
@@ -177,7 +177,7 @@ export function AppCard({ app, index, variant = 'compact' }: AppCardProps) {
       transition={{ duration: 0.3, delay: index * 0.05 }}
     >
       <Link
-        href={`/apps/${id}`}
+        href={`/apps/${slug}`}
         className="group block overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-elevated)] transition-all duration-300 hover:border-[var(--border-hover)]"
         style={{
           boxShadow: hovered ? `0 8px 30px -5px ${accentColor}40` : 'none',

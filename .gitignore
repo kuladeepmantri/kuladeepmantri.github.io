@@ -41,6 +41,15 @@ yarn-error.log*
 /mobile-*.png
 /tablet-*.png
 /homepage-*.png
+/bento-*.png
+/particles-*.png
+
+# superpowers brainstorming / agents
+.superpowers/
+.claude/
+
+# generated at build time — do not commit
+/lib/generated/
 
 # typescript
 *.tsbuildinfo
