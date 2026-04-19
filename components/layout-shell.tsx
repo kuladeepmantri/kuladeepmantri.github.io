@@ -1,43 +1,20 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import Lenis from 'lenis'
+import { useState } from 'react'
 import { CommandPalette } from '@/components/command-palette'
+import { KeyboardHelp } from '@/components/keyboard-help'
+import { useArrowNav } from '@/hooks/use-arrow-nav'
 
 export function LayoutShell({ children }: { children: React.ReactNode }) {
   const [cmdkOpen, setCmdkOpen] = useState(false)
-
-  useEffect(() => {
-    const isTouchDevice = window.matchMedia('(hover: none) and (pointer: coarse)').matches
-
-    const lenis = new Lenis({
-      duration: 0.6,
-      easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-      smoothWheel: true,
-      touchMultiplier: 1.0,
-      // Disable smooth scroll on touch devices -- native momentum is smoother
-      ...(isTouchDevice ? { smoothTouch: false } : {}),
-    })
-
-    let rafId: number
-
-    function raf(time: number) {
-      lenis.raf(time)
-      rafId = requestAnimationFrame(raf)
-    }
-
-    rafId = requestAnimationFrame(raf)
-
-    return () => {
-      cancelAnimationFrame(rafId)
-      lenis.destroy()
-    }
-  }, [])
+  const [helpOpen, setHelpOpen] = useState(false)
+  useArrowNav(cmdkOpen || helpOpen)
 
   return (
     <>
       {children}
       <CommandPalette open={cmdkOpen} setOpen={setCmdkOpen} />
+      <KeyboardHelp open={helpOpen} setOpen={setHelpOpen} />
     </>
   )
 }

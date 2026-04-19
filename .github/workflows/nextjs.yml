@@ -9,6 +9,11 @@ on:
   push:
     branches: ["main"]
 
+  # Daily rebuild so scripts/fetch-github.ts refreshes commit counts in
+  # lib/generated/github.ts even when no code has changed.
+  schedule:
+    - cron: "0 6 * * *"
+
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
@@ -67,8 +72,12 @@ jobs:
             ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json', '**/yarn.lock') }}-
       - name: Install dependencies
         run: ${{ steps.detect-package-manager.outputs.manager }} ${{ steps.detect-package-manager.outputs.command }}
-      - name: Build with Next.js
-        run: ${{ steps.detect-package-manager.outputs.runner }} next build
+      - name: Build with Next.js (triggers prebuild → fetch-github)
+        run: ${{ steps.detect-package-manager.outputs.manager }} run build
+        env:
+          # GITHUB_TOKEN lets scripts/fetch-github.ts query the GraphQL API for
+          # commit counts. Read-only; see .github/workflows permissions above.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:

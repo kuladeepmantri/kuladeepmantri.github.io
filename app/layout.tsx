@@ -1,11 +1,9 @@
 import type { Metadata, Viewport } from 'next'
-import { Inter } from 'next/font/google'
+import { Inter, IBM_Plex_Mono } from 'next/font/google'
 import './globals.css'
 import { Header } from './header'
 import { Footer } from './footer'
 import { LayoutShell } from '@/components/layout-shell'
-import { LoadingScreen } from '@/components/loading-screen'
-import { PageTransition } from '@/components/page-transition'
 import { WEBSITE_URL } from '@/lib/constants'
 
 const inter = Inter({
@@ -14,15 +12,24 @@ const inter = Inter({
   display: 'swap',
 })
 
+const ibmPlexMono = IBM_Plex_Mono({
+  subsets: ['latin'],
+  weight: ['400', '500', '600'],
+  variable: '--font-mono',
+  display: 'swap',
+})
+
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  themeColor: '#050505',
+  themeColor: '#faf9f5',
 }
 
 export const metadata: Metadata = {
   metadataBase: new URL(WEBSITE_URL),
-  alternates: { canonical: '/' },
+  // Canonical is NOT set here — that would force every sub-page (/now, /verify,
+  // /apps/[slug]) to canonicalize to `/`, suppressing their indexing. Let Next
+  // derive canonical per-page from the route, or override in per-page metadata.
   title: {
     default: 'Kuladeep Mantri',
     template: '%s | Kuladeep Mantri',
@@ -51,21 +58,12 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={`dark ${inter.variable}`}>
-      <body className="bg-[var(--bg)] font-[var(--font-inter),system-ui,-apple-system,sans-serif] antialiased">
+    <html lang="en" className={`${inter.variable} ${ibmPlexMono.variable}`}>
+      <body className="bg-[var(--bg)] antialiased">
         <LayoutShell>
-          <LoadingScreen />
           <div className="flex min-h-screen w-full flex-col">
-            <a
-              href="#main-content"
-              className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:rounded-lg focus:bg-[var(--accent)] focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-[var(--bg)]"
-            >
-              Skip to content
-            </a>
             <Header />
-            <main id="main-content" className="flex-1">
-              <PageTransition>{children}</PageTransition>
-            </main>
+            <main className="flex-1">{children}</main>
             <Footer />
           </div>
         </LayoutShell>

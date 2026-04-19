@@ -1,0 +1,5 @@
+Contact: mailto:mantrikuladeep@gmail.com
+Contact: https://github.com/kuladeepmantri
+Expires: 2027-04-19T00:00:00.000Z
+Preferred-Languages: en
+Canonical: https://kuladeepmantri.com/.well-known/security.txt
