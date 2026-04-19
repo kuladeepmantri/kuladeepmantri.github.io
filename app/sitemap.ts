@@ -1,14 +1,14 @@
 import type { MetadataRoute } from 'next'
 import { WEBSITE_URL } from '@/lib/constants'
-import { PROJECTS } from './data'
+import { SIGNALS } from './signals'
 
 export const dynamic = 'force-static'
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const lastModified = new Date()
 
-  const appPages = PROJECTS.map((project) => ({
-    url: `${WEBSITE_URL}/apps/${project.id}`,
+  const appPages = SIGNALS.map((signal) => ({
+    url: `${WEBSITE_URL}/apps/${signal.slug}`,
     lastModified,
     changeFrequency: 'monthly' as const,
     priority: 0.8,

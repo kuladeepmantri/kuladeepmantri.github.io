@@ -1,41 +1,32 @@
-import { SOCIAL_LINKS, EMAIL } from './data'
+import { SOCIAL_LINKS, EMAIL } from './signals'
 
 export function Footer() {
   return (
-    <footer className="border-t border-[var(--border)] bg-[var(--bg)]">
-      <div className="mx-auto max-w-5xl px-5 py-10 sm:px-8">
-        <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-          <div className="space-y-1">
-            <p className="text-sm font-medium text-[var(--text-secondary)]">
-              Kuladeep Mantri
-            </p>
-            <a
-              href={`mailto:${EMAIL}`}
-              className="text-xs text-[var(--text-muted)] transition-colors hover:text-[var(--text-secondary)]"
-            >
-              {EMAIL}
-            </a>
-          </div>
-
-          <div className="flex items-center gap-4">
-            {SOCIAL_LINKS.map((social) => (
+    <footer className="mt-16 border-t border-[var(--border)]">
+      <div className="mx-auto max-w-[680px] px-5 py-8 text-[12px] font-semibold text-[var(--text-muted)]">
+        <div className="flex flex-wrap items-center gap-x-1 gap-y-2">
+          <a
+            href={`mailto:${EMAIL}`}
+            className="transition-colors hover:text-[var(--text)]"
+          >
+            {EMAIL}
+          </a>
+          {SOCIAL_LINKS.map((social) => (
+            <span key={social.label} className="inline-flex items-center">
+              <span className="mx-2 opacity-50">·</span>
               <a
-                key={social.label}
                 href={social.link}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-xs text-[var(--text-muted)] transition-colors hover:text-[var(--text)]"
+                className="transition-colors hover:text-[var(--text)]"
               >
-                {social.label}
+                {social.label.toLowerCase()}
               </a>
-            ))}
-          </div>
-        </div>
-
-        <div className="mt-8 pt-6 border-t border-[var(--border)]">
-          <p className="text-[11px] text-[var(--text-muted)]">
-            &copy; {new Date().getFullYear()} Kuladeep Mantri. All rights reserved.
-          </p>
+            </span>
+          ))}
+          <span className="ml-auto opacity-60">
+            &copy; {new Date().getFullYear()} kuladeep mantri
+          </span>
         </div>
       </div>
     </footer>

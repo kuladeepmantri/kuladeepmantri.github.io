@@ -14,7 +14,7 @@ import {
   Mail,
   Github,
 } from 'lucide-react'
-import { EMAIL, SOCIAL_LINKS, PROJECTS } from '@/app/data'
+import { EMAIL, SOCIAL_LINKS, SIGNALS as PROJECTS } from '@/app/signals'
 
 interface CommandPaletteProps {
   open: boolean
@@ -110,7 +110,7 @@ export function CommandPalette({ open, setOpen }: CommandPaletteProps) {
               : project.collaborator ? Users
               : Shield
             return (
-              <Command.Item key={project.id} onSelect={() => navigate(`/apps/${project.id}`)}>
+              <Command.Item key={project.id} onSelect={() => navigate(`/apps/${project.slug}`)}>
                 <Icon size={16} />
                 <span>{project.name}</span>
               </Command.Item>
