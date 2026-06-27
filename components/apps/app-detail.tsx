@@ -199,7 +199,6 @@ export function AppDetail({ app }: { app: AppProject }) {
                   imageSrc={app.image}
                   videoSrc={app.video}
                   appName={app.name}
-                  accentColor={app.accentColor}
                 />
               )}
             </section>
