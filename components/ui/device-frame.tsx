@@ -1,7 +1,6 @@
 'use client'
 import { cn } from '@/lib/utils'
 import Image from 'next/image'
-import { motion } from 'motion/react'
 
 type DeviceFrameProps = {
   type: 'iphone' | 'browser'
@@ -9,7 +8,6 @@ type DeviceFrameProps = {
   videoSrc?: string | null
   embedUrl?: string | null
   appName: string
-  accentColor: string
   interactive?: boolean
   className?: string
 }
@@ -18,8 +16,7 @@ function IPhoneFrame({
   imageSrc,
   videoSrc,
   appName,
-  accentColor,
-}: Omit<DeviceFrameProps, 'type' | 'className'>) {
+}: Omit<DeviceFrameProps, 'type' | 'className' | 'accentColor'>) {
   return (
     <div className="mx-auto w-[260px] sm:w-[280px]">
       <div className="relative rounded-[2.5rem] border border-zinc-700 bg-zinc-900 p-3 shadow-2xl">
@@ -47,21 +44,8 @@ function IPhoneFrame({
               className="object-cover"
             />
           ) : (
-            <div
-              className="flex h-full w-full flex-col items-center justify-center"
-              style={{
-                background: `linear-gradient(135deg, ${accentColor}20 0%, #09090b 50%, ${accentColor}10 100%)`,
-              }}
-            >
-              <span
-                className="text-2xl font-bold"
-                style={{ color: accentColor }}
-              >
-                {appName}
-              </span>
-              <span className="mt-2 text-xs text-[var(--text-muted)]">
-                Coming soon
-              </span>
+            <div className="flex h-full w-full flex-col items-center justify-center bg-[var(--bg-subtle)]">
+              <span className="text-sm text-[var(--text-muted)]">{appName}</span>
             </div>
           )}
         </div>
@@ -75,7 +59,6 @@ function BrowserFrame({
   videoSrc,
   embedUrl,
   appName,
-  accentColor,
   interactive,
 }: Omit<DeviceFrameProps, 'type' | 'className'>) {
   const displayUrl = embedUrl
@@ -88,9 +71,9 @@ function BrowserFrame({
         {/* Title bar */}
         <div className="flex h-10 items-center border-b border-zinc-700 px-4">
           <div className="flex gap-2">
-            <div className="h-3 w-3 rounded-full bg-[#ff5f57]" />
-            <div className="h-3 w-3 rounded-full bg-[#febc2e]" />
-            <div className="h-3 w-3 rounded-full bg-[#28c840]" />
+            <div className="h-2.5 w-2.5 rounded-full bg-[var(--border-hover)]" />
+            <div className="h-2.5 w-2.5 rounded-full bg-[var(--border-hover)]" />
+            <div className="h-2.5 w-2.5 rounded-full bg-[var(--border-hover)]" />
           </div>
           <div className="mx-4 flex-1">
             <div className="mx-auto h-6 max-w-xs rounded-md bg-zinc-800 px-3 text-center text-[11px] leading-6 text-zinc-500">
@@ -99,7 +82,7 @@ function BrowserFrame({
           </div>
         </div>
         {/* Content */}
-        <div className={cn('relative bg-black', embedUrl ? 'aspect-[16/10]' : 'aspect-[16/10]')}>
+        <div className="relative aspect-[16/10] bg-black">
           {embedUrl ? (
             <iframe
               src={embedUrl}
@@ -128,21 +111,8 @@ function BrowserFrame({
               className="object-cover object-top"
             />
           ) : (
-            <div
-              className="flex h-full w-full flex-col items-center justify-center"
-              style={{
-                background: `linear-gradient(135deg, ${accentColor}15 0%, #09090b 50%, ${accentColor}08 100%)`,
-              }}
-            >
-              <span
-                className="text-3xl font-bold"
-                style={{ color: accentColor }}
-              >
-                {appName}
-              </span>
-              <span className="mt-2 text-sm text-[var(--text-muted)]">
-                Coming soon
-              </span>
+            <div className="flex h-full w-full flex-col items-center justify-center bg-[var(--bg-subtle)]">
+              <span className="text-sm text-[var(--text-muted)]">{appName}</span>
             </div>
           )}
         </div>
@@ -157,27 +127,16 @@ export function DeviceFrame({
   videoSrc,
   embedUrl,
   appName,
-  accentColor,
   interactive,
   className,
 }: DeviceFrameProps) {
   return (
-    <div style={{ perspective: 1000 }}>
-    <motion.div
-      className={cn('', className)}
-      whileHover={embedUrl && interactive ? undefined : {
-        rotateY: type === 'iphone' ? -3 : -5,
-        rotateX: 2,
-        scale: 1.02,
-      }}
-      transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-    >
+    <div className={cn('', className)}>
       {type === 'iphone' ? (
         <IPhoneFrame
           imageSrc={imageSrc}
           videoSrc={videoSrc}
           appName={appName}
-          accentColor={accentColor}
         />
       ) : (
         <BrowserFrame
@@ -185,11 +144,9 @@ export function DeviceFrame({
           videoSrc={videoSrc}
           embedUrl={embedUrl}
           appName={appName}
-          accentColor={accentColor}
           interactive={interactive}
         />
       )}
-    </motion.div>
     </div>
   )
 }

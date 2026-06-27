@@ -18,10 +18,10 @@
   }
 }
 
-/* ── Design Tokens (OKLCH, light-mode only) ──
+/* ── Design Tokens (OKLCH) ──
  * Warm paper palette, recalibrated for high-contrast reading on light.
  * Darker inks. Deeper accents. All colors in OKLCH so color-mix() below
- * produces perceptually-smooth tints per-signal. No dark mode. */
+ * produces perceptually-smooth tints per-signal. */
 :root {
   color-scheme: light;
 
@@ -39,16 +39,40 @@
   --border: oklch(0.84 0.004 85);
   --border-hover: oklch(0.70 0.005 85);
 
-  /* Accent — deep lab-green, passes AA for text */
-  --accent: oklch(0.46 0.15 155);
-  --accent-dim: oklch(0.46 0.15 155 / 0.12);
-  --accent-hover: oklch(0.40 0.15 155);
+  /* Accent — steel blue: professional, not cliché */
+  --accent: oklch(0.38 0.10 250);
+  --accent-dim: oklch(0.38 0.10 250 / 0.12);
+  --accent-hover: oklch(0.32 0.10 250);
 
   /* Signal lifecycle semantics — WCAG-AA compliant on --bg */
-  --status-active: oklch(0.46 0.15 155);   /* lab-green: alive, pinging */
+  --status-active: oklch(0.42 0.15 155);   /* green: alive, pinging (semantic only) */
   --status-shipped: oklch(0.42 0.14 245);  /* deep slate-blue: filed, done */
   --status-paused: oklch(0.52 0.14 60);    /* warm amber: waiting */
   --status-archived: oklch(0.55 0.005 80); /* dim ink: cold */
+}
+
+[data-theme='dark'] {
+  color-scheme: dark;
+
+  --bg:          oklch(0.11 0.006 85);
+  --bg-elevated: oklch(0.16 0.006 85);
+  --bg-subtle:   oklch(0.21 0.005 85);
+
+  --text:           oklch(0.93 0.006 80);
+  --text-secondary: oklch(0.72 0.006 80);
+  --text-muted:     oklch(0.52 0.004 80);
+
+  --border:       oklch(0.26 0.005 85);
+  --border-hover: oklch(0.40 0.005 85);
+
+  --accent:       oklch(0.62 0.10 250);
+  --accent-dim:   oklch(0.62 0.10 250 / 0.14);
+  --accent-hover: oklch(0.68 0.10 250);
+
+  --status-active:   oklch(0.62 0.16 155);
+  --status-shipped:  oklch(0.62 0.13 245);
+  --status-paused:   oklch(0.70 0.14 60);
+  --status-archived: oklch(0.46 0.004 80);
 }
 
 /* ── Signal state chips ── */
@@ -77,6 +101,15 @@
 
   html {
     color-scheme: light;
+  }
+
+  html[data-theme='dark'] {
+    color-scheme: dark;
+  }
+
+  [data-theme='dark'] body {
+    font-weight: 400;
+    background-image: none;
   }
 
   body {

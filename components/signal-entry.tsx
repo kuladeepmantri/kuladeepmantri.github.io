@@ -24,25 +24,16 @@ export function SignalEntry({
   const pad = String(total).length
   const rowNo = String(index + 1).padStart(pad, '0')
 
-  // The per-signal accent flows into the row's hover state, the title color,
-  // and the keyboard focus indicator via a single custom property.
-  const signalStyle = {
-    ['--signal-color' as string]: signal.accentColor,
-    ['--focus-tint' as string]: signal.accentColor,
-  } as React.CSSProperties
-
   return (
     <article
       data-signal-id={signal.id}
       data-index={index}
-      style={signalStyle}
       className="signal-entry group grid grid-cols-[auto_auto_1fr] gap-x-5 border-b border-[var(--border)] py-8 last:border-b-0"
     >
-      {/* Row number — signature "log file" gutter, tinted by signal color. */}
+      {/* Row number — signature "log file" gutter. */}
       <div
         aria-hidden
-        className="select-none pt-0.5 text-[12px] font-semibold leading-[1.4]"
-        style={{ color: `color-mix(in oklch, ${signal.accentColor} 70%, var(--text-muted))` }}
+        className="select-none pt-0.5 text-[12px] font-semibold leading-[1.4] text-[var(--text-muted)]"
       >
         {rowNo}
       </div>
@@ -53,8 +44,7 @@ export function SignalEntry({
         <div>started {formatSignalDate(signal.dateFirst)}</div>
         {activity && (
           <div
-            className="mt-1.5 text-[11.5px] leading-[1.4] font-semibold uppercase tracking-[0.06em]"
-            style={{ color: signal.accentColor }}
+            className="mt-1.5 text-[11.5px] leading-[1.4] font-semibold uppercase tracking-[0.06em] text-[var(--text-secondary)]"
           >
             {activity}
           </div>
@@ -87,7 +77,7 @@ export function SignalEntry({
         </p>
 
         {/* Action row */}
-        <div className="mt-4 flex flex-wrap items-center gap-x-1 text-[13px] font-semibold text-[var(--text-muted)]">
+        <div className="mt-4 flex flex-wrap items-center gap-x-1 text-[13px] font-semibold text-[var(--text-secondary)]">
           <Link
             href={`/apps/${signal.slug}`}
             aria-label={`Read about ${signal.name}`}
