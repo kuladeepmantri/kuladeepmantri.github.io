@@ -2,11 +2,10 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { useState, useRef, useEffect } from 'react'
+import { useRef, useEffect } from 'react'
 import { motion } from 'motion/react'
-import { Users, ExternalLink } from 'lucide-react'
+import { Users } from 'lucide-react'
 import { STATUS_DOT, STATUS_LABEL } from '@/app/signals'
-import { CarPreview } from '@/components/car-preview'
 import type { AppProject } from '@/app/signals'
 
 type AppCardProps = {
@@ -23,13 +22,10 @@ export function AppCard({ app, index, variant = 'compact' }: AppCardProps) {
     description,
     image,
     video,
-    embedUrl,
-    accentColor,
     status,
     collaborator,
     link,
   } = app
-  const [hovered, setHovered] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
 
   useEffect(() => {
@@ -60,22 +56,11 @@ export function AppCard({ app, index, variant = 'compact' }: AppCardProps) {
         <Link
           href={`/apps/${slug}`}
           className="group block overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-elevated)] transition-all duration-300 hover:border-[var(--border-hover)]"
-          style={{
-            boxShadow: hovered
-              ? `0 8px 30px -5px ${accentColor}40`
-              : 'none',
-          }}
-          onMouseEnter={() => setHovered(true)}
-          onMouseLeave={() => setHovered(false)}
         >
           <div className="grid grid-cols-1 sm:grid-cols-2">
-            {/* Image/Video/3D Preview */}
+            {/* Image/Video Preview */}
             <div className="relative aspect-[16/10] overflow-hidden">
-              {embedUrl ? (
-                <div className="h-full w-full" style={{ pointerEvents: 'none' }}>
-                  <CarPreview />
-                </div>
-              ) : video ? (
+              {video ? (
                 <video
                   ref={videoRef}
                   loop
@@ -96,18 +81,8 @@ export function AppCard({ app, index, variant = 'compact' }: AppCardProps) {
                   sizes="50vw"
                 />
               ) : (
-                <div
-                  className="flex h-full w-full items-center justify-center"
-                  style={{
-                    background: `linear-gradient(135deg, ${accentColor}20, #0a0a0a 50%, ${accentColor}10)`,
-                  }}
-                >
-                  <span
-                    className="text-2xl font-bold"
-                    style={{ color: accentColor }}
-                  >
-                    {name}
-                  </span>
+                <div className="flex h-full w-full items-center justify-center bg-[var(--bg-subtle)]">
+                  <span className="text-sm text-[var(--text-muted)]">{name}</span>
                 </div>
               )}
               <div className="absolute inset-x-0 bottom-0 h-1/4 sm:h-1/3 bg-gradient-to-t from-[var(--bg-elevated)] to-transparent" />
@@ -123,10 +98,7 @@ export function AppCard({ app, index, variant = 'compact' }: AppCardProps) {
                   {STATUS_LABEL[status]}
                 </span>
               </div>
-              <h3
-                className="text-lg sm:text-xl font-bold transition-colors"
-                style={{ color: hovered ? accentColor : 'var(--text)' }}
-              >
+              <h3 className="text-lg sm:text-xl font-bold text-[var(--text)] transition-colors">
                 {name}
               </h3>
               <p className="mt-1 text-sm text-[var(--text-secondary)]">
@@ -153,13 +125,14 @@ export function AppCard({ app, index, variant = 'compact' }: AppCardProps) {
               )}
 
               {link && (
-                <span
-                  role="link"
-                  className="mt-2 inline-flex cursor-pointer items-center gap-1 text-xs text-[var(--text-muted)] hover:text-[var(--text)]"
-                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); window.open(link, '_blank') }}
+                <button
+                  type="button"
+                  aria-label={`Open ${name} live`}
+                  className="mt-2 text-xs text-[var(--text-secondary)] transition-colors hover:text-[var(--text)]"
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); window.open(link, '_blank', 'noopener,noreferrer') }}
                 >
-                  <ExternalLink size={10} /> Visit site
-                </span>
+                  [live]
+                </button>
               )}
             </div>
           </div>
@@ -179,18 +152,9 @@ export function AppCard({ app, index, variant = 'compact' }: AppCardProps) {
       <Link
         href={`/apps/${slug}`}
         className="group block overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-elevated)] transition-all duration-300 hover:border-[var(--border-hover)]"
-        style={{
-          boxShadow: hovered ? `0 8px 30px -5px ${accentColor}40` : 'none',
-        }}
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
       >
         <div className="relative aspect-[16/10] overflow-hidden">
-          {embedUrl ? (
-            <div className="h-full w-full" style={{ pointerEvents: 'none' }}>
-              <CarPreview />
-            </div>
-          ) : image ? (
+          {image ? (
             <Image
               src={image}
               alt={name}
@@ -199,18 +163,8 @@ export function AppCard({ app, index, variant = 'compact' }: AppCardProps) {
               sizes="(max-width: 640px) 100vw, 50vw"
             />
           ) : (
-            <div
-              className="flex h-full w-full items-center justify-center"
-              style={{
-                background: `linear-gradient(135deg, ${accentColor}20, #0a0a0a 50%, ${accentColor}10)`,
-              }}
-            >
-              <span
-                className="text-2xl font-bold"
-                style={{ color: accentColor }}
-              >
-                {name}
-              </span>
+            <div className="flex h-full w-full items-center justify-center bg-[var(--bg-subtle)]">
+              <span className="text-sm text-[var(--text-muted)]">{name}</span>
             </div>
           )}
           <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-[var(--bg-elevated)] to-transparent" />
@@ -218,18 +172,18 @@ export function AppCard({ app, index, variant = 'compact' }: AppCardProps) {
 
         <div className="p-4">
           <div className="flex items-center justify-between">
-            <span
-              className="text-base font-semibold transition-colors"
-              style={{ color: hovered ? accentColor : 'var(--text)' }}
-            >
+            <span className="text-base font-semibold text-[var(--text)] transition-colors">
               {name}
             </span>
             {link && (
-              <span
-                className="flex items-center gap-1 text-xs text-[var(--text-muted)]"
+              <button
+                type="button"
+                aria-label={`Open ${name} live`}
+                className="text-[12px] text-[var(--text-secondary)] transition-colors hover:text-[var(--text)]"
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); window.open(link, '_blank', 'noopener,noreferrer') }}
               >
-                <ExternalLink size={10} /> Live
-              </span>
+                [live]
+              </button>
             )}
           </div>
           <p className="mt-1 text-sm text-[var(--text-secondary)]">

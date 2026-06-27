@@ -22,7 +22,10 @@ const ibmPlexMono = IBM_Plex_Mono({
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  themeColor: '#faf9f5',
+  themeColor: [
+    { media: '(prefers-color-scheme: dark)', color: '#1c1b18' },
+    { media: '(prefers-color-scheme: light)', color: '#faf9f5' },
+  ],
 }
 
 export const metadata: Metadata = {
@@ -59,6 +62,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${inter.variable} ${ibmPlexMono.variable}`}>
+      <head>
+        {/* Anti-flash: sets data-theme before React hydrates, defaulting to dark */}
+        <script dangerouslySetInnerHTML={{ __html: `(function(){try{var t=localStorage.getItem('km-theme');document.documentElement.setAttribute('data-theme',t==='light'?'light':'dark')}catch(e){document.documentElement.setAttribute('data-theme','dark')}})();` }} />
+      </head>
       <body className="bg-[var(--bg)] antialiased">
         <LayoutShell>
           <div className="flex min-h-screen w-full flex-col">
