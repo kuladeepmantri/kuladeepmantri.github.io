@@ -125,16 +125,14 @@ export function AppCard({ app, index, variant = 'compact' }: AppCardProps) {
               )}
 
               {link && (
-                <a
-                  href={link}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <button
+                  type="button"
                   aria-label={`Open ${name} live`}
                   className="mt-2 text-xs text-[var(--text-secondary)] transition-colors hover:text-[var(--text)]"
-                  onClick={(e) => e.stopPropagation()}
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); window.open(link, '_blank', 'noopener,noreferrer') }}
                 >
                   [live]
-                </a>
+                </button>
               )}
             </div>
           </div>
@@ -178,16 +176,14 @@ export function AppCard({ app, index, variant = 'compact' }: AppCardProps) {
               {name}
             </span>
             {link && (
-              <a
-                href={link}
-                target="_blank"
-                rel="noopener noreferrer"
+              <button
+                type="button"
                 aria-label={`Open ${name} live`}
                 className="text-[12px] text-[var(--text-secondary)] transition-colors hover:text-[var(--text)]"
-                onClick={(e) => e.stopPropagation()}
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); window.open(link, '_blank', 'noopener,noreferrer') }}
               >
                 [live]
-              </a>
+              </button>
             )}
           </div>
           <p className="mt-1 text-sm text-[var(--text-secondary)]">
