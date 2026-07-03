@@ -64,6 +64,11 @@ export function SignalEntry({
           >
             {STATE_LABEL[signal.state].toLowerCase()}
           </span>
+          {signal.statusNote && (
+            <span className="text-[11px] text-[var(--text-muted)]">
+              {signal.statusNote}
+            </span>
+          )}
         </div>
 
         {/* Tagline */}
