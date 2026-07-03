@@ -1,3 +1,5 @@
+import { kubereachArticle } from '@/app/articles/kubereach'
+
 // ── Types ──
 
 /**
@@ -16,6 +18,27 @@
 export type SignalState = 'active' | 'shipped' | 'paused' | 'archived'
 export type SignalType = 'project' | 'finding' | 'thought' | 'ship'
 
+/**
+ * Long-form writeup, authored as an ordered list of blocks so a detail page can
+ * render real prose, diagrams, and code-style figures without an MDX pipeline.
+ * Only set on entries that have a full article; most signals leave `article` null
+ * and rely on `description` alone.
+ *
+ * - prose:    a paragraph of body text
+ * - heading:  a section break
+ * - ascii:    a monospace figure (box-drawing / terminal output), matches the ledger aesthetic
+ * - diagram:  a raw inline SVG string (themed via CSS vars so it adapts light/dark)
+ * - callout:  a labelled aside (note, caveat, scope statement)
+ * - steps:    an ordered chain of short lines
+ */
+export type ArticleBlock =
+  | { kind: 'prose'; text: string }
+  | { kind: 'heading'; text: string }
+  | { kind: 'ascii'; title?: string; art: string }
+  | { kind: 'diagram'; title?: string; svg: string }
+  | { kind: 'callout'; label: string; text: string }
+  | { kind: 'steps'; items: string[] }
+
 export type Signal = {
   // Identity
   id: string // 'KM-2024-0001' — stable permalink, format: KM-YYYY-NNNN
@@ -29,6 +52,9 @@ export type Signal = {
   state: SignalState
   // Legacy status surface; new UI should use `state` instead.
   status: 'live' | 'beta' | 'building' | 'personal'
+  // Optional human phrase shown next to the state label (e.g. "open for more ideas").
+  // The state gives the color/word; this gives the nuance.
+  statusNote?: string | null
   dateFirst: string // ISO 8601 — when the signal started
   dateLast: string // ISO 8601 — last meaningful update
 
@@ -45,6 +71,9 @@ export type Signal = {
   tags: string[]
   deviceType: 'iphone' | 'browser'
   collaborator: { name: string; github: string } | null
+
+  // Optional long-form writeup rendered on the detail page (see ArticleBlock).
+  article?: ArticleBlock[] | null
 
   // Populated only for type='finding' or security-research projects
   advisory?: {
@@ -98,6 +127,49 @@ export const STATE_LABEL: Record<SignalState, string> = {
 // the log itself is sorted by last-updated.
 export const SIGNALS: Signal[] = [
   {
+    id: 'KM-2026-0006',
+    slug: 'kubereach',
+    type: 'project',
+    name: 'kubereach',
+    tagline: 'Kubernetes Foothold-to-Cloud Recon',
+    description:
+      'A post-foothold Kubernetes recon idea: drop into one compromised pod, map what your stolen identity can actually reach, and follow the trail out into the AWS account behind the cluster. I proved the two scariest parts against real infrastructure, then stopped to ask whether it is worth building at all.',
+    state: 'active',
+    status: 'building',
+    statusNote: 'idea stage · researched and proven, shaping it',
+    dateFirst: '2026-06-27',
+    dateLast: '2026-07-03',
+    repos: ['getnullpkg/kubereach'],
+    signatureRef: null,
+    link: 'https://github.com/getnullpkg/kubereach',
+    image: null,
+    video: null,
+    embedUrl: null,
+    accentColor: '#fb7185',
+    tags: [
+      'Go',
+      'Kubernetes',
+      'AWS',
+      'EKS',
+      'IRSA',
+      'RBAC',
+      'Offensive Security',
+    ],
+    deviceType: 'browser',
+    collaborator: null,
+    article: kubereachArticle,
+    advisory: {
+      affectedSystems: [
+        'Amazon EKS clusters using IRSA (IAM Roles for Service Accounts)',
+        'Any managed Kubernetes (EKS / GKE / AKS) where tooling trusts SelfSubjectRulesReview behind a webhook authorizer',
+      ],
+      impact:
+        "Two findings, both proven in a lab. First: a token read from a single pod can be redeemed off-cluster for that pod's full cloud permissions, with no path back to the cluster. Second: permission-enumeration tools that trust SelfSubjectRulesReview under-report what a stolen identity can do on any cluster with a webhook authorizer, which is the norm on managed Kubernetes.",
+      mitigation:
+        'Prefer EKS Pod Identity over IRSA, since its tokens are cluster-bound and cannot be redeemed off-box. Scope workload IAM roles tightly and alert on AssumeRoleWithWebIdentity calls from unexpected networks. When auditing blast radius, probe permissions with SelfSubjectAccessReview per action rather than trusting the summarized rule list.',
+    },
+  },
+  {
     id: 'KM-2026-0005',
     slug: 'rune',
     type: 'project',
@@ -105,8 +177,9 @@ export const SIGNALS: Signal[] = [
     tagline: 'Real-Time Vehicle Diagnostics',
     description:
       'Real-time diagnostic system for a 2026 Honda Accord SE. A Raspberry Pi 4B in the armrest streams OBD-II data through three layers of health analysis (threshold checks, streaming anomaly detection, trend forecasting) to a React PWA on a mounted Pixel 6 Pro, with a 3D visualization of subsystem health zones and sensor fusion across vibration, audio, and environmental data.',
-    state: 'shipped',
+    state: 'active',
     status: 'live',
+    statusNote: 'built · brainstorming more use cases',
     dateFirst: '2026-01-15',
     dateLast: '2026-04-10',
     repos: ['kuladeepmantri/rune'],
@@ -130,6 +203,7 @@ export const SIGNALS: Signal[] = [
       'AI dev team that runs multiple agents in parallel through a Slack-like interface. Live message streaming, Kanban board, and sandboxed Docker execution.',
     state: 'active',
     status: 'building',
+    statusNote: 'currently building',
     dateFirst: '2025-01-01',
     dateLast: '2026-04-15',
     repos: ['kuladeepmantri/shipcrew'],
@@ -156,6 +230,7 @@ export const SIGNALS: Signal[] = [
       'Syscall tracer and security analyzer for ARM64 Linux. Covers both defense (behavioral profiling, anomaly detection) and offense (process injection, ROP gadget scanning).',
     state: 'shipped',
     status: 'live',
+    statusNote: 'open for more ideas',
     dateFirst: '2024-09-01',
     dateLast: '2025-11-15',
     repos: ['kuladeepmantri/auris'],
@@ -190,6 +265,7 @@ export const SIGNALS: Signal[] = [
       'Recovery tracker with streak tracking, a panic mode for tough moments, and journaling with mood analysis. Built with SwiftUI and iOS 26 Liquid Glass.',
     state: 'active',
     status: 'personal',
+    statusNote: 'in personal use',
     dateFirst: '2026-01-10',
     dateLast: '2026-03-22',
     repos: [],
@@ -213,6 +289,7 @@ export const SIGNALS: Signal[] = [
       'Practical digital safety guides and tools. Plain-language security without the jargon.',
     state: 'shipped',
     status: 'live',
+    statusNote: 'completed',
     dateFirst: '2024-03-01',
     dateLast: '2024-10-15',
     repos: ['kuladeepmantri/untilithappens'],

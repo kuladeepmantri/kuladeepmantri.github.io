@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useState } from 'react'
 import type { AppProject, Signal } from '@/app/signals'
 import { STATE_LABEL } from '@/app/signals'
+import { ArticleBody } from '@/components/apps/article-body'
 import { DeviceFrame } from '@/components/ui/device-frame'
 import { formatSignalDate } from '@/lib/format-date'
 import { activitySummary, getRepoData } from '@/lib/github'
@@ -48,6 +49,11 @@ export function AppDetail({ app }: { app: AppProject }) {
           <span data-state={app.state}>
             {STATE_LABEL[app.state].toLowerCase()}
           </span>
+          {app.statusNote && (
+            <span className="normal-case tracking-normal text-[var(--text-secondary)]">
+              {app.statusNote}
+            </span>
+          )}
           <span aria-hidden>·</span>
           <span>
             {formatSignalDate(app.dateFirst)} &rarr;{' '}
@@ -124,10 +130,15 @@ export function AppDetail({ app }: { app: AppProject }) {
         <RawView signal={app as Signal} />
       ) : (
         <>
-          {/* Body */}
+          {/* Body — short dek; the full writeup (if any) renders below it */}
           <section className="mt-6 text-[15px] leading-[1.7] text-[var(--text-secondary)]">
             <p>{app.description}</p>
           </section>
+
+          {/* Long-form article (only entries that have one) */}
+          {app.article && app.article.length > 0 && (
+            <ArticleBody blocks={app.article} />
+          )}
 
           {/* Advisory block (security findings only) */}
           {app.advisory && (
