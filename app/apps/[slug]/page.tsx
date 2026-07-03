@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { SIGNALS, findSignalBySlug } from '@/app/signals'
 import { AppDetail } from '@/components/apps/app-detail'
+import { KubereachExperience } from '@/components/apps/kubereach/KubereachExperience'
 
 type Props = {
   params: Promise<{ slug: string }>
@@ -31,6 +32,12 @@ export default async function AppPage({ params }: Props) {
 
   if (!project) {
     notFound()
+  }
+
+  // kubereach gets a dedicated immersive walkthrough; every other slug keeps
+  // the standard text detail page.
+  if (project.slug === 'kubereach') {
+    return <KubereachExperience />
   }
 
   return <AppDetail app={project} />
