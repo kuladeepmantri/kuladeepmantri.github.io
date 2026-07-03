@@ -49,6 +49,9 @@
   --status-shipped: oklch(0.42 0.14 245);  /* deep slate-blue: filed, done */
   --status-paused: oklch(0.52 0.14 60);    /* warm amber: waiting */
   --status-archived: oklch(0.55 0.005 80); /* dim ink: cold */
+
+  /* kubereach immersive accent — deep enough to pass AA as small text on paper */
+  --kr-rose: oklch(0.52 0.20 18);
 }
 
 [data-theme='dark'] {
@@ -73,6 +76,8 @@
   --status-shipped:  oklch(0.62 0.13 245);
   --status-paused:   oklch(0.70 0.14 60);
   --status-archived: oklch(0.46 0.004 80);
+
+  --kr-rose: oklch(0.72 0.16 18);
 }
 
 /* ── Signal state chips ── */
@@ -257,6 +262,54 @@ a.signal-title:hover,
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/* ── No-JS fallback ──
+ * motion's whileInView reveals start at opacity:0 in the static HTML. If JS
+ * never runs, force them visible so content is not blank. */
+@media (scripting: none) {
+  .kr-reveal {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
+/* ── kubereach cluster diagram ── */
+@keyframes kr-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+@keyframes kr-travel {
+  from {
+    offset-distance: 0%;
+  }
+  to {
+    offset-distance: 100%;
+  }
+}
+.kr-compromised {
+  animation: kr-pulse 2.4s ease-in-out infinite;
+}
+.kr-led {
+  animation: kr-pulse 1.4s ease-in-out infinite;
+}
+.kr-token {
+  animation: kr-travel 2.8s linear infinite;
+}
+.kr-token-b {
+  animation-delay: 0.7s;
+}
+@media (prefers-reduced-motion: reduce) {
+  .kr-compromised,
+  .kr-led,
+  .kr-token {
+    animation: none;
   }
 }
 
