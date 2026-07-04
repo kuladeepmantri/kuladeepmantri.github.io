@@ -1,36 +1,22 @@
 import type { Signal } from '@/app/signals'
 import { SignalEntry } from './signal-entry'
 
+// The project index as a plate section: each project is a small schematic figure
+// rather than a row of text. Open on the page (no panel box) so it reads as an
+// editorial figure spread, aligned to the timeline above by shared language.
 export function SignalLog({ signals }: { signals: Signal[] }) {
-  const activeCount = signals.filter((s) => s.state === 'active').length
-  const shippedCount = signals.filter((s) => s.state === 'shipped').length
-
   return (
-    <section aria-label="Log" className="mt-8">
-      <h2 className="sr-only">Log</h2>
-
-      {/* Log column label row. */}
-      <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 border-b border-[var(--border)] pb-3 text-[11.5px] font-bold uppercase tracking-[0.12em] text-[var(--text-muted)]">
-        <span>
-          #
-          <span className="mx-2 opacity-50">·</span>
-          id / started
-          <span className="mx-2 opacity-50">·</span>
-          entry
-        </span>
-        <span className="text-[var(--text-secondary)]">
-          {signals.length} entries &middot; {activeCount} active &middot; {shippedCount} shipped
-        </span>
+    <section aria-label="Projects" className="mt-20">
+      <div className="mb-8 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 text-[11px] tracking-[0.12em] text-[var(--text-muted)] uppercase">
+        <span>every project</span>
+        <span>newest first</span>
       </div>
 
-      {signals.map((signal, i) => (
-        <SignalEntry
-          key={signal.id}
-          signal={signal}
-          index={i}
-          total={signals.length}
-        />
-      ))}
+      <div className="grid grid-cols-1 gap-x-10 gap-y-12 sm:grid-cols-2">
+        {signals.map((signal) => (
+          <SignalEntry key={signal.id} signal={signal} />
+        ))}
+      </div>
     </section>
   )
 }

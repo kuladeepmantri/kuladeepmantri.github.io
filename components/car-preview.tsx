@@ -271,7 +271,7 @@ export function CarPreview() {
           toneMapping: THREE.ACESFilmicToneMapping,
           toneMappingExposure: 1.2,
         }}
-        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'transparent' }}
+        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: '#050505' }}
         dpr={mobile ? [1, 1] : [1, 1.5]}
       >
         <Scene onLoad={handleLoad} ready={loaded} mobile={mobile} />

@@ -1,12 +1,13 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useState, type ReactNode } from 'react'
-import { SmoothScroll } from './SmoothScroll'
-import { Reveal } from './ui/Reveal'
-import { SectionHeading } from './ui/SectionHeading'
-import { Widget } from './ui/Widget'
-import { Aside } from './ui/Aside'
+import { useEffect, useState } from 'react'
+import { SmoothScroll } from '@/components/ui/smooth-scroll'
+import { Reveal } from '@/components/ui/reveal'
+import { SectionHeading } from '@/components/ui/section-heading'
+import { Band } from '@/components/ui/band'
+import { AsideNote as Aside } from '@/components/ui/aside-note'
+import { Prose } from '@/components/ui/prose'
 import { SsrrVsSar } from './SsrrVsSar'
 import { AttackPath } from './AttackPath'
 import { ClusterDiagram } from './ClusterDiagram'
@@ -20,20 +21,6 @@ import {
   CONCLUSION,
   SECTIONS,
 } from '@/app/apps/kubereach/content'
-
-// Longer reading passages ride the site's Inter (body), while headings use the
-// page-local serif and labels stay mono. Same three-voice rhythm as Rune, mapped
-// onto the portfolio's own fonts.
-function Prose({ children }: { children: ReactNode }) {
-  return (
-    <div
-      style={{ fontFamily: 'var(--font-inter)' }}
-      className="max-w-[64ch] space-y-4 text-[15px] leading-[1.75] text-[var(--text-secondary)]"
-    >
-      {children}
-    </div>
-  )
-}
 
 function Nav() {
   const [active, setActive] = useState(SECTIONS[0].id)
@@ -54,7 +41,7 @@ function Nav() {
   }, [])
 
   useEffect(() => {
-    const onScroll = () => setVisible(window.scrollY > 420)
+    const onScroll = () => setVisible(window.scrollY > 480)
     onScroll()
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
@@ -99,14 +86,14 @@ export function KubereachExperience() {
   return (
     <SmoothScroll>
       <Nav />
-      <article className="mx-auto max-w-[680px] px-5 pb-24">
+      <article className="mx-auto max-w-reading px-5 pb-24">
         {/* Back link */}
         <Link
           href="/"
-          aria-label="Back to log"
+          aria-label="Back to all projects"
           className="mt-2 mb-8 inline-flex items-center gap-1 text-[12px] text-[var(--text-muted)] transition-colors hover:text-[var(--text)]"
         >
-          [&larr; log]
+          [&larr; back]
         </Link>
 
         {/* ── Hero ── */}
@@ -141,15 +128,13 @@ export function KubereachExperience() {
         </header>
 
         {/* Architecture diagram, full-bleed band */}
-        <div className="my-12 ml-[calc(-50vw+50%)] w-screen border-y border-[var(--border)] bg-[var(--bg-elevated)] py-10 md:py-14">
-          <div className="mx-auto max-w-[900px] px-5">
-            <ClusterDiagram />
-            <p className="mt-6 text-center text-[11px] tracking-[0.14em] text-[var(--text-muted)] uppercase">
-              one container is compromised &middot; its token escapes the cluster
-              to your laptop, then to AWS
-            </p>
-          </div>
-        </div>
+        <Band max={900}>
+          <ClusterDiagram />
+          <p className="mt-6 text-center text-[11px] tracking-[0.14em] text-[var(--text-muted)] uppercase">
+            one container is compromised &middot; its token escapes the cluster
+            to your laptop, then to AWS
+          </p>
+        </Band>
 
         {/* ── 01 · Start ── */}
         <SectionHeading id="start" number="01" title="The starting point" />
@@ -172,9 +157,9 @@ export function KubereachExperience() {
             <p>{SSRR_SAR.intro}</p>
           </Prose>
         </Reveal>
-        <Widget hint="interactive · try both calls">
+        <Band hint="interactive · try both calls">
           <SsrrVsSar />
-        </Widget>
+        </Band>
         <Reveal>
           <Prose>
             <p>{SSRR_SAR.takeaway}</p>
@@ -192,9 +177,9 @@ export function KubereachExperience() {
             <p>{ATTACK_INTRO}</p>
           </Prose>
         </Reveal>
-        <Widget hint="interactive · click any hop">
+        <Band hint="interactive · click any hop">
           <AttackPath />
-        </Widget>
+        </Band>
 
         {/* ── 04 · The real run ── */}
         <SectionHeading id="real-run" number="04" title="The real run" />
@@ -221,23 +206,26 @@ export function KubereachExperience() {
 
         <ol className="my-6 space-y-3">
           {REAL_RUN.steps.map((s, i) => (
-            <Reveal key={s.text} delay={i * 0.05}>
-              <li className="flex gap-4 rounded-lg border border-[var(--border)] p-4">
-                <span className="mt-0.5 text-[13px] tabular-nums text-[var(--text-muted)]">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <div>
-                  <div className="text-[10.5px] tracking-[0.12em] text-[var(--text-muted)] uppercase">
-                    {s.hat}
-                  </div>
-                  <p
-                    style={{ fontFamily: 'var(--font-inter)' }}
-                    className="mt-1 text-[14px] leading-[1.6] text-[var(--text-secondary)]"
-                  >
-                    {s.text}
-                  </p>
+            <Reveal
+              as="li"
+              key={s.text}
+              delay={i * 0.05}
+              className="flex gap-4 rounded-lg border border-[var(--border)] p-4"
+            >
+              <span className="mt-0.5 text-[13px] tabular-nums text-[var(--text-muted)]">
+                {String(i + 1).padStart(2, '0')}
+              </span>
+              <div>
+                <div className="text-[10.5px] tracking-[0.12em] text-[var(--text-muted)] uppercase">
+                  {s.hat}
                 </div>
-              </li>
+                <p
+                  style={{ fontFamily: 'var(--font-inter)' }}
+                  className="mt-1 text-[14px] leading-[1.6] text-[var(--text-secondary)]"
+                >
+                  {s.text}
+                </p>
+              </div>
             </Reveal>
           ))}
         </ol>
@@ -266,31 +254,34 @@ export function KubereachExperience() {
         </Reveal>
         <ol className="my-6 space-y-0">
           {METHOD.stages.map((st, i) => (
-            <Reveal key={st.tag} delay={i * 0.06}>
-              <li className="grid grid-cols-[auto_1fr] gap-x-4">
-                <div className="flex flex-col items-center">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full border border-[var(--border)] text-[10px] text-[var(--text-muted)]">
-                    {i + 1}
-                  </span>
-                  {i < METHOD.stages.length - 1 && (
-                    <span className="my-1 w-px flex-1 bg-[var(--border)]" />
-                  )}
+            <Reveal
+              as="li"
+              key={st.tag}
+              delay={i * 0.06}
+              className="grid grid-cols-[auto_1fr] gap-x-4"
+            >
+              <div className="flex flex-col items-center">
+                <span className="flex h-8 w-8 items-center justify-center rounded-full border border-[var(--border)] text-[10px] text-[var(--text-muted)]">
+                  {i + 1}
+                </span>
+                {i < METHOD.stages.length - 1 && (
+                  <span className="my-1 w-px flex-1 bg-[var(--border)]" />
+                )}
+              </div>
+              <div className="pb-6">
+                <div className="text-[10.5px] tracking-[0.14em] text-[var(--text-muted)] uppercase">
+                  {st.tag}
                 </div>
-                <div className="pb-6">
-                  <div className="text-[10.5px] tracking-[0.14em] text-[var(--text-muted)] uppercase">
-                    {st.tag}
-                  </div>
-                  <h3 className="mt-0.5 text-[15px] font-semibold text-[var(--text)]">
-                    {st.title}
-                  </h3>
-                  <p
-                    style={{ fontFamily: 'var(--font-inter)' }}
-                    className="mt-1 max-w-[58ch] text-[14px] leading-[1.65] text-[var(--text-secondary)]"
-                  >
-                    {st.text}
-                  </p>
-                </div>
-              </li>
+                <h3 className="mt-0.5 text-[15px] font-semibold text-[var(--text)]">
+                  {st.title}
+                </h3>
+                <p
+                  style={{ fontFamily: 'var(--font-inter)' }}
+                  className="mt-1 max-w-[58ch] text-[14px] leading-[1.65] text-[var(--text-secondary)]"
+                >
+                  {st.text}
+                </p>
+              </div>
             </Reveal>
           ))}
         </ol>
@@ -312,7 +303,7 @@ export function KubereachExperience() {
             href="/"
             className="inline-flex items-center gap-1 text-[12px] text-[var(--text-muted)] transition-colors hover:text-[var(--text)]"
           >
-            [&larr; back to log]
+            [&larr; back]
           </Link>
         </div>
       </article>

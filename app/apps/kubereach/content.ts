@@ -211,8 +211,8 @@ export const METHOD = {
 export const CONCLUSION = {
   paragraphs: [
     'This is where kubereach is right now. The two parts that worried me most both held up against real infrastructure. The one I am most sure about is the correctness finding: nearly every tool here under-reports what a stolen identity can really do on the managed clusters that matter most. That is the piece I want to lead with.',
-    'I am still actively working on it and brainstorming what the most advanced, most useful version looks like. One piece of the demo, the off-box IRSA pivot, narrows as EKS Pod Identity becomes the default, so I am pushing the parts that stay valuable further instead.',
-    'This is what I tried and what worked. I am looking to make it more advanced, I am open to suggestions, and if this is your kind of problem I would be glad to have people build on it with me.',
+    'It is still active. The off-box IRSA pivot in the demo narrows as EKS Pod Identity becomes the default, so I am pushing the parts that stay valuable further instead.',
+    'If this is your kind of problem, I am glad to have people build on it with me.',
   ],
   scope:
     'Every bit of this ran against my own lab and a throwaway AWS account I owned and then deleted. That is the only place any of it belongs. It exists to understand and defend these paths, not to point at anyone.',
