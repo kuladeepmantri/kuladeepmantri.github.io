@@ -6,7 +6,6 @@ const BINDINGS: { keys: string[]; desc: string }[] = [
   { keys: ['↓', '→', 'j', 'l'], desc: 'next link' },
   { keys: ['↑', '←', 'k', 'h'], desc: 'previous link' },
   { keys: ['↵'], desc: 'open / activate' },
-  { keys: ['/'], desc: 'search' },
   { keys: ['g', 'g'], desc: 'top of page' },
   { keys: ['G'], desc: 'bottom of page' },
   { keys: ['?'], desc: 'toggle this help' },
@@ -47,7 +46,6 @@ export function KeyboardHelp({ open, setOpen }: KeyboardHelpProps) {
   return (
     <div
       role="dialog"
-      aria-modal="true"
       aria-label="Keyboard shortcuts"
       className="fixed bottom-6 right-6 z-[9997] w-[280px] rounded-lg border border-[var(--border)] bg-[var(--bg-elevated)] p-4 text-[11px] text-[var(--text-muted)] shadow-[0_8px_32px_rgba(0,0,0,0.5)]"
     >

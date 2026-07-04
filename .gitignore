@@ -43,6 +43,11 @@ yarn-error.log*
 /homepage-*.png
 /bento-*.png
 /particles-*.png
+/home-current.png
+/pr-*.png
+# source photos kept locally, not shipped (cropped versions live under public/)
+/*.JPG
+/*.jpeg
 
 # superpowers brainstorming / agents
 .superpowers/
@@ -54,3 +59,4 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+.obsidian/

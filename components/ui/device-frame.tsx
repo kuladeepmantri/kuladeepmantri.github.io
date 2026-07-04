@@ -16,7 +16,7 @@ function IPhoneFrame({
   imageSrc,
   videoSrc,
   appName,
-}: Omit<DeviceFrameProps, 'type' | 'className' | 'accentColor'>) {
+}: Omit<DeviceFrameProps, 'type' | 'className'>) {
   return (
     <div className="mx-auto w-[260px] sm:w-[280px]">
       <div className="relative rounded-[2.5rem] border border-zinc-700 bg-zinc-900 p-3 shadow-2xl">

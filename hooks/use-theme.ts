@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 export type Theme = 'dark' | 'light'
 
 export function useTheme() {
-  const [theme, setTheme] = useState<Theme>('dark')
+  const [theme, setTheme] = useState<Theme>('light')
 
   useEffect(() => {
     const current = document.documentElement.getAttribute('data-theme') as Theme
