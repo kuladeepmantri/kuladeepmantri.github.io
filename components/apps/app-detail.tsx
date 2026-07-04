@@ -31,14 +31,14 @@ export function AppDetail({ app }: { app: AppProject }) {
   const repoData = getRepoData(app.repos[0])
 
   return (
-    <div className="mx-auto max-w-[680px] px-5 pb-12">
+    <div className="mx-auto max-w-reading px-5 pb-12">
       {/* Back link */}
       <Link
         href="/"
-        aria-label="Back to log"
+        aria-label="Back to all projects"
         className="mb-6 inline-flex items-center gap-1 text-[12px] text-[var(--text-muted)] transition-colors hover:text-[var(--text)]"
       >
-        [← log]
+        [← back]
       </Link>
 
       {/* Header: KM-YYYY-NNNN · state · dates · activity */}

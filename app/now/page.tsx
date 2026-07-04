@@ -1,135 +1,141 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { sortedByStart } from '@/app/signals'
-import { formatSignalDate } from '@/lib/format-date'
 
 export const metadata: Metadata = {
-  title: 'Now',
+  title: 'Notes',
   description:
-    'What Kuladeep Mantri is working on right now: active projects, current focus, recent activity.',
+    'The workbench: what Kuladeep Mantri is building now, what is next, what shipped, and what got shelved.',
 }
 
-// Static as of the build: the three most recently touched signals with
-// state !== archived are the current focus set.
-export default function NowPage() {
-  const signals = sortedByStart()
-  const active = signals.filter((s) => s.state === 'active').slice(0, 3)
-  const recentShipped = signals
-    .filter((s) => s.state === 'shipped')
-    .slice(0, 2)
-  const latest = signals[0]
-  const lastUpdate = latest ? formatSignalDate(latest.dateLast) : ''
+// Hand-maintained. This page is written, not generated — I update it when the
+// real state changes, which is the whole point of a /now page.
+const UPDATED = 'July 2026'
 
+type Item = { name: string; slug?: string; note: string }
+
+const NOW: Item[] = [
+  {
+    name: 'Auris',
+    slug: 'auris',
+    note: 'ARM64 syscall tracing and ROP scanning. The tracer works; I keep pulling on what it can see.',
+  },
+  {
+    name: 'Rune',
+    slug: 'rune',
+    note: 'Still running in the car. I add a sensor or a forecasting layer whenever a drive gets boring.',
+  },
+]
+
+const NEXT: Item[] = [
+  {
+    name: 'ShipCrew',
+    slug: 'shipcrew',
+    note: 'The multi-agent dev crew works end to end. Deciding what the next layer of hardening buys.',
+  },
+  {
+    name: 'Kintsugi',
+    slug: 'kintsugi',
+    note: 'A personal iOS app I use daily. Small, private, not trying to be a product.',
+  },
+]
+
+const SHIPPED: Item[] = [
+  {
+    name: 'untilithappens.org',
+    slug: 'untilithappens',
+    note: 'Live and done. A real site that does its one job.',
+  },
+  {
+    name: 'Rune',
+    slug: 'rune',
+    note: 'Shipped and in daily use, even as I keep extending it.',
+  },
+]
+
+const SHELVED: Item[] = [
+  {
+    name: 'kubereach',
+    slug: 'kubereach',
+    note: 'Both bets proved against real infrastructure. Shelved once a competing tool covered most of the same ground.',
+  },
+  {
+    name: 'DeID-Anonymizer',
+    slug: 'deid',
+    note: 'A PII masking service. Regex detection today, the queue and storage scaffolded for the model that replaces it.',
+  },
+]
+
+function Group({ label, items }: { label: string; items: Item[] }) {
   return (
-    <div className="mx-auto max-w-[680px] px-5 pb-12">
+    <section className="mt-10">
+      <h2 className="mb-4 text-[11px] tracking-[0.2em] text-[var(--text-muted)] uppercase">
+        {label}
+      </h2>
+      <ul className="space-y-4">
+        {items.map((it, i) => (
+          <li key={`${it.name}-${i}`} className="grid grid-cols-1 gap-1">
+            <div className="text-[15px] font-semibold text-[var(--text)]">
+              {it.slug ? (
+                <Link
+                  href={`/apps/${it.slug}`}
+                  className="transition-colors hover:text-[color:var(--accent)]"
+                >
+                  {it.name}
+                </Link>
+              ) : (
+                it.name
+              )}
+            </div>
+            <p
+              style={{ fontFamily: 'var(--font-inter)' }}
+              className="max-w-[60ch] text-[14px] leading-[1.65] text-[var(--text-secondary)]"
+            >
+              {it.note}
+            </p>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}
+
+export default function NowPage() {
+  return (
+    <div className="mx-auto max-w-reading px-5 pt-4 pb-24">
       <header className="space-y-3 border-b border-[var(--border)] pb-6">
-        <div className="flex flex-wrap items-center gap-x-2 text-[12px] uppercase tracking-[0.08em] text-[var(--text-muted)]">
-          <Link
-            href="/"
-            className="transition-colors hover:text-[var(--text)]"
-          >
-            kuladeepmantri.com
-          </Link>
-          <span aria-hidden>·</span>
-          <span>now</span>
-          <span aria-hidden>·</span>
-          <span>as of {lastUpdate}</span>
+        <div className="text-[11px] tracking-[0.2em] text-[var(--text-muted)] uppercase">
+          the workbench &middot; updated {UPDATED}
         </div>
-        <h1 className="text-[18px] font-semibold text-[var(--text)]">
-          what i&rsquo;m on right now
+        <h1
+          style={{ fontFamily: 'var(--font-inter)' }}
+          className="text-[26px] font-semibold tracking-[-0.02em] text-[var(--text)] md:text-[32px]"
+        >
+          What I am on right now
         </h1>
       </header>
 
-      <section className="mt-6 space-y-5 text-[15px] leading-[1.7] text-[var(--text-secondary)]">
-        <p>
-          I&rsquo;m splitting time between security research on ARM64
-          (Auris: syscall tracing, ROP scanning) and a multi-agent dev
-          experiment (ShipCrew: a Slack-shaped interface for running
-          Claude agents in parallel against sandboxed Docker workspaces).
-        </p>
-        <p>
-          On the side I&rsquo;m keeping Rune running in my car. It logs
-          OBD-II data from the armrest Pi and streams health analysis to a
-          dash-mounted phone. I add a new sensor or a new forecasting
-          layer whenever the drive gets boring.
-        </p>
-        <p>
-          Everything here is maintained by me, alone, on purpose. This
-          page is updated manually. If it hasn&rsquo;t changed in a while,
-          check the{' '}
-          <Link
-            href="/"
-            className="underline underline-offset-[3px] transition-colors hover:text-[var(--text)]"
-          >
-            log
-          </Link>{' '}
-          for dated activity.
-        </p>
-      </section>
+      <p
+        style={{ fontFamily: 'var(--font-inter)' }}
+        className="mt-6 max-w-[60ch] text-[15px] leading-[1.75] text-[var(--text-secondary)]"
+      >
+        Where my head is at right now. What I am building, what is next, what
+        shipped, and what I stopped. I update it when it changes.
+      </p>
 
-      {active.length > 0 && (
-        <section className="mt-10">
-          <h2 className="mb-3 text-[11px] uppercase tracking-[0.12em] text-[var(--text-muted)]">
-            active
-          </h2>
-          <ul className="space-y-2 text-[14px] text-[var(--text-secondary)]">
-            {active.map((s) => (
-              <li key={s.id} className="flex items-baseline gap-x-3">
-                <span className="font-[var(--font-mono)] text-[12px] text-[var(--text-muted)]">
-                  {s.id}
-                </span>
-                <Link
-                  href={`/apps/${s.slug}`}
-                  className="transition-colors hover:text-[var(--text)]"
-                >
-                  <span className="text-[var(--text)]">{s.name}</span>
-                  <span className="text-[var(--text-muted)]">
-                    {' '}
-                    : {s.tagline.toLowerCase()}
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+      <Group label="now" items={NOW} />
+      <Group label="next" items={NEXT} />
+      <Group label="shipped" items={SHIPPED} />
+      <Group label="shelved" items={SHELVED} />
 
-      {recentShipped.length > 0 && (
-        <section className="mt-8">
-          <h2 className="mb-3 text-[11px] uppercase tracking-[0.12em] text-[var(--text-muted)]">
-            recently shipped
-          </h2>
-          <ul className="space-y-2 text-[14px] text-[var(--text-secondary)]">
-            {recentShipped.map((s) => (
-              <li key={s.id} className="flex items-baseline gap-x-3">
-                <span className="font-[var(--font-mono)] text-[12px] text-[var(--text-muted)]">
-                  {s.id}
-                </span>
-                <Link
-                  href={`/apps/${s.slug}`}
-                  className="transition-colors hover:text-[var(--text)]"
-                >
-                  <span className="text-[var(--text)]">{s.name}</span>
-                  <span className="text-[var(--text-muted)]">
-                    {' '}
-                    : {s.tagline.toLowerCase()}
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      <p className="mt-10 text-[12px] text-[var(--text-muted)]">
-        format inspired by{' '}
+      <p className="mt-12 text-[12px] text-[var(--text-muted)]">
+        Format inspired by{' '}
         <a
           href="https://sive.rs/nowff"
           target="_blank"
           rel="noopener noreferrer"
           className="underline underline-offset-[3px] transition-colors hover:text-[var(--text)]"
         >
-          derek sivers&rsquo; /now movement
+          Derek Sivers&rsquo; /now movement
         </a>
         .
       </p>
