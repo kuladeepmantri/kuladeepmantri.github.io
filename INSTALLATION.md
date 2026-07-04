@@ -32,10 +32,14 @@ Visit `http://localhost:3000`.
 
 ## Update Content
 
-- Portfolio data: `app/data.ts`
+- Signals (projects/findings — single source of truth): `app/signals.ts`
 - Home page layout/content: `app/page.tsx`
 - Now page updates: `app/now/page.tsx`
-- Site metadata + CSP: `app/layout.tsx`
+- Site metadata: `app/layout.tsx`
+
+Repo stats shown on the site are fetched at build time by `scripts/fetch-github.ts`
+(runs automatically as a `predev`/`prebuild` step). Set `GITHUB_TOKEN` for live data;
+without it the build still succeeds with stub data.
 
 ## Quality Checks
 

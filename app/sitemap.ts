@@ -22,10 +22,16 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 1,
     },
     {
-      url: `${WEBSITE_URL}/apps`,
+      url: `${WEBSITE_URL}/now`,
       lastModified,
       changeFrequency: 'weekly',
-      priority: 0.9,
+      priority: 0.7,
+    },
+    {
+      url: `${WEBSITE_URL}/about`,
+      lastModified,
+      changeFrequency: 'monthly',
+      priority: 0.7,
     },
     ...appPages,
   ]

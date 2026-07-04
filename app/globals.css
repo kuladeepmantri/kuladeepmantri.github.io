@@ -1,5 +1,12 @@
 @import 'tailwindcss';
 
+/* ── Theme tokens (Tailwind v4) ──
+ * The one shared layout width: ~740px reading column (`max-w-reading`).
+ * Visuals break out of it with the <Band> full-bleed wrapper. */
+@theme {
+  --container-reading: 740px;
+}
+
 /* ── View Transitions ──
  * Soft 140ms cross-fade between routes on browsers that support it (Chrome 111+,
  * Safari 18+, Firefox TP). Unsupported browsers just navigate normally. */
@@ -39,10 +46,11 @@
   --border: oklch(0.84 0.004 85);
   --border-hover: oklch(0.70 0.005 85);
 
-  /* Accent — steel blue: professional, not cliché */
-  --accent: oklch(0.38 0.10 250);
-  --accent-dim: oklch(0.38 0.10 250 / 0.12);
-  --accent-hover: oklch(0.32 0.10 250);
+  /* Accent — warm ember/rose. One warm family holds the site together;
+   * per-project pages layer a quiet --signal-color tint on top. */
+  --accent: oklch(0.52 0.2 18);
+  --accent-dim: oklch(0.52 0.2 18 / 0.12);
+  --accent-hover: oklch(0.46 0.2 18);
 
   /* Signal lifecycle semantics — WCAG-AA compliant on --bg */
   --status-active: oklch(0.42 0.15 155);   /* green: alive, pinging (semantic only) */
@@ -68,9 +76,9 @@
   --border:       oklch(0.26 0.005 85);
   --border-hover: oklch(0.40 0.005 85);
 
-  --accent:       oklch(0.62 0.10 250);
-  --accent-dim:   oklch(0.62 0.10 250 / 0.14);
-  --accent-hover: oklch(0.68 0.10 250);
+  --accent:       oklch(0.72 0.16 18);
+  --accent-dim:   oklch(0.72 0.16 18 / 0.14);
+  --accent-hover: oklch(0.78 0.16 18);
 
   --status-active:   oklch(0.62 0.16 155);
   --status-shipped:  oklch(0.62 0.13 245);
@@ -106,6 +114,10 @@
 
   html {
     color-scheme: light;
+    /* Full-bleed bands are w-screen (100vw includes the scrollbar width), which
+     * otherwise leaks a few px of horizontal scroll. clip, not hidden: no new
+     * scroll container, sticky keeps working. */
+    overflow-x: clip;
   }
 
   html[data-theme='dark'] {
@@ -144,11 +156,6 @@
         color-mix(in oklch, var(--text) 1.8%, transparent) 0,
         transparent 45%
       );
-  }
-
-  ::selection {
-    background-color: var(--accent);
-    color: var(--bg);
   }
 
   /* Headings get balanced wrapping so line breaks feel intentional. */
@@ -269,7 +276,7 @@ a.signal-title:hover,
  * motion's whileInView reveals start at opacity:0 in the static HTML. If JS
  * never runs, force them visible so content is not blank. */
 @media (scripting: none) {
-  .kr-reveal {
+  .km-reveal {
     opacity: 1 !important;
     transform: none !important;
   }
@@ -313,85 +320,65 @@ a.signal-title:hover,
   }
 }
 
-/* ── Command Palette (cmdk) ── */
-[cmdk-overlay] {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.1);
-  z-index: 9998;
+/* ── Home project figures ──
+ * Calm and precise at rest; each figure performs its real behavior on hover.
+ * The accent bloom reads in both light and dark via a color-mixed drop-shadow.
+ * All motion is gated behind prefers-reduced-motion, so those users get the
+ * fully-drawn static figure instead. Hover is inherited from the `.group`
+ * article that wraps each figure. */
+.kmf-glow {
+  transition: filter 320ms ease;
+}
+.group:hover .kmf-glow {
+  filter: drop-shadow(
+    0 0 5px color-mix(in oklch, var(--signal-color, var(--accent)) 55%, transparent)
+  );
 }
 
-[cmdk-dialog] {
-  position: fixed;
-  top: 20%;
-  left: 0;
-  right: 0;
-  margin-left: auto;
-  margin-right: auto;
-  width: min(560px, calc(100vw - 32px));
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  overflow: hidden;
-  z-index: 9999;
-  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5);
+@media (prefers-reduced-motion: no-preference) {
+  /* Lines/paths that draw themselves in on hover (elements set pathLength="1"). */
+  .kmf-draw {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+  }
+  .group:hover .kmf-draw {
+    animation: kmf-draw 720ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    animation-delay: var(--kmf-delay, 0ms);
+  }
+  @keyframes kmf-draw {
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+
+  /* Elements that light up once the signal reaches them. */
+  .kmf-node {
+    opacity: 0.3;
+  }
+  .group:hover .kmf-node {
+    animation: kmf-light 380ms ease forwards;
+    animation-delay: var(--kmf-delay, 520ms);
+  }
+  @keyframes kmf-light {
+    to {
+      opacity: 1;
+    }
+  }
+
+  /* Redaction bars that wipe across their field on hover (deid). */
+  .kmf-mask {
+    transform: scaleX(0);
+    transform-origin: left center;
+    transform-box: fill-box;
+  }
+  .group:hover .kmf-mask {
+    animation: kmf-mask 460ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    animation-delay: var(--kmf-delay, 0ms);
+  }
+  @keyframes kmf-mask {
+    to {
+      transform: scaleX(1);
+    }
+  }
 }
 
-[cmdk-input] {
-  width: 100%;
-  padding: 16px 20px;
-  background: transparent;
-  border: none;
-  border-bottom: 1px solid var(--border);
-  color: var(--text);
-  font-size: 15px;
-  outline: none;
-}
-
-[cmdk-input]::placeholder {
-  color: var(--text-muted);
-}
-
-[cmdk-list] {
-  max-height: 320px;
-  overflow-y: auto;
-  padding: 8px;
-}
-
-[cmdk-item] {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 12px;
-  cursor: pointer;
-  font-size: 14px;
-  color: var(--text-secondary);
-  border-radius: 10px;
-  transition: all 0.15s ease;
-}
-
-[cmdk-item][data-selected='true'] {
-  background: var(--accent-dim);
-  color: var(--text);
-}
-
-[cmdk-item]:active {
-  background: var(--accent);
-  color: var(--bg);
-}
-
-[cmdk-group-heading] {
-  padding: 8px 12px 4px;
-  font-size: 11px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--text-muted);
-}
-
-[cmdk-empty] {
-  padding: 32px;
-  text-align: center;
-  color: var(--text-muted);
-  font-size: 14px;
-}
