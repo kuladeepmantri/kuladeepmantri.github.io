@@ -13,15 +13,14 @@ const FOCUSABLE_SELECTOR = [
 /**
  * Site-wide keyboard navigation. All four arrow keys (plus vim h/j/k/l) move
  * focus between visible focusable elements in DOM order with wrap. Enter
- * activates (native behavior). `/` opens the command palette. `?` shows
- * keyboard help. `gg` top, `G` bottom.
+ * activates (native behavior). `?` toggles keyboard help. `gg` jumps to top,
+ * `G` to bottom.
  *
- * The hook short-circuits when the command palette is open (caller passes
- * `paletteOpen`) so cmdk's own list navigation owns the keys.
+ * Pass `suspended` (e.g. while an overlay owns the keyboard) to short-circuit.
  *
  * Disabled on touch devices.
  */
-export function useArrowNav(paletteOpen = false) {
+export function useArrowNav(suspended = false) {
   useEffect(() => {
     if (typeof window === 'undefined') return
     if (window.matchMedia('(hover: none) and (pointer: coarse)').matches) return
@@ -70,8 +69,7 @@ export function useArrowNav(paletteOpen = false) {
     }
 
     function onKeyDown(e: KeyboardEvent) {
-      // Let cmdk own its keys when open
-      if (paletteOpen) return
+      if (suspended) return
       if (isTypingTarget(document.activeElement)) return
       if (e.metaKey || e.ctrlKey || e.altKey) return
 
@@ -89,10 +87,6 @@ export function useArrowNav(paletteOpen = false) {
         case 'h':
           e.preventDefault()
           move(-1)
-          break
-        case '/':
-          e.preventDefault()
-          document.dispatchEvent(new CustomEvent('toggle-cmdk'))
           break
         case '?':
           e.preventDefault()
@@ -123,5 +117,5 @@ export function useArrowNav(paletteOpen = false) {
       const w = window as typeof window & { __kmGLast?: number }
       w.__kmGLast = undefined
     }
-  }, [paletteOpen])
+  }, [suspended])
 }
