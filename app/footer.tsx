@@ -3,7 +3,7 @@ import { SOCIAL_LINKS, EMAIL } from './signals'
 export function Footer() {
   return (
     <footer className="mt-16 border-t border-[var(--border)]">
-      <div className="mx-auto max-w-[680px] px-5 py-8 text-[12px] font-semibold text-[var(--text-muted)]">
+      <div className="mx-auto max-w-reading px-5 py-8 text-[12px] font-semibold text-[var(--text-muted)]">
         <div className="flex flex-wrap items-center gap-x-1 gap-y-2">
           <a
             href={`mailto:${EMAIL}`}

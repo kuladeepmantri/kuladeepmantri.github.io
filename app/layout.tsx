@@ -30,7 +30,7 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   metadataBase: new URL(WEBSITE_URL),
-  // Canonical is NOT set here — that would force every sub-page (/now, /verify,
+  // Canonical is NOT set here — that would force every sub-page (/now, /about,
   // /apps/[slug]) to canonicalize to `/`, suppressing their indexing. Let Next
   // derive canonical per-page from the route, or override in per-page metadata.
   title: {
@@ -61,10 +61,14 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${ibmPlexMono.variable}`}>
+    <html
+      lang="en"
+      className={`${inter.variable} ${ibmPlexMono.variable}`}
+      suppressHydrationWarning
+    >
       <head>
-        {/* Anti-flash: sets data-theme before React hydrates, defaulting to dark */}
-        <script dangerouslySetInnerHTML={{ __html: `(function(){try{var t=localStorage.getItem('km-theme');document.documentElement.setAttribute('data-theme',t==='light'?'light':'dark')}catch(e){document.documentElement.setAttribute('data-theme','dark')}})();` }} />
+        {/* Anti-flash: sets data-theme before React hydrates, defaulting to light */}
+        <script dangerouslySetInnerHTML={{ __html: `(function(){try{var t=localStorage.getItem('km-theme');document.documentElement.setAttribute('data-theme',t==='dark'?'dark':'light')}catch(e){document.documentElement.setAttribute('data-theme','light')}})();` }} />
       </head>
       <body className="bg-[var(--bg)] antialiased">
         <LayoutShell>

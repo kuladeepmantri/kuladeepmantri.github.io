@@ -3,22 +3,26 @@
 import { motion, useReducedMotion } from 'motion/react'
 import type { ReactNode } from 'react'
 
-// Fade-and-rise on scroll into view. Adapted from Rune's Reveal, but on the
-// portfolio's `motion/react` (motion's successor package) instead of framer-motion.
+// Fade-and-rise on scroll into view. The `km-reveal` class is the no-JS
+// fallback hook in globals.css (forces visibility when scripting is off).
+// `as` lets it render as a list item so it can sit directly inside <ol>/<ul>.
 export function Reveal({
   children,
   delay = 0,
   className,
+  as = 'div',
 }: {
   children: ReactNode
   delay?: number
   className?: string
+  as?: 'div' | 'li'
 }) {
   const reduce = useReducedMotion()
+  const Comp = as === 'li' ? motion.li : motion.div
 
   return (
-    <motion.div
-      className={['kr-reveal', className].filter(Boolean).join(' ')}
+    <Comp
+      className={['km-reveal', className].filter(Boolean).join(' ')}
       initial={{ opacity: 0, y: 18 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-80px' }}
@@ -29,6 +33,6 @@ export function Reveal({
       }}
     >
       {children}
-    </motion.div>
+    </Comp>
   )
 }

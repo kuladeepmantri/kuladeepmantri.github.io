@@ -1,4 +1,3 @@
-import { kubereachArticle } from '@/app/articles/kubereach'
 
 // ── Types ──
 
@@ -133,10 +132,10 @@ export const SIGNALS: Signal[] = [
     name: 'kubereach',
     tagline: 'Kubernetes Foothold-to-Cloud Recon',
     description:
-      'A post-foothold Kubernetes recon idea: drop into one compromised pod, map what your stolen identity can actually reach, and follow the trail out into the AWS account behind the cluster. I proved the two scariest parts against real infrastructure, then stopped to ask whether it is worth building at all.',
+      'A post-foothold Kubernetes recon technique: drop into one compromised pod, map what the stolen identity can actually reach, and follow the trail out into the AWS account behind the cluster. The two hardest parts are proven against real infrastructure.',
     state: 'active',
     status: 'building',
-    statusNote: 'idea stage · researched and proven, shaping it',
+    statusNote: 'proven against real infra · shaping the tool',
     dateFirst: '2026-06-27',
     dateLast: '2026-07-03',
     repos: ['getnullpkg/kubereach'],
@@ -157,7 +156,6 @@ export const SIGNALS: Signal[] = [
     ],
     deviceType: 'browser',
     collaborator: null,
-    article: kubereachArticle,
     advisory: {
       affectedSystems: [
         'Amazon EKS clusters using IRSA (IAM Roles for Service Accounts)',
@@ -179,7 +177,7 @@ export const SIGNALS: Signal[] = [
       'Real-time diagnostic system for a 2026 Honda Accord SE. A Raspberry Pi 4B in the armrest streams OBD-II data through three layers of health analysis (threshold checks, streaming anomaly detection, trend forecasting) to a React PWA on a mounted Pixel 6 Pro, with a 3D visualization of subsystem health zones and sensor fusion across vibration, audio, and environmental data.',
     state: 'active',
     status: 'live',
-    statusNote: 'built · brainstorming more use cases',
+    statusNote: 'in daily use · adding sensors',
     dateFirst: '2026-01-15',
     dateLast: '2026-04-10',
     repos: ['kuladeepmantri/rune'],
@@ -200,10 +198,10 @@ export const SIGNALS: Signal[] = [
     name: 'ShipCrew',
     tagline: 'Multi-Agent AI Dev Team',
     description:
-      'AI dev team that runs multiple agents in parallel through a Slack-like interface. Live message streaming, Kanban board, and sandboxed Docker execution.',
+      'A Slack-shaped room of named Claude agents that take tasks, review each other, and ship. Message routing, live token streaming, per-agent memory and budgets, automatic handoffs. Built with Abhishek Manyam.',
     state: 'active',
     status: 'building',
-    statusNote: 'currently building',
+    statusNote: 'working prototype',
     dateFirst: '2025-01-01',
     dateLast: '2026-04-15',
     repos: ['kuladeepmantri/shipcrew'],
@@ -230,7 +228,7 @@ export const SIGNALS: Signal[] = [
       'Syscall tracer and security analyzer for ARM64 Linux. Covers both defense (behavioral profiling, anomaly detection) and offense (process injection, ROP gadget scanning).',
     state: 'shipped',
     status: 'live',
-    statusNote: 'open for more ideas',
+    statusNote: 'runs on ARM64',
     dateFirst: '2024-09-01',
     dateLast: '2025-11-15',
     repos: ['kuladeepmantri/auris'],
@@ -289,7 +287,7 @@ export const SIGNALS: Signal[] = [
       'Practical digital safety guides and tools. Plain-language security without the jargon.',
     state: 'shipped',
     status: 'live',
-    statusNote: 'completed',
+    statusNote: 'live',
     dateFirst: '2024-03-01',
     dateLast: '2024-10-15',
     repos: ['kuladeepmantri/untilithappens'],
@@ -300,6 +298,30 @@ export const SIGNALS: Signal[] = [
     embedUrl: null,
     accentColor: '#e879f9',
     tags: ['Next.js', 'Security UX', 'Education'],
+    deviceType: 'browser',
+    collaborator: null,
+  },
+  {
+    id: 'KM-2023-0001',
+    slug: 'deid',
+    type: 'project',
+    name: 'DeID-Anonymizer',
+    tagline: 'PII masking service',
+    description:
+      'A PII de-identification service: a FastAPI endpoint that detects and masks personal data, behind a queue and object storage. Regex detection today, with the pipeline scaffolded for NER.',
+    state: 'archived',
+    status: 'building',
+    statusNote: 'regex detection · scaffolded for NER',
+    dateFirst: '2023-04-26',
+    dateLast: '2025-08-11',
+    repos: ['kuladeepmantri/DeID-Anonymizer'],
+    signatureRef: null,
+    link: null,
+    image: null,
+    video: null,
+    embedUrl: null,
+    accentColor: '#b58a5e',
+    tags: ['FastAPI', 'Celery', 'React'],
     deviceType: 'browser',
     collaborator: null,
   },
@@ -322,7 +344,7 @@ export const SOCIAL_LINKS: SocialLink[] = [
   { label: 'Instagram', link: 'https://www.instagram.com/kuladeep.mantri/' },
 ]
 
-export const EMAIL = 'mantrikuladeep@gmail.com'
+export const EMAIL = 'kuladeepbmantri@gmail.com'
 
 // ── Helpers ──
 
