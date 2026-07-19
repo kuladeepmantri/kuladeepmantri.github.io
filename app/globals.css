@@ -382,3 +382,18 @@ a.signal-title:hover,
   }
 }
 
+/* Touch devices have no hover, so the home figures never advance past their
+ * resting (invisible) state — deid in particular renders as a blank document.
+ * Show them fully drawn, matching what reduced-motion users already get. */
+@media (hover: none) {
+  .kmf-draw {
+    stroke-dashoffset: 0;
+  }
+  .kmf-node {
+    opacity: 1;
+  }
+  .kmf-mask {
+    transform: scaleX(1);
+  }
+}
+

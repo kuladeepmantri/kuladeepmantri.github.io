@@ -56,6 +56,10 @@ export type Signal = {
   statusNote?: string | null
   dateFirst: string // ISO 8601 — when the signal started
   dateLast: string // ISO 8601 — last meaningful update
+  // Optional manual ordering for the home project log (lower = earlier). When
+  // absent, sortedByRelevance falls back to dateFirst order. LabTimeline stays
+  // chronological regardless of this.
+  featureRank?: number
 
   // Provenance
   repos: string[] // e.g., ['kuladeepmantri/auris'] — resolved at build time
@@ -128,6 +132,7 @@ export const SIGNALS: Signal[] = [
   {
     id: 'KM-2026-0006',
     slug: 'kubereach',
+    featureRank: 1,
     type: 'project',
     name: 'kubereach',
     tagline: 'Kubernetes Foothold-to-Cloud Recon',
@@ -170,6 +175,7 @@ export const SIGNALS: Signal[] = [
   {
     id: 'KM-2026-0005',
     slug: 'rune',
+    featureRank: 6,
     type: 'project',
     name: 'Rune',
     tagline: 'Real-Time Vehicle Diagnostics',
@@ -194,6 +200,7 @@ export const SIGNALS: Signal[] = [
   {
     id: 'KM-2025-0003',
     slug: 'shipcrew',
+    featureRank: 4,
     type: 'project',
     name: 'ShipCrew',
     tagline: 'Multi-Agent AI Dev Team',
@@ -221,6 +228,7 @@ export const SIGNALS: Signal[] = [
   {
     id: 'KM-2024-0002',
     slug: 'auris',
+    featureRank: 3,
     type: 'project',
     name: 'Auris',
     tagline: 'ARM64 Linux Security Toolkit',
@@ -255,6 +263,7 @@ export const SIGNALS: Signal[] = [
   {
     id: 'KM-2026-0004',
     slug: 'kintsugi',
+    featureRank: 7,
     // Note: kept at 0004 (Kintsugi predates Rune by a few days). Rune is 0005.
     type: 'project',
     name: 'Kintsugi',
@@ -280,6 +289,7 @@ export const SIGNALS: Signal[] = [
   {
     id: 'KM-2024-0001',
     slug: 'untilithappens',
+    featureRank: 9,
     type: 'project',
     name: 'untilithappens.org',
     tagline: 'Digital Safety Platform',
@@ -304,6 +314,7 @@ export const SIGNALS: Signal[] = [
   {
     id: 'KM-2023-0001',
     slug: 'deid',
+    featureRank: 8,
     type: 'project',
     name: 'DeID-Anonymizer',
     tagline: 'PII masking service',
@@ -344,7 +355,7 @@ export const SOCIAL_LINKS: SocialLink[] = [
   { label: 'Instagram', link: 'https://www.instagram.com/kuladeep.mantri/' },
 ]
 
-export const EMAIL = 'kuladeepbmantri@gmail.com'
+export const EMAIL = 'mantrikuladeep@gmail.com'
 
 // ── Helpers ──
 
@@ -372,3 +383,18 @@ export function sortedByStart(): Signal[] {
  * Back-compat alias. Prefer `sortedByStart`.
  */
 export const sortedByRecency = sortedByStart
+
+/**
+ * Ordering for the home project log: by `featureRank` ascending (lower = earlier),
+ * so the most role-relevant work leads regardless of date. Signals without a rank
+ * sort to the back, newest-first among themselves. The LabTimeline intentionally
+ * keeps `sortedByStart` so the timeline stays chronological.
+ */
+export function sortedByRelevance(): Signal[] {
+  return [...SIGNALS].sort((a, b) => {
+    const ra = a.featureRank ?? Number.POSITIVE_INFINITY
+    const rb = b.featureRank ?? Number.POSITIVE_INFINITY
+    if (ra !== rb) return ra - rb
+    return new Date(b.dateFirst).getTime() - new Date(a.dateFirst).getTime()
+  })
+}

@@ -34,24 +34,24 @@ export const metadata: Metadata = {
   // /apps/[slug]) to canonicalize to `/`, suppressing their indexing. Let Next
   // derive canonical per-page from the route, or override in per-page metadata.
   title: {
-    default: 'Kuladeep Mantri',
+    default: 'Kuladeep Mantri · cybersecurity engineer',
     template: '%s | Kuladeep Mantri',
   },
   description:
-    'Security engineer and software developer. Projects in security, systems, and design.',
+    'Cybersecurity engineer who also builds AI. I work on how systems and the AI running on them are designed, and where they fail.',
   openGraph: {
     type: 'website',
     url: WEBSITE_URL,
-    title: 'Kuladeep Mantri',
+    title: 'Kuladeep Mantri · cybersecurity engineer',
     description:
-      'Security engineer and software developer. Projects in security, systems, and design.',
+      'Cybersecurity engineer who also builds AI. I work on how systems and the AI running on them are designed, and where they fail.',
     siteName: 'Kuladeep Mantri',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Kuladeep Mantri',
+    title: 'Kuladeep Mantri · cybersecurity engineer',
     description:
-      'Security engineer and software developer. Projects in security, systems, and design.',
+      'Cybersecurity engineer who also builds AI. I work on how systems and the AI running on them are designed, and where they fail.',
   },
 }
 
@@ -73,8 +73,14 @@ export default function RootLayout({
       <body className="bg-[var(--bg)] antialiased">
         <LayoutShell>
           <div className="flex min-h-screen w-full flex-col">
+            <a
+              href="#main"
+              className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:rounded focus:bg-[var(--accent)] focus:px-3 focus:py-2 focus:text-[var(--bg)]"
+            >
+              Skip to content
+            </a>
             <Header />
-            <main className="flex-1">{children}</main>
+            <main id="main" className="flex-1">{children}</main>
             <Footer />
           </div>
         </LayoutShell>

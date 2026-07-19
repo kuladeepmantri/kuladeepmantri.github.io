@@ -46,7 +46,7 @@ export function RuneExperience() {
       footer={{ live: HERO.live, src: 'https://github.com/kuladeepmantri/rune' }}
     >
       {/* 3D hero, full-bleed */}
-      <Band max={1100} hint="2026 Honda Accord · drag to rotate">
+      <Band max={1100} hint="2026 Honda Accord · auto-orbiting">
         <LazyScene
           poster="/models/accord-poster.webp"
           alt="3D model of a 2026 Honda Accord"
