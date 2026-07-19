@@ -51,8 +51,8 @@ export function LabTimeline({ signals }: { signals: Signal[] }) {
   return (
     <figure className="mx-auto w-full max-w-[1000px]">
       <div className="mb-3 flex items-baseline justify-between text-[11px] tracking-[0.12em] text-[var(--text-muted)] uppercase">
-        <span>the work, over time</span>
-        <span>hover to read · click to open</span>
+        <h2>the work, over time</h2>
+        <span>hover to read · tap to open</span>
       </div>
 
       <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-elevated)] px-4 py-5 sm:px-6">
