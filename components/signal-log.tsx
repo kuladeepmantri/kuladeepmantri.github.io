@@ -8,8 +8,8 @@ export function SignalLog({ signals }: { signals: Signal[] }) {
   return (
     <section aria-label="Projects" className="mt-20">
       <div className="mb-8 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 text-[11px] tracking-[0.12em] text-[var(--text-muted)] uppercase">
-        <span>every project</span>
-        <span>newest first</span>
+        <h2>every project</h2>
+        <span>featured first</span>
       </div>
 
       <div className="grid grid-cols-1 gap-x-10 gap-y-12 sm:grid-cols-2">

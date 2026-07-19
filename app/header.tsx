@@ -28,7 +28,7 @@ export function Header() {
         <Link
           href="/"
           aria-label="Home"
-          className="text-[15px] font-bold tracking-[-0.01em] text-[var(--text)] transition-colors hover:text-[color:var(--accent)]"
+          className="py-2 -my-2 text-[15px] font-bold tracking-[-0.01em] text-[var(--text)] transition-colors hover:text-[color:var(--accent)]"
         >
           km
         </Link>
@@ -37,7 +37,7 @@ export function Header() {
           <Link
             key={item.href}
             href={item.href}
-            className={`font-medium transition-colors hover:text-[var(--text)] ${
+            className={`py-2 -my-2 font-medium transition-colors hover:text-[var(--text)] ${
               item.match(pathname)
                 ? 'text-[var(--text)]'
                 : 'text-[var(--text-muted)]'
@@ -50,7 +50,7 @@ export function Header() {
           href={github}
           target="_blank"
           rel="noopener noreferrer"
-          className="font-medium text-[var(--text-muted)] transition-colors hover:text-[var(--text)]"
+          className="py-2 -my-2 font-medium text-[var(--text-muted)] transition-colors hover:text-[var(--text)]"
         >
           github
         </a>
@@ -58,7 +58,7 @@ export function Header() {
         <button
           onClick={toggleTheme}
           aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-          className="ml-auto flex h-8 w-8 items-center justify-center rounded-full text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-subtle)] hover:text-[var(--text)]"
+          className="ml-auto flex h-9 w-9 items-center justify-center rounded-full text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-subtle)] hover:text-[var(--text)]"
         >
           {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
         </button>
