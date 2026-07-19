@@ -7,10 +7,10 @@ export function Masthead() {
   return (
     <header className="border-b border-[var(--border)] pb-9">
       <div className="text-[11px] tracking-[0.22em] text-[color:var(--accent)] uppercase">
-        cybersecurity engineer &amp; architect
+        cybersecurity engineer
       </div>
 
-      <h1 className="mt-3 text-[19px] font-bold tracking-[0.01em] text-[var(--text)]">
+      <h1 className="mt-3 text-[23px] font-bold tracking-[-0.01em] text-[var(--text)]">
         Kuladeep Bhushan Mantri
       </h1>
 
@@ -18,9 +18,9 @@ export function Masthead() {
         style={{ fontFamily: 'var(--font-inter)' }}
         className="mt-4 max-w-[60ch] text-[16px] leading-[1.7] text-[var(--text-secondary)]"
       >
-        I understand how applications, cloud, and infrastructure are designed,
-        where they run, what they trust, and how they fail, then design security
-        that fits.
+        I understand how applications, cloud, infrastructure, and the AI systems
+        built on top of them are designed, where they run, what they trust, and
+        how they fail, then build security that fits.
       </p>
 
       <div className="mt-6 flex items-center gap-1.5 text-[11.5px] tracking-[0.08em] text-[var(--text-muted)] uppercase">

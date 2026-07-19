@@ -66,9 +66,13 @@ function Nav({
     >
       <div className="border-b border-[var(--border)] bg-[color-mix(in_oklch,var(--bg)_88%,transparent)] backdrop-blur-md">
         <div className="mx-auto flex h-11 max-w-[1100px] items-center gap-1 overflow-x-auto px-4 md:px-8">
-          <span className="mr-3 shrink-0 text-[10px] tracking-[0.2em] text-[var(--text-muted)] uppercase">
+          <a
+            href="#top"
+            aria-label="Back to top"
+            className="mr-3 shrink-0 text-[10px] tracking-[0.2em] text-[var(--text-muted)] uppercase transition-colors hover:text-[var(--text)]"
+          >
             {name}
-          </span>
+          </a>
           {sections.map((s) => (
             <a
               key={s.id}
@@ -137,7 +141,7 @@ export function ProjectShell({
           [&larr; back]
         </Link>
 
-        <header>
+        <header id="top">
           <div className="text-[12px] tracking-[0.2em] text-[color:var(--signal-color)] uppercase">
             {hero.eyebrow}
           </div>
