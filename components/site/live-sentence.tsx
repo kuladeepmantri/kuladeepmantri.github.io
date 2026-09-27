@@ -1,7 +1,7 @@
 'use client'
 
 import type { ProjectRef } from '@/app/signals'
-import { ago, clock, latestProject, olderThan, type Push } from '@/lib/live'
+import { ago, clock, latestProject, type Push } from '@/lib/live'
 import { useLive } from '@/lib/live-store'
 import { Token } from './token'
 
@@ -46,25 +46,37 @@ export function LiveSentence({ projects }: { projects: ProjectRef[] }) {
   const x = <Token href="/x">X</Token>
   const github = <Token href="/github">GitHub</Token>
 
-  const lead = target ? (
-    <>
-      I {olderThan(target.at, now, 30) ? 'last pushed' : 'pushed'} to {target.node} on {github}{' '}
-      {ago(target.at, now)}
-      {lastPostAt && (
+  // "My last commit went to evalcore on GitHub on Jul 22, my last post to X
+  // 4 days ago, and it's 4:09 PM here." Each clause drops out without data.
+  const parts: React.ReactNode[] = []
+  if (target)
+    parts.push(
+      <>
+        My last commit went to {target.node} on {github} {ago(target.at, now)}
+      </>,
+    )
+  if (lastPostAt)
+    parts.push(
+      target ? (
         <>
-          , posted on {x} {ago(lastPostAt, now)}
+          my last post to {x} {ago(lastPostAt, now)}
         </>
-      )}
-    </>
-  ) : (
-    <>
-      I build in the open on {github}, post on {x}
-    </>
-  )
+      ) : (
+        <>
+          My last post went to {x} {ago(lastPostAt, now)}
+        </>
+      ),
+    )
+  const clockPart = parts.length ? <>and it’s {time} here.</> : <>It’s {time} here.</>
 
   return (
     <p className="sentence s2" suppressHydrationWarning>
-      {lead}, and it’s {time} here.
+      {parts.map((p, i) => (
+        <span key={i}>
+          {p},{' '}
+        </span>
+      ))}
+      {clockPart}
     </p>
   )
 }

@@ -16,7 +16,7 @@ const mona = Mona_Sans({
 export const metadata: Metadata = {
   metadataBase: new URL(WEBSITE_URL),
   title: {
-    default: 'Kuladeep Mantri · cybersecurity engineer',
+    default: 'Kuladeep Mantri · security engineer',
     template: '%s · Kuladeep Mantri',
   },
   description: SENTENCE_ONE,
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     siteName: 'Kuladeep Mantri',
-    title: 'Kuladeep Mantri · cybersecurity engineer',
+    title: 'Kuladeep Mantri · security engineer',
     description: SENTENCE_ONE,
     url: WEBSITE_URL,
   },
