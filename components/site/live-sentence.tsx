@@ -2,6 +2,7 @@
 
 import type { ProjectRef } from '@/app/signals'
 import { ago, clock, latestProject, type Push } from '@/lib/live'
+import { useEffect, useState } from 'react'
 import { useLive } from '@/lib/live-store'
 import { Token } from './token'
 
@@ -41,6 +42,9 @@ function lastPushTarget(
 /** Sentence two: built from the latest push, the latest post, and the clock. */
 export function LiveSentence({ projects }: { projects: ProjectRef[] }) {
   const { repos, pushes, lastPostAt, now } = useLive()
+  // Hidden until hydrated, so the build-time clock never flashes before the real one.
+  const [ready, setReady] = useState(false)
+  useEffect(() => setReady(true), [])
   const target = lastPushTarget(pushes, projects, latestProject(projects, repos))
   const time = <Token href="/contact">{clock(now)}</Token>
   const x = <Token href="/x">X</Token>
@@ -70,7 +74,7 @@ export function LiveSentence({ projects }: { projects: ProjectRef[] }) {
   const clockPart = parts.length ? <>and it’s {time} here.</> : <>It’s {time} here.</>
 
   return (
-    <p className="sentence s2" suppressHydrationWarning>
+    <p className={ready ? 'sentence s2 is-ready' : 'sentence s2'} suppressHydrationWarning>
       {parts.map((p, i) => (
         <span key={i}>
           {p},{' '}
