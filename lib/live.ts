@@ -13,8 +13,8 @@ export type RepoLive = {
   commits30d: number
   recent: Commit[] // newest first, up to 3
   language?: string | null
-  commitsYear?: number
-  monthly?: number[] // commits per month, oldest first, last 12 months
+  commitsYear?: number // my commits in the last 365 days
+  days?: [string, number][] // my commits per local day, oldest first
 }
 
 /** A recently pushed repo. Private repos keep only the time, never the name. */
