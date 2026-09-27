@@ -12,6 +12,9 @@ export type RepoLive = {
   pushedAt: string | null
   commits30d: number
   recent: Commit[] // newest first, up to 3
+  language?: string | null
+  commitsYear?: number
+  monthly?: number[] // commits per month, oldest first, last 12 months
 }
 
 /** A recently pushed repo. Private repos keep only the time, never the name. */
@@ -162,20 +165,4 @@ export function latestProject<T extends ProjectRef>(
     if (better) out = { project: p, commit: c }
   }
   return out
-}
-
-export function mostActive<T extends ProjectRef>(
-  projects: T[],
-  repos: Record<string, RepoLive> | undefined,
-): T | null {
-  let best: T | null = null
-  let max = 0
-  for (const p of projects) {
-    const n = p.repos.reduce((s, r) => s + (repos?.[r]?.commits30d ?? 0), 0)
-    if (n > max) {
-      max = n
-      best = p
-    }
-  }
-  return best
 }
