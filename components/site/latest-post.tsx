@@ -1,4 +1,3 @@
-import { X_HANDLE } from '@/app/signals'
 import { LIVE } from '@/lib/generated/live'
 import { RelTime } from './rel-time'
 
@@ -10,18 +9,8 @@ function clean(text: string) {
 /** My newest post on X, refreshed every build. Replaces the old Now line. */
 export function LatestPost() {
   const post = LIVE.x?.posts[0]
-  const profile = `https://x.com/${X_HANDLE}`
 
-  if (!post) {
-    return (
-      <p className="latest-post empty">
-        <span className="lp-head">On X</span>
-        <span className="lp-text">
-          I post as <a href={profile}>@{X_HANDLE}</a>.
-        </span>
-      </p>
-    )
-  }
+  if (!post) return null
 
   return (
     <a className="latest-post" href={post.url}>
