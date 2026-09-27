@@ -8,10 +8,10 @@ function short(repo: string) {
   return repo.split('/')[1] ?? repo
 }
 
-/** Two facts: where my latest commit went and when. */
+/** Two facts: the public repo my latest commit went to, and when. */
 export function LastPushFacts() {
   const { pushes, now } = useLive()
-  const p = pushes?.[0]
+  const p = pushes?.find((x) => !x.isPrivate && x.repo)
   return (
     <>
       <span className="fact big">

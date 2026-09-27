@@ -22,7 +22,7 @@ export function Intro() {
 
       <div className="sentences">
         <p className="sentence s1">
-          I’m <Token href="/about">Kuladeep</Token>, a security engineer in Michigan.
+          I’m <Token href="/about">Kuladeep</Token>. Security Engineer, Michigan.
         </p>
         <LiveSentence projects={projects} />
       </div>

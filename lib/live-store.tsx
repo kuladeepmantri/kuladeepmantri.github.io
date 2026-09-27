@@ -4,7 +4,7 @@
 // the build snapshot's repo data, overrides from the browser refresh, and a
 // single `now` that ticks every 30 s for the whole page.
 
-import { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useState } from 'react'
 import type { Push, RepoLive } from './live'
 import { refresh } from './live-client'
 
@@ -20,6 +20,9 @@ type Store = ClientLive & { now: number }
 
 const LiveContext = createContext<Store | null>(null)
 
+// Layout effects run before paint in the browser; on the server they would warn.
+const useIsoLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect
+
 export function LiveProvider({
   value,
   children,
@@ -28,12 +31,13 @@ export function LiveProvider({
   children: React.ReactNode
 }) {
   // First render uses the build time on both server and client so hydration
-  // matches; the effect then switches to the real clock.
+  // matches; the layout effect below switches to the real clock before paint.
   const [now, setNow] = useState(() => Date.parse(value.builtAt))
   const [repos, setRepos] = useState(value.repos)
   const [pushes, setPushes] = useState(value.pushes)
 
-  useEffect(() => {
+  // Correct the clock before the first paint, so build-time values never show.
+  useIsoLayoutEffect(() => {
     setNow(Date.now())
     const id = setInterval(() => setNow(Date.now()), 30_000)
     return () => clearInterval(id)

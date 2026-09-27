@@ -47,8 +47,11 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en" className={mona.variable} suppressHydrationWarning>
       <head>
-        <meta name="theme-color" content={THEME_COLORS.light} />
+        <meta name="theme-color" content={THEME_COLORS.dark} />
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+        <noscript>
+          <style>{'.s2{opacity:1}'}</style>
+        </noscript>
       </head>
       <body>
         <Shell>{children}</Shell>

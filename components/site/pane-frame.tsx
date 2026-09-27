@@ -78,8 +78,13 @@ export function PaneFrame({
     const html = document.documentElement
     const prev = html.style.overflow
     html.style.overflow = 'hidden'
+    // aria-modal means the content behind must be unreachable by keyboard too.
+    // The top bar stays live: on phones it holds the tab bar.
+    const behind = document.querySelectorAll<HTMLElement>('.intro > :not(.topbar)')
+    behind.forEach((el) => el.setAttribute('inert', ''))
     return () => {
       html.style.overflow = prev
+      behind.forEach((el) => el.removeAttribute('inert'))
       const t = trigger.current
       if (t?.isConnected) t.focus({ preventScroll: true })
     }
@@ -110,7 +115,7 @@ export function PaneFrame({
           </>
         ) : (
           <>
-            <span>Work</span>
+            <span />
             <UpdatedAt />
           </>
         )}

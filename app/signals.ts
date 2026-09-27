@@ -184,7 +184,7 @@ export const SIGNALS: Signal[] = [
 // Sentence one, as plain text for meta descriptions. The page renders it with
 // "Kuladeep" as a link, in components/site/intro.tsx; keep the two in sync.
 export const SENTENCE_ONE =
-  'I’m Kuladeep, a security engineer in Michigan.'
+  'I’m Kuladeep. Security Engineer, Michigan.'
 
 export const EMAIL = 'mantrikuladeep@gmail.com'
 export const GITHUB_USER = 'kuladeepmantri'
@@ -206,14 +206,15 @@ export function sortedByStart(): Signal[] {
 }
 
 /** The slim shape client components need (keeps bodies out of the JS bundle). */
-export type ProjectRef = Pick<Signal, 'slug' | 'name' | 'line' | 'repos' | 'dateLast'>
+export type ProjectRef = Pick<Signal, 'slug' | 'name' | 'line' | 'repos' | 'dateLast' | 'stack'>
 
 export function projectRefs(): ProjectRef[] {
-  return SIGNALS.map(({ slug, name, line, repos, dateLast }) => ({
+  return SIGNALS.map(({ slug, name, line, repos, dateLast, stack }) => ({
     slug,
     name,
     line,
     repos,
     dateLast,
+    stack,
   }))
 }
