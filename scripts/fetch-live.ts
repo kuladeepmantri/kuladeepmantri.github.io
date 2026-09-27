@@ -82,6 +82,20 @@ function buildSha(): string {
   }
 }
 
+// Local fallback: reuse a logged-in gh CLI session so no token file is needed.
+// Held in memory only, never written anywhere.
+function ghCliToken(): string | undefined {
+  if (process.env.CI) return undefined
+  try {
+    return (
+      execSync('gh auth token', { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim() ||
+      undefined
+    )
+  } catch {
+    return undefined
+  }
+}
+
 // ── GitHub ──
 
 const LEVEL: Record<string, 0 | 1 | 2 | 3 | 4> = {
@@ -297,7 +311,7 @@ async function main() {
     x: prev?.x ?? null,
   }
 
-  const ghToken = process.env.GH_PAT || process.env.GITHUB_TOKEN
+  const ghToken = process.env.GH_PAT || process.env.GITHUB_TOKEN || ghCliToken()
   if (ghToken) {
     try {
       snap.github = await fetchGithub(ghToken)
