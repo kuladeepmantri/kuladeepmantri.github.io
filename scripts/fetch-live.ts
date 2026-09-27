@@ -304,7 +304,7 @@ async function fetchX(token: string, prev: X | null): Promise<X> {
   const headers = { Authorization: `Bearer ${token}` }
   let profile: Omit<X, 'posts' | 'sinceId'>
   const stale =
-    !prev || Date.now() - new Date(prev.profileFetchedAt).getTime() > 24 * 3600 * 1000
+    !prev || Date.now() - new Date(prev.profileFetchedAt).getTime() > 7 * 24 * 3600 * 1000
   if (stale) {
     const u = (await fetchJson(
       `https://api.x.com/2/users/by/username/${X_HANDLE}?user.fields=description,profile_image_url,name,verified,verified_type`,
