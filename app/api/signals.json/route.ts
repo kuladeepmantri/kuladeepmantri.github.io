@@ -1,10 +1,10 @@
-import { sortedByRecency } from '@/app/signals'
+import { sortedByStart } from '@/app/signals'
 import { WEBSITE_URL } from '@/lib/constants'
 
 export const dynamic = 'force-static'
 
 export function GET(): Response {
-  const signals = sortedByRecency()
+  const signals = sortedByStart()
 
   const body = {
     version: 'https://jsonfeed.org/version/1.1',
