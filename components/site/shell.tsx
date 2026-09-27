@@ -6,7 +6,8 @@ import { LiveProvider } from '@/lib/live-store'
 import { Deck } from './deck'
 import { HomePane } from './home-pane'
 import { TweetCard } from './tweet-card'
-import { Field, type Source } from './field'
+import { Backdrop } from './backdrop'
+import type { Source } from './field'
 
 const LOCAL_DAY = new Intl.DateTimeFormat('en-CA', { timeZone: TIMEZONE })
 
@@ -46,7 +47,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
         lastPostAt: LIVE.x?.posts[0]?.createdAt ?? null,
       }}
     >
-      <Field
+      <Backdrop
         sources={sources()}
         names={Object.fromEntries(SIGNALS.map((s) => [s.slug, s.name]))}
       />
