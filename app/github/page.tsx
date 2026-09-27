@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { Avatar } from '@/components/site/avatar'
-import { ContributionGrid } from '@/components/site/contribution-grid'
-import { LastPushFacts, RecentPushes } from '@/components/site/last-push'
+import { RecentPushes } from '@/components/site/last-push'
+import { PaneHead } from '@/components/site/pane-head'
 import { LIVE } from '@/lib/generated/live'
 import { GITHUB_USER, projectRefs } from '../signals'
 
@@ -13,66 +13,46 @@ export const metadata: Metadata = {
 
 export default function GitHub() {
   const gh = LIVE.github
-  const projects = projectRefs()
   const langTotal = gh?.languages.reduce((s, l) => s + l.bytes, 0) ?? 0
-
   return (
-    <article className="p-body">
-      <div className="profile">
-        <Avatar size={64} />
-        <span className="profile-name">
-          <span>Kuladeep Mantri</span>
-          <span>@{GITHUB_USER} on GitHub</span>
-        </span>
-        <a className="pill" href={`https://github.com/${GITHUB_USER}`}>
-          Follow
-        </a>
-      </div>
-      <h2 className="sr-only">GitHub</h2>
-      {gh?.user.bio && <p className="bio">{gh.user.bio}</p>}
-
+    <article>
+      <PaneHead title="GitHub" />
+      <a className="who" href={`https://github.com/${GITHUB_USER}`}>
+        <Avatar size={48} />
+        <div>
+          <p className="who-name">Kuladeep Mantri</p>
+          <p className="muted">@{GITHUB_USER} ↗</p>
+        </div>
+      </a>
+      {gh?.user.bio && <p>{gh.user.bio}</p>}
       {gh ? (
         <>
-          <div className="facts">
-            <span className="fact big">
-              <span>Contributions, last year</span>
-              <span>{gh.totalContributions.toLocaleString('en-US')}</span>
-            </span>
-            <LastPushFacts />
-          </div>
-
-          <h3 className="lab section-lab">Contributions, last 40 weeks</h3>
-          <div className="grid-wrap">
-            <ContributionGrid weeks={gh.weeks} total={gh.totalContributions} />
-          </div>
-
-          <RecentPushes projects={projects} />
-
+          <dl className="facts">
+            <div>
+              <dt>Contributions, last year</dt>
+              <dd>{gh.totalContributions.toLocaleString('en-US')}</dd>
+            </div>
+          </dl>
+          <RecentPushes projects={projectRefs()} />
           {gh.languages.length > 0 && (
-            <>
-              <h3 className="lab section-lab">Languages in public repos</h3>
-              <div className="langbar" aria-hidden="true">
-                {gh.languages.map((l, i) => (
-                  <div
-                    key={l.name}
-                    className={`q${4 - i}`}
-                    style={{ width: `${(l.bytes / langTotal) * 100}%` }}
-                  />
+            <section>
+              <h2 className="list-lab">Languages in public repos</h2>
+              <ul className="langs">
+                {gh.languages.map((l) => (
+                  <li key={l.name}>
+                    <span>{l.name}</span>
+                    <span className="bar">
+                      <i style={{ width: `${(l.bytes / langTotal) * 100}%` }} />
+                    </span>
+                    <span className="when">{Math.round((l.bytes / langTotal) * 100)}%</span>
+                  </li>
                 ))}
-              </div>
-              <div className="legend">
-                {gh.languages.map((l, i) => (
-                  <span key={l.name}>
-                    <i className={`q${4 - i}`} aria-hidden="true" />
-                    {l.name}
-                  </span>
-                ))}
-              </div>
-            </>
+              </ul>
+            </section>
           )}
         </>
       ) : (
-        <p className="p-note">GitHub data didn’t load for this build. The profile has everything.</p>
+        <p className="muted">GitHub data didn’t load for this build.</p>
       )}
     </article>
   )
