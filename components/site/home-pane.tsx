@@ -50,9 +50,10 @@ function Item({
         }}
         onPointerLeave={() => slug && emit('focus', { slug: null })}
         onClick={() => {
-          // The pane opens out of this row, and the background ripples from it.
+          // A hairline draws under this row; the pane unfolds from it and the
+          // background re-inks outward from the same line.
           const r = ref.current?.getBoundingClientRect()
-          if (r) setOrigin({ x: r.right, y: r.top + r.height / 2 })
+          if (r) setOrigin({ x: r.right, y: r.bottom - 3 })
           const el = ref.current
           if (el) {
             el.dataset.fire = ''

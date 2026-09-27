@@ -24,7 +24,10 @@ const B8 = [
 
 const PX = 2 // dither pixel, in CSS px
 const G = 8 // lattice spacing the field is computed on, in CSS px
-const AMBIENT = 26 // background hosts that aren't tied to a date
+const AMBIENT = 22 // background hosts that aren't tied to a date
+const LENS = 190 // radius, in CSS px, the pointer reveals the network within
+const BAND = 64 // height of the re-ink front, in CSS px
+const REINK_S = 1.1
 
 function hash1(n: number) {
   const s = Math.sin(n * 127.1 + 311.7) * 43758.5453
@@ -34,19 +37,20 @@ function hash1(n: number) {
 type Host = {
   x: number
   y: number
-  day: number // -1 for ambient hosts
+  day: number // negative for ambient hosts
   n: number
   slugs: string[]
-  born: number
+  rev: number // how revealed it is, 0 to 1
 }
 
 /**
- * The background: a dithered print with a quiet network on top. Every day
- * with activity in the last year is a host, placed left to right by date
- * across the open part of the screen; hosts link to their nearest
- * neighbours and packets travel between them. The pointer probes nearby
- * hosts, a scan line passes over, and opening a pane sends a ripple out
- * from the row that opened it.
+ * The background: a slow dithered print. Under it sits a network of every
+ * active day in the last year, placed left to right by date, which stays
+ * hidden until the pointer passes over it or a project is hovered.
+ *
+ * Changing page re-inks the print in the new palette, from the row that was
+ * clicked outward: two fronts split up and down from that line, coarse
+ * pixels at the edge, the new palette dithered in behind them.
  */
 export function Field({
   sources,
@@ -77,20 +81,29 @@ export function Field({
     let px32: Uint32Array | null = null
     let lattice = new Float32Array(0)
 
-    // Palette crossfade
+    const inksOf = (l: Float32Array) =>
+      [0.0, 0.13, 0.3, 0.58].map((v, k) => {
+        const c = Math.max(0, Math.min(255, (v * 255) | 0)) * 3
+        const m = k === 0 ? 0.5 : 1
+        return (
+          (255 << 24) |
+          (((l[c + 2] * m) | 0) << 16) |
+          (((l[c + 1] * m) | 0) << 8) |
+          ((l[c] * m) | 0)
+        )
+      })
+
     let paletteKey = place.current.palette
-    let lutFrom = buildLUT(PALETTES[paletteKey] ?? PALETTES.home)
-    let lutTo = lutFrom
-    let lut = lutFrom
-    let lutT = 1
-    const rgb = (v: number): [number, number, number] => {
-      const k = Math.max(0, Math.min(255, (v * 255) | 0)) * 3
-      return [lut[k] | 0, lut[k + 1] | 0, lut[k + 2] | 0]
-    }
+    let lut = buildLUT(PALETTES[paletteKey] ?? PALETTES.home)
+    let inks = inksOf(lut)
     const col = (v: number, a = 1) => {
-      const [r, g, b] = rgb(v)
-      return a === 1 ? `rgb(${r},${g},${b})` : `rgba(${r},${g},${b},${a})`
+      const k = Math.max(0, Math.min(255, (v * 255) | 0)) * 3
+      return `rgba(${lut[k] | 0},${lut[k + 1] | 0},${lut[k + 2] | 0},${a})`
     }
+
+    // A page change in progress: where it started, how far along, and the inks it replaces.
+    let reink: { y: number; t: number; old: number[] } | null = null
+    let pending: { y: number; at: number } | null = null
 
     // Which projects had commits on each day, so a host can name them.
     const now0 = Date.now()
@@ -121,9 +134,9 @@ export function Field({
     type Packet = { a: Host; b: Host; p: number; v: number }
     let packets: Packet[] = []
     let links: [Host, Host][] = []
-    const ripples: { x: number; y: number; t: number }[] = []
     const pointer = { x: 0, y: 0, on: false }
     let focus: string | null = null
+    let trace = 0 // position of the point running along a focused project's days
     let hovered: Host | null = null
     let t = 0
     let last = performance.now()
@@ -155,24 +168,29 @@ export function Field({
     function layout(x0: number, x1: number) {
       const key = `${heatKey}|${Math.round(x0)}|${Math.round(x1)}|${W}|${H}`
       if (key === layoutKey) return
-      const fresh = !layoutKey.startsWith(`${heatKey}|`)
       layoutKey = key
-      const old = new Map(hosts.filter((h) => h.day >= 0).map((h) => [h.day, h]))
+      const old = new Map(hosts.map((h) => [h.day, h.rev]))
       const next: Host[] = []
       for (let i = 0; i < YEAR_DAYS; i++) {
         if (!raw[i]) continue
-        const prev = old.get(i)
         next.push({
           x: x0 + (i / (YEAR_DAYS - 1)) * (x1 - x0),
           y: H * (0.14 + 0.72 * hash1(i * 1.37 + 5)),
           day: i,
           n: raw[i],
           slugs: dayProjects.get(i) ?? [],
-          born: fresh || !prev ? t : prev.born,
+          rev: old.get(i) ?? 0,
         })
       }
       for (const a of ambient)
-        next.push({ x: a.fx * W, y: a.fy * H, day: -1 - a.seed, n: 0, slugs: [], born: -10 })
+        next.push({
+          x: a.fx * W,
+          y: a.fy * H,
+          day: -1 - a.seed,
+          n: 0,
+          slugs: [],
+          rev: old.get(-1 - a.seed) ?? 0,
+        })
       hosts = next
       // Each host links to its two nearest neighbours.
       const seen = new Set<string>()
@@ -202,15 +220,12 @@ export function Field({
       if (want.palette !== paletteKey) {
         paletteKey = want.palette
         root.dataset.palette = paletteKey
-        lutFrom = lut
-        lutTo = buildLUT(PALETTES[paletteKey] ?? PALETTES.home)
-        lutT = 0
-      }
-      if (lutT < 1) {
-        lutT = reduce ? 1 : Math.min(1, lutT + dt / 0.9)
-        const k = lutT * lutT * (3 - 2 * lutT)
-        lut = new Float32Array(768)
-        for (let i = 0; i < 768; i++) lut[i] = lutFrom[i] + (lutTo[i] - lutFrom[i]) * k
+        const y = pending && nowMs - pending.at < 1500 ? pending.y : H / 2
+        pending = null
+        const old = inks
+        lut = buildLUT(PALETTES[paletteKey] ?? PALETTES.home)
+        inks = inksOf(lut)
+        reink = reduce ? null : { y, t: 0, old }
       }
       if (want.heat !== heatKey) setHeat(want.heat)
 
@@ -223,13 +238,22 @@ export function Field({
       if (x1 - x0 < 220) x0 = 48
       layout(x0, x1)
 
-      // Ambient hosts drift a little.
-      for (const h of hosts)
+      // Ambient hosts drift a little. Hosts come into view near the pointer,
+      // and all of a project's days come into view while it is hovered.
+      for (const h of hosts) {
         if (h.day < 0) {
           const a = ambient[-1 - h.day]
           h.x = a.fx * W + 18 * Math.sin(t * 0.05 + a.seed)
           h.y = a.fy * H + 14 * Math.cos(t * 0.04 + a.seed * 1.7)
         }
+        let target = focus && h.slugs.includes(focus) ? 1 : 0
+        if (pointer.on) {
+          const d = Math.hypot(h.x - pointer.x, h.y - pointer.y)
+          if (d < LENS) target = Math.max(target, (1 - d / LENS) ** 0.6 * (h.day >= 0 ? 1 : 0.6))
+        }
+        h.rev += (target - h.rev) * Math.min(1, dt * (target > h.rev ? 9 : 2.5))
+        if (reduce) h.rev = target
+      }
 
       // ── Dither layer ──
       const bw = Math.ceil(W / PX)
@@ -240,142 +264,158 @@ export function Field({
         img = bctx.createImageData(bw, bh)
         px32 = new Uint32Array(img.data.buffer)
       }
-      const inks = [0.0, 0.16, 0.38, 0.7].map((v, k) => {
-        const [r, g, b] = rgb(v)
-        const m = k === 0 ? 0.5 : 1
-        return (255 << 24) | (((b * m) | 0) << 16) | (((g * m) | 0) << 8) | ((r * m) | 0)
-      })
       const gw = Math.ceil(W / G) + 2
       const gh = Math.ceil(H / G) + 2
       if (lattice.length !== gw * gh) lattice = new Float32Array(gw * gh)
-      const scanY = (((t * 0.045) % 1.25) - 0.1) * H
       for (let j = 0; j < gh; j++) {
         const y = j * G
-        const scan = 0.07 * Math.exp(-(((y - scanY) / 30) ** 2))
         const vy = (y / H - 0.5) ** 2
         for (let i = 0; i < gw; i++) {
           const x = i * G
-          const n = fbm(x * 0.002 + t * 0.016, y * 0.002 - t * 0.01, t * 0.024)
-          let v = smoothstep(0.4, 0.86, n) * 0.38 + scan
+          const n = fbm(x * 0.0018 + t * 0.011, y * 0.0018 - t * 0.007, t * 0.016)
+          let v = smoothstep(0.42, 0.88, n) * 0.36
           if (pointer.on) {
             const d2 = (x - pointer.x) ** 2 + (y - pointer.y) ** 2
-            v += 0.22 * Math.exp(-d2 / (2 * 110 * 110))
-          }
-          for (const r of ripples) {
-            const d = Math.hypot(x - r.x, y - r.y)
-            const edge = r.t * 900
-            v += 0.35 * (1 - r.t / 1.4) * Math.exp(-(((d - edge) / 40) ** 2))
+            v += 0.14 * Math.exp(-d2 / (2 * 130 * 130))
           }
           lattice[j * gw + i] = v * (1 - 0.8 * ((x / W - 0.5) ** 2 + vy))
         }
       }
-      // A soft glow around busy hosts, in the same print.
+      // Revealed hosts bloom in the same print.
       for (const h of hosts) {
-        if (h.day < 0) continue
-        const s = 0.18 + 0.4 * Math.sqrt(h.n / peak)
-        const lit = focus && h.slugs.includes(focus) ? 1.8 : 1
-        const R = 9
+        if (h.day < 0 || h.rev < 0.02) continue
+        const s = (0.16 + 0.34 * Math.sqrt(h.n / peak)) * h.rev
+        const R = 8
         const ci = Math.round(h.x / G)
         const cj = Math.round(h.y / G)
         for (let j = Math.max(0, cj - R); j <= Math.min(gh - 1, cj + R); j++)
           for (let i = Math.max(0, ci - R); i <= Math.min(gw - 1, ci + R); i++) {
             const d2 = (i * G - h.x) ** 2 + (j * G - h.y) ** 2
-            lattice[j * gw + i] += s * lit * Math.exp(-d2 / (2 * 34 * 34))
+            lattice[j * gw + i] += s * Math.exp(-d2 / (2 * 30 * 30))
           }
       }
+
+      // Re-ink progress: the distance each front has travelled from its line.
+      let front = Infinity
+      if (reink) {
+        reink.t += dt
+        const p = Math.min(1, reink.t / REINK_S)
+        front = (1 - (1 - p) ** 3) * (Math.max(reink.y, H - reink.y) + BAND)
+        if (p >= 1) reink = null
+      }
+      const old = reink?.old ?? inks
+      const ry = reink?.y ?? 0
+
       const out = px32!
       const k = PX / G
       for (let j = 0; j < bh; j++) {
-        const gy = j * k
+        // Behind the front: new inks. Ahead: old ones. On it: coarse pixels,
+        // a little brighter, with the new palette dithered in.
+        const edge = front - Math.abs(j * PX - ry)
+        const band = edge > 0 && edge < BAND
+        const m = band ? edge / BAND : edge <= 0 ? 0 : 1
+        const coarse = band && m < 0.7
+        const lift = band ? 0.09 * (1 - m) : 0
+        const jj = coarse ? j & ~3 : j
+        const gy = jj * k
         const j0 = gy | 0
         const fy = gy - j0
         const row0 = j0 * gw
         const row1 = row0 + gw
-        const brow = (j & 7) * 8
+        const bj = ((coarse ? j >> 2 : j) & 7) * 8
+        const pj = ((j + 3) & 7) * 8
+        const rowInks = m === 1 ? inks : m === 0 ? old : null
         for (let i = 0; i < bw; i++) {
-          const gx = i * k
+          const ii = coarse ? i & ~3 : i
+          const gx = ii * k
           const i0 = gx | 0
           const fx = gx - i0
           const top = lattice[row0 + i0] + (lattice[row0 + i0 + 1] - lattice[row0 + i0]) * fx
           const bot = lattice[row1 + i0] + (lattice[row1 + i0 + 1] - lattice[row1 + i0]) * fx
-          let q = ((top + (bot - top) * fy) * 3 + B8[brow + (i & 7)]) | 0
+          let q = ((top + (bot - top) * fy + lift) * 3 + B8[bj + ((coarse ? i >> 2 : i) & 7)]) | 0
           if (q < 0) q = 0
           else if (q > 3) q = 3
-          out[j * bw + i] = inks[q]
+          const set = rowInks ?? (m > B8[pj + ((i + 5) & 7)] ? inks : old)
+          out[j * bw + i] = set[q]
         }
       }
       bctx.putImageData(img!, 0, 0)
-      ctx.globalAlpha = 1
       ctx.imageSmoothingEnabled = false
       ctx.drawImage(buf, 0, 0, bw * PX, bh * PX)
       ctx.imageSmoothingEnabled = true
 
-      // ── Network layer ──
-      const isLit = (h: Host) => !!focus && h.slugs.includes(focus)
-      const fade = (h: Host) => Math.min(1, Math.max(0, (t - h.born) / 0.8))
-
+      // ── Network layer, only where revealed ──
       ctx.lineWidth = 1
       for (const [a, b] of links) {
-        const lit = isLit(a) && isLit(b)
-        const al =
-          Math.min(fade(a), fade(b)) * (lit ? 0.85 : a.day >= 0 || b.day >= 0 ? 0.42 : 0.22)
-        ctx.strokeStyle = col(lit ? 0.95 : 0.55, al)
+        const al = Math.min(a.rev, b.rev) * 0.45
+        if (al < 0.01) continue
+        ctx.strokeStyle = col(0.6, al)
         ctx.beginPath()
         ctx.moveTo(a.x, a.y)
         ctx.lineTo(b.x, b.y)
         ctx.stroke()
       }
 
-      // Packets: more of them leave busy hosts.
-      if (!reduce && links.length) {
-        const rate = 2.5 + Math.min(6, hosts.length * 0.12)
-        if (Math.random() < rate * dt) {
-          const pick = links[(Math.random() * links.length) | 0]
-          const [a, b] = Math.random() < 0.5 ? pick : [pick[1], pick[0]]
-          packets.push({ a, b, p: 0, v: 90 + Math.random() * 90 })
+      // A hovered project's days, joined in date order, with a point running along them.
+      const chain = focus ? hosts.filter((h) => h.day >= 0 && h.slugs.includes(focus!)) : []
+      if (chain.length > 1) {
+        ctx.strokeStyle = col(0.9, 0.5 * chain[0].rev)
+        ctx.beginPath()
+        chain.forEach((h, i) => (i ? ctx.lineTo(h.x, h.y) : ctx.moveTo(h.x, h.y)))
+        ctx.stroke()
+        if (!reduce) {
+          trace = (trace + dt * 1.6) % (chain.length - 1)
+          const a = chain[trace | 0]
+          const b = chain[(trace | 0) + 1]
+          const f = trace % 1
+          ctx.fillStyle = col(1, chain[0].rev)
+          ctx.fillRect(a.x + (b.x - a.x) * f - 1.5, a.y + (b.y - a.y) * f - 1.5, 3, 3)
         }
-        if (packets.length > 60) packets.shift()
+      } else trace = 0
+
+      // Packets, only on links in view.
+      if (!reduce && pointer.on && Math.random() < 5 * dt) {
+        const pick = links[(Math.random() * links.length) | 0]
+        if (pick && Math.min(pick[0].rev, pick[1].rev) > 0.35) {
+          const [a, b] = Math.random() < 0.5 ? pick : [pick[1], pick[0]]
+          packets.push({ a, b, p: 0, v: 70 + Math.random() * 70 })
+        }
       }
       for (let i = packets.length - 1; i >= 0; i--) {
         const pk = packets[i]
         const len = Math.hypot(pk.b.x - pk.a.x, pk.b.y - pk.a.y) || 1
         pk.p += (pk.v * dt) / len
-        if (pk.p >= 1) {
+        const al = Math.min(pk.a.rev, pk.b.rev)
+        if (pk.p >= 1 || al < 0.02) {
           packets.splice(i, 1)
           continue
         }
-        const x = pk.a.x + (pk.b.x - pk.a.x) * pk.p
-        const y = pk.a.y + (pk.b.y - pk.a.y) * pk.p
-        ctx.fillStyle = col(0.95, 0.9)
-        ctx.fillRect(x - 1, y - 1, 2, 2)
+        ctx.fillStyle = col(0.95, al)
+        ctx.fillRect(
+          pk.a.x + (pk.b.x - pk.a.x) * pk.p - 1,
+          pk.a.y + (pk.b.y - pk.a.y) * pk.p - 1,
+          2,
+          2,
+        )
       }
 
-      // Hosts: busy days are small squares in a frame; ambient ones are dots.
+      // Hosts: active days are small squares in a frame; ambient ones are dots.
       hovered = null
       let best = 16 * 16
       for (const h of hosts) {
-        const f = fade(h)
+        if (h.rev < 0.02) continue
         if (h.day < 0) {
-          ctx.fillStyle = col(0.5, 0.55 * f)
+          ctx.fillStyle = col(0.5, 0.6 * h.rev)
           ctx.fillRect(h.x - 1, h.y - 1, 2, 2)
           continue
         }
-        const lit = isLit(h)
         const s = 3 + 3 * Math.sqrt(h.n / peak)
-        ctx.fillStyle = col(lit ? 1 : 0.92, f)
+        ctx.fillStyle = col(0.95, h.rev)
         ctx.fillRect(h.x - s / 2, h.y - s / 2, s, s)
-        const frameS = s + 8 + (lit ? 4 : 0)
-        ctx.strokeStyle = col(lit ? 0.95 : 0.6, (lit ? 0.9 : 0.45) * f)
-        ctx.strokeRect(h.x - frameS / 2 + 0.5, h.y - frameS / 2 + 0.5, frameS - 1, frameS - 1)
-        // A ping every few seconds, staggered per host.
-        const period = 4 + hash1(h.day) * 4
-        const ph = ((t + hash1(h.day + 3) * period) % period) / 1.4
-        if (ph < 1 && !reduce) {
-          ctx.strokeStyle = col(0.8, (1 - ph) * 0.35 * f)
-          const r = 6 + ph * 26
-          ctx.strokeRect(h.x - r, h.y - r, r * 2, r * 2)
-        }
-        if (pointer.on) {
+        const fs = s + 8
+        ctx.strokeStyle = col(0.7, 0.5 * h.rev)
+        ctx.strokeRect(h.x - fs / 2 + 0.5, h.y - fs / 2 + 0.5, fs - 1, fs - 1)
+        if (pointer.on && h.rev > 0.4) {
           const d2 = (h.x - pointer.x) ** 2 + (h.y - pointer.y) ** 2
           if (d2 < best) {
             best = d2
@@ -384,22 +424,8 @@ export function Field({
         }
       }
 
-      // The pointer probes: a reticle, and lines to hosts in range.
       if (pointer.on) {
-        ctx.strokeStyle = col(0.85, 0.5)
-        ctx.setLineDash([2, 4])
-        for (const h of hosts) {
-          const d = Math.hypot(h.x - pointer.x, h.y - pointer.y)
-          if (d > 170) continue
-          ctx.globalAlpha = (1 - d / 170) * (h.day >= 0 ? 0.9 : 0.4)
-          ctx.beginPath()
-          ctx.moveTo(pointer.x, pointer.y)
-          ctx.lineTo(h.x, h.y)
-          ctx.stroke()
-        }
-        ctx.setLineDash([])
-        ctx.globalAlpha = 1
-        ctx.strokeStyle = col(0.9, 0.7)
+        ctx.strokeStyle = col(0.9, 0.45)
         const r = 7
         ctx.beginPath()
         ctx.moveTo(pointer.x - r - 4, pointer.y)
@@ -412,24 +438,6 @@ export function Field({
         ctx.lineTo(pointer.x, pointer.y + r + 4)
         ctx.stroke()
       }
-
-      // Ripples from opened panes, as a crisp ring over the dithered one.
-      for (let i = ripples.length - 1; i >= 0; i--) {
-        const r = ripples[i]
-        r.t += dt
-        if (r.t > 1.4) {
-          ripples.splice(i, 1)
-          continue
-        }
-        ctx.strokeStyle = col(0.9, 0.5 * (1 - r.t / 1.4))
-        ctx.beginPath()
-        ctx.arc(r.x, r.y, r.t * 900, 0, Math.PI * 2)
-        ctx.stroke()
-      }
-
-      // Scan line, crisp and faint.
-      ctx.fillStyle = col(0.8, 0.07)
-      ctx.fillRect(0, scanY, W, 1)
 
       updateTip()
       raf = requestAnimationFrame(frame)
@@ -464,7 +472,7 @@ export function Field({
       pointer.y = e.clientY
     }
     const onLeave = () => (pointer.on = false)
-    const offOpen = on<Point>('open', (p) => ripples.push({ x: p.x, y: p.y, t: 0 }))
+    const offOpen = on<Point>('open', (p) => (pending = { y: p.y, at: performance.now() }))
     const offFocus = on<{ slug: string | null }>('focus', (d) => (focus = d.slug))
     function onVisible() {
       cancelAnimationFrame(raf)

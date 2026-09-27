@@ -1,8 +1,8 @@
 @import 'tailwindcss';
 
 /*
- * A living background (the field: a dithered print with a quiet network on
- * top) fills the window. Panes float on it as dark rounded cards: the home
+ * A living background (the field: a slow dithered print, with a network
+ * that shows only where the pointer is) fills the window. Panes float on it as dark rounded cards: the home
  * pane, and one pane per opened page to its right. One typeface, Geist.
  */
 
@@ -240,6 +240,31 @@ button {
   animation: fold 0.42s var(--snap) both;
 }
 
+/* Switching pages: the pane pinches into the new row's line, then opens from it. */
+@keyframes pinch {
+  to {
+    clip-path: inset(var(--ft, 50%) 0 var(--fb, 50%) 0 round 16px);
+  }
+}
+
+@keyframes spread {
+  from {
+    clip-path: inset(var(--ft, 50%) 0 var(--fb, 50%) 0 round 16px);
+  }
+  to {
+    clip-path: inset(0 0 0 0 round 16px);
+  }
+}
+
+.pane-page[data-phase='swap'] {
+  clip-path: inset(0 0 0 0 round 16px);
+  animation: pinch 0.21s cubic-bezier(0.6, 0, 0.9, 0.4) both;
+}
+
+.pane-page[data-phase='reopen'] {
+  animation: spread 0.5s var(--snap) both;
+}
+
 .home {
   animation: text-in 0.6s var(--ease) 0.1s both;
 }
@@ -252,7 +277,12 @@ button {
   animation-delay: 0.36s;
 }
 
-.pane[data-phase='out'] .pane-content {
+.pane[data-phase='reopen'] .pane-content {
+  animation-delay: 0.16s;
+}
+
+.pane[data-phase='out'] .pane-content,
+.pane[data-phase='swap'] .pane-content {
   opacity: 0;
   transition: opacity 0.1s;
 }
@@ -466,14 +496,18 @@ button {
   transition: color 0.15s;
 }
 
-/* A click sends a band of light across the row before the pane opens. */
-@keyframes fire {
-  from {
-    transform: translateX(-100%);
+/* A click draws a hairline under the row, out toward the pane that opens from it. */
+@keyframes trace {
+  0% {
+    transform: scaleX(0);
     opacity: 1;
   }
-  to {
-    transform: translateX(100%);
+  55% {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scaleX(1);
     opacity: 0;
   }
 }
@@ -482,14 +516,13 @@ button {
 .tabs a[data-fire]::after {
   content: '';
   position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    color-mix(in srgb, var(--accent) 30%, transparent),
-    transparent
-  );
-  animation: fire 0.6s var(--ease) both;
+  left: 0;
+  right: 0;
+  bottom: 3px;
+  height: 1px;
+  background: var(--accent);
+  transform-origin: left;
+  animation: trace 0.6s var(--ease) both;
   pointer-events: none;
 }
 

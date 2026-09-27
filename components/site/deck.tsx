@@ -6,17 +6,20 @@ import { emit, takeOrigin } from '@/lib/bus'
 import { normalizePath, placeFor } from '@/lib/panes'
 import { tick } from '@/lib/sound'
 
-type Phase = 'in' | 'open' | 'out'
+type Phase = 'in' | 'open' | 'out' | 'swap' | 'reopen'
 type Open = { key: string; node: React.ReactNode; phase: Phase; y: number | null }
 
 const IN_MS = 650
 const OUT_MS = 440
+const SWAP_MS = 210
+const REOPEN_MS = 520
 
 /**
  * The home pane plus at most one pane to its right, for the current route.
  * A pane opens out of the row that was clicked: a line at that row's height
  * runs across, then unfolds up and down into the pane. Closing folds it back
- * into the same line.
+ * into the same line. Picking another row while a pane is open pinches the
+ * pane into that row's line and unfolds the new page from it.
  */
 export function Deck({ home, children }: { home: React.ReactNode; children: React.ReactNode }) {
   const path = normalizePath(usePathname())
@@ -35,8 +38,8 @@ export function Deck({ home, children }: { home: React.ReactNode; children: Reac
   useEffect(() => {
     clearTimeout(timer.current)
     const cur = openRef.current
-    const settle = (k: string) =>
-      setTimeout(() => setOpen((o) => (o && o.key === k ? { ...o, phase: 'open' } : o)), IN_MS)
+    const settle = (k: string, ms = IN_MS) =>
+      setTimeout(() => setOpen((o) => (o && o.key === k ? { ...o, phase: 'open' } : o)), ms)
 
     if (first.current) {
       first.current = false
@@ -44,12 +47,17 @@ export function Deck({ home, children }: { home: React.ReactNode; children: Reac
       return
     }
     const from = takeOrigin()
+    if (from) emit('open', from)
     if (key) {
-      if (from) emit('open', from)
       if (cur && cur.phase !== 'out') {
-        // Already open: swap the content in place.
         tick('open')
-        setOpen({ ...cur, key, node: children, y: from?.y ?? cur.y })
+        const y = from?.y ?? cur.y
+        const node = children
+        setOpen({ ...cur, phase: 'swap', y })
+        timer.current = setTimeout(() => {
+          setOpen({ key, node, phase: 'reopen', y })
+          timer.current = settle(key, REOPEN_MS)
+        }, SWAP_MS)
         return
       }
       tick('open')

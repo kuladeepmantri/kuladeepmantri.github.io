@@ -1,7 +1,7 @@
 // How the panes and the background talk to each other, without a shared
 // React tree: a few window events, plus the point a pane was opened from.
 //
-//   km:open   { x, y }         a pane is opening from this point (a ripple starts there)
+//   km:open   { x, y }         the page is changing from this row (the background re-inks from it)
 //   km:focus  { slug | null }  a project is hovered in the list (its hosts light up)
 //   km:node   { slugs }        a host is hovered on the background (its rows light up)
 
