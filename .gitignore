@@ -63,6 +63,3 @@ next-env.d.ts
 
 # live snapshot written by scripts/fetch-live.ts at build time
 /public/live.json
-
-# verification builds next to the dev server
-/.next-verify/

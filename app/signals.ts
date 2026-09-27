@@ -184,12 +184,7 @@ export const SIGNALS: Signal[] = [
 // Sentence one, as plain text for meta descriptions. The page renders it with
 // "Kuladeep" as a link, in components/site/intro.tsx; keep the two in sync.
 export const SENTENCE_ONE =
-  'I’m Kuladeep, a cybersecurity engineer in Michigan. I build security tools.'
-
-// The Now line on the home page. Update both together.
-export const NOW =
-  'Learning how to monitor and contain AI agents while they run, and building small tools along the way.'
-export const NOW_UPDATED = '2026-09-27'
+  'I’m Kuladeep, a cybersecurity engineer in Michigan. I also build whatever I get curious about: apps, AI tools, and the infrastructure behind them.'
 
 export const EMAIL = 'mantrikuladeep@gmail.com'
 export const GITHUB_USER = 'kuladeepmantri'
