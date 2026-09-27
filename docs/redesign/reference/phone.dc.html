@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Living sentence, phone</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Mona+Sans:wdth,wght@75..125,200..900&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+.p-paper{--bg:#F7F6F2;--surf:#FFFFFF;--ink:#151412;--sub:#56534D;--s2:#96928A;--faint:#76726B;--rule:#E5E2DC;--und:#CFCBC2;--live:#1F9D55;--idle:#D4D1CA;--selbg:#151412;--seltx:#F7F6F2;--tok:#151412;--q0:#ECEAE4;--q1:#D3D0C8;--q2:#A8A59E;--q3:#5E5B55;--q4:#151412;--btn:#151412;--btntx:#F7F6F2}
+.p-snow{--bg:#FFFFFF;--surf:#F5F6F8;--ink:#0B0B0C;--sub:#50505A;--s2:#8E8E96;--faint:#6E6E76;--rule:#ECECEF;--und:#C3CEFA;--live:#2447E0;--idle:#D9D9DE;--selbg:#2447E0;--seltx:#FFFFFF;--tok:#2447E0;--q0:#EEF0F6;--q1:#C9D3FA;--q2:#8FA4F2;--q3:#4E6BE8;--q4:#2447E0;--btn:#0B0B0C;--btntx:#FFFFFF}
+.p-graphite{--bg:#111110;--surf:#1A1A19;--ink:#EEECE7;--sub:#B0ADA7;--s2:#7A7771;--faint:#8F8C86;--rule:#2A2927;--und:#4A4845;--live:#3FCF7A;--idle:#3A3936;--selbg:#EEECE7;--seltx:#111110;--tok:#EEECE7;--q0:#1F1F1D;--q1:#3A3936;--q2:#6E6C67;--q3:#A3A09A;--q4:#EEECE7;--btn:#EEECE7;--btntx:#111110}
+.p-sage{--bg:#EBEDE6;--surf:#F5F6F1;--ink:#1A1D18;--sub:#4E544A;--s2:#848B7E;--faint:#666D61;--rule:#D6DACF;--und:#A9BCAC;--live:#2F5D3A;--idle:#C5CABE;--selbg:#2F5D3A;--seltx:#EBEDE6;--tok:#2F5D3A;--q0:#DDE1D6;--q1:#B7C6B6;--q2:#86A08A;--q3:#4E7A58;--q4:#2F5D3A;--btn:#1A1D18;--btntx:#EBEDE6}
+.ms{position:relative;width:390px;height:844px;box-sizing:border-box;font-family:'Mona Sans',system-ui,sans-serif;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums;font-size:15px;line-height:1.55;overflow:hidden;scrollbar-width:none}
+.ms.scrolls{overflow-y:auto}
+.ms a{color:var(--ink);text-decoration:none}
+.tk{all:unset;cursor:pointer;color:var(--tok);text-decoration:underline;text-decoration-color:var(--und);text-decoration-thickness:2px;text-underline-offset:5px;border-radius:6px}
+.tk.on{background:var(--selbg);color:var(--seltx);text-decoration-color:transparent;padding:0 .14em;margin:0 -.07em;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+.tk:focus-visible,.ib:focus-visible,.row:focus-visible,.cp:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+.row{all:unset;box-sizing:border-box;cursor:pointer;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;width:100%;min-height:52px;padding:10px 0;border-top:1px solid var(--rule)}
+.ib{all:unset;cursor:pointer;min-width:44px;height:44px;display:flex;align-items:center;justify-content:center;color:var(--sub);font-size:15px}
+.dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;background:var(--idle)}
+.dot.live{background:var(--live)}
+.av{position:relative;overflow:hidden;border-radius:50%;flex-shrink:0;background:var(--rule)}
+.av img{position:absolute;display:block}
+.sq{width:8px;height:8px;border-radius:2px}
+.q0{background:var(--q0)}.q1{background:var(--q1)}.q2{background:var(--q2)}.q3{background:var(--q3)}.q4{background:var(--q4)}
+.pill{display:block;text-align:center;font-size:15px;font-weight:500;padding:13px 18px;border-radius:999px;background:var(--btn);color:var(--btntx) !important}
+.cp{all:unset;cursor:pointer;font-size:13px;font-weight:500;padding:9px 14px;border-radius:999px;background:var(--btn);color:var(--btntx)}
+.lab{font-size:13px;font-weight:500;color:var(--faint)}
+.fact{display:flex;flex-direction:column}
+.fact span:first-child{font-size:12px;color:var(--faint)}
+.fact span:last-child{font-size:14px}
+.scrim{all:unset;position:absolute;inset:0;z-index:9;background:rgba(10,10,10,.32);cursor:pointer}
+@keyframes up{from{transform:translateY(60px);opacity:.3}to{transform:none;opacity:1}}
+@keyframes slide{from{transform:translateX(40px);opacity:.3}to{transform:none;opacity:1}}
+@keyframes rise{from{transform:translateY(6px);opacity:0}to{transform:none;opacity:1}}
+.m-sheet{position:absolute;left:0;right:0;bottom:0;z-index:10;max-height:78%;overflow-y:auto;scrollbar-width:none;box-sizing:border-box;padding:8px 20px 34px;background:var(--surf);border-radius:22px 22px 0 0;box-shadow:0 -16px 40px -18px rgba(0,0,0,.35);animation:up .28s cubic-bezier(.2,.7,.2,1);display:flex;flex-direction:column;gap:14px}
+.m-push{position:absolute;inset:0;z-index:10;overflow-y:auto;scrollbar-width:none;box-sizing:border-box;padding:0 24px 40px;background:var(--bg);animation:slide .26s cubic-bezier(.2,.7,.2,1);display:flex;flex-direction:column;gap:14px}
+.m-inline{box-sizing:border-box;margin-top:4px;padding:16px 18px 20px;background:var(--surf);border:1px solid var(--rule);border-radius:16px;animation:rise .24s cubic-bezier(.2,.7,.2,1);display:flex;flex-direction:column;gap:14px}
+</style>
+</helmet>
+<div class="{{root}}">
+<div style="box-sizing: border-box; padding: 60px 24px 40px; display: flex; flex-direction: column; gap: 20px">
+<div style="display: flex; justify-content: space-between; align-items: center"><span style="font-weight: 600">Kuladeep Mantri</span><span style="display: flex; align-items: center; gap: 7px; font-size: 13px; color: var(--faint)"><span class="dot live"></span>{{time}}</span></div>
+<p style="margin: 6px 0 0; font-size: 27px; line-height: 1.2; font-weight: 500; letter-spacing: -0.03em">I'm <button class="{{c.about}}" onClick="{{go.about}}">Kuladeep</button>, a cybersecurity engineer in Michigan. I build security tools and AI systems, and study how they fail.</p>
+<p style="margin: 0; font-size: 27px; line-height: 1.2; font-weight: 500; letter-spacing: -0.03em; color: var(--s2)">I pushed to <button class="{{c.kubereach}}" onClick="{{go.kubereach}}">kubereach</button> on <button class="{{c.gh}}" onClick="{{go.gh}}">GitHub</button> {{pushAgo}}, posted on <button class="{{c.x}}" onClick="{{go.x}}">X</button> {{postAgo}}, and it's <button class="{{c.contact}}" onClick="{{go.contact}}">{{time}}</button> here.</p>
+
+<sc-if value="{{showScrim}}" hint-placeholder-val="{{false}}"><button class="scrim" onClick="{{close}}" aria-label="Close"></button></sc-if>
+
+<sc-if value="{{open}}" hint-placeholder-val="{{true}}">
+<div class="{{wrap}}">
+<sc-if value="{{m.sheet}}" hint-placeholder-val="{{true}}"><div style="display: flex; justify-content: center; padding-top: 2px"><span style="width: 36px; height: 4px; border-radius: 2px; background: var(--rule)"></span></div></sc-if>
+<sc-if value="{{m.push}}" hint-placeholder-val="{{false}}">
+<div style="position: sticky; top: 0; z-index: 2; display: grid; grid-template-columns: 88px minmax(0, 1fr) 88px; align-items: center; margin: 0 -24px; padding: 48px 12px 8px; background: var(--bg); border-bottom: 1px solid var(--rule)">
+<button class="ib" onClick="{{close}}" style="justify-content: flex-start; padding-left: 8px">← Back</button>
+<span style="text-align: center; font-weight: 600">{{title}}</span><span></span>
+</div>
+</sc-if>
+<sc-if value="{{m.headed}}" hint-placeholder-val="{{true}}">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: -6px"><span class="lab">{{title}}</span><button class="ib" onClick="{{close}}" aria-label="Close" style="margin-right: -12px"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M2 2 L12 12 M12 2 L2 12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path></svg></button></div>
+</sc-if>
+
+<sc-if value="{{isProject}}" hint-placeholder-val="{{false}}">
+<span style="font-size: 13px; color: var(--faint)">{{cur.repo}} · {{cur.state}}</span>
+<span style="font-size: 24px; line-height: 1.15; font-weight: 600; letter-spacing: -0.025em; margin-top: -8px">{{cur.name}}</span>
+<span style="font-size: 15px; line-height: 1.6">{{cur.body}}</span>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; padding: 12px 0; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule)"><span class="fact"><span>Stack</span><span>{{cur.stack}}</span></span><span class="fact"><span>Last push</span><span>{{cur.last}}</span></span></div>
+<sc-for list="{{cur.commits}}" as="k" hint-placeholder-count="2"><div style="display: flex; justify-content: space-between; gap: 12px; font-size: 14px"><span style="display: flex; align-items: center; gap: 8px"><span class="{{k.dot}}"></span>{{k.msg}}</span><span style="font-size: 13px; color: var(--faint); white-space: nowrap">{{k.ago}}</span></div></sc-for>
+<sc-for list="{{cur.links}}" as="l" hint-placeholder-count="1"><a class="pill" href="{{l.href}}">{{l.label}}</a></sc-for>
+</sc-if>
+
+<sc-if value="{{is.gh}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; align-items: center; gap: 12px"><span class="av" style="width: 48px; height: 48px"><img src="/_blob/3d6c05485ce13e35811cad5ead8fb96b" alt="" style="width: 163px; left: -65px; top: -49px"></span><span style="display: flex; flex-direction: column; line-height: 1.35"><span style="font-weight: 600">kuladeepmantri</span><span style="font-size: 13px; color: var(--faint)">on GitHub · Go, C, TypeScript</span></span></div>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; padding: 12px 0; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule)"><span class="fact"><span>Contributions, 6 months</span><span style="font-size: 20px; font-weight: 500">{{contrib}}</span></span><span class="fact"><span>Most active</span><span style="font-size: 20px; font-weight: 500">kubereach</span></span></div>
+<div style="display: grid; grid-template-columns: repeat(30, 8px); grid-template-rows: repeat(7, 8px); grid-auto-flow: column; gap: 2px"><sc-for list="{{grid}}" as="q" hint-placeholder-count="210"><span class="{{q}}"></span></sc-for></div>
+<a class="pill" href="https://github.com/kuladeepmantri">Open GitHub</a>
+</sc-if>
+
+<sc-if value="{{is.x}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; align-items: center; gap: 12px"><span class="av" style="width: 48px; height: 48px"><img src="/_blob/3d6c05485ce13e35811cad5ead8fb96b" alt="" style="width: 163px; left: -65px; top: -49px"></span><span style="display: flex; flex-direction: column; line-height: 1.35"><span style="font-weight: 600">Kuladeep Mantri</span><span style="font-size: 13px; color: var(--faint)">@kuladeepmantri on X</span></span></div>
+<span style="color: var(--sub)">Cybersecurity engineer. Building kubereach. Security, AI, and what breaks.</span>
+<sc-for list="{{posts}}" as="t" hint-placeholder-count="2"><div style="display: flex; flex-direction: column; gap: 2px; padding-top: 12px; border-top: 1px solid var(--rule)"><span>{{t.text}}</span><span style="font-size: 13px; color: var(--faint)">{{t.ago}}</span></div></sc-for>
+<a class="pill" href="https://x.com/kuladeepmantri">Follow on X</a>
+</sc-if>
+
+<sc-if value="{{is.about}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; align-items: center; gap: 12px"><span class="av" style="width: 48px; height: 48px"><img src="/_blob/3d6c05485ce13e35811cad5ead8fb96b" alt="" style="width: 163px; left: -65px; top: -49px"></span><span style="display: flex; flex-direction: column; line-height: 1.35"><span style="font-weight: 600">Kuladeep Mantri</span><span style="font-size: 13px; color: var(--faint)">Hyderabad → Michigan · CEH</span></span></div>
+<span style="line-height: 1.65">I got into computers by breaking them, went from bricking Windows XP to running Arch and rolling my own distro, then learned to build: C with GDB open, the web, cloud, Kubernetes.</span>
+<span style="line-height: 1.65">Lately it's AI, running and fine-tuning open-weight models on my own hardware and working out how they fail too.</span>
+</sc-if>
+
+<sc-if value="{{is.contact}}" hint-placeholder-val="{{false}}">
+<span style="font-size: 13px; color: var(--faint)">{{time}} in Michigan · {{mood}}</span>
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; background: var(--bg); border: 1px solid var(--rule); border-radius: 12px"><span style="display: flex; flex-direction: column; min-width: 0"><span style="font-size: 12px; color: var(--faint)">Email</span><a href="mailto:mantrikuladeep@gmail.com" style="font-weight: 500; overflow: hidden; text-overflow: ellipsis">mantrikuladeep@gmail.com</a></span><button class="cp" onClick="{{copy}}">{{copyLabel}}</button></div>
+<div style="display: flex; flex-direction: column"><a href="https://x.com/kuladeepmantri" style="display: flex; justify-content: space-between; padding: 12px 0; border-top: 1px solid var(--rule)"><span>X</span><span style="color: var(--faint)">@kuladeepmantri ↗</span></a><a href="https://github.com/kuladeepmantri" style="display: flex; justify-content: space-between; padding: 12px 0; border-top: 1px solid var(--rule)"><span>GitHub</span><span style="color: var(--faint)">kuladeepmantri ↗</span></a><a href="https://www.instagram.com/kuladeep.mantri/" style="display: flex; justify-content: space-between; padding: 12px 0; border-top: 1px solid var(--rule)"><span>Instagram</span><span style="color: var(--faint)">kuladeep.mantri ↗</span></a></div>
+</sc-if>
+</div>
+</sc-if>
+
+<p style="margin: 4px 0 0; color: var(--sub)"><span style="font-weight: 600; color: var(--ink)">Now</span>&#160;&#160;Securing AI systems: model weights, the infrastructure that trains them, and agents while they run.</p>
+
+<div style="display: flex; flex-direction: column; padding-top: 4px">
+<span class="lab" style="padding-bottom: 4px">Work</span>
+<sc-for list="{{items}}" as="p" hint-placeholder-count="7">
+<button class="row" onClick="{{p.open}}"><span style="display: flex; flex-direction: column; line-height: 1.4"><span style="font-weight: 550">{{p.name}}</span><span style="font-size: 14px; color: var(--sub)">{{p.line}}</span></span><span style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--faint)"><span class="{{p.dot}}"></span>{{p.meta}}</span></button>
+</sc-for>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"palette":{"editor":"enum","options":["paper","snow","graphite","sage"],"default":"paper"},"mode":{"editor":"enum","options":["sheet","push","inline"],"default":"sheet"},"start":{"editor":"enum","options":["none","about","kubereach","gh","x","contact"],"default":"x"},"$preview":{"width":390,"height":844}}'>
+var H = 60, D = 1440;
+var P = [
+  { id: "kubereach", name: "kubereach", line: "Kubernetes foothold to cloud recon", repo: "getnullpkg/kubereach", state: "Active", stack: "Go · AWS", body: "You get a shell in one Kubernetes pod. kubereach maps what that stolen identity can actually reach, then follows the trail into the AWS account behind the cluster. Both core claims proven on a real EKS cluster.", links: [{ label: "Open repository ↗", href: "https://github.com/getnullpkg/kubereach" }], commits: [{ msg: "sar: fan out access checks", off: 125 }, { msg: "irsa: document unsigned STS", off: 26 * H }] },
+  { id: "rune", name: "Rune", line: "Live diagnostics for my car", repo: "kuladeepmantri/rune", state: "In daily use", stack: "Python · Pi", body: "A Raspberry Pi in the armrest reads the CAN bus and turns it into a live health score, with anomaly detection running on the device.", links: [{ label: "Open site ↗", href: "https://rune.kuladeepmantri.com/" }], commits: [{ msg: "thermal: back off when hot", off: 6 * D }] },
+  { id: "shipcrew", name: "ShipCrew", line: "Claude agents that ship code", repo: "kuladeepmantri/shipcrew", state: "Prototype", stack: "TypeScript", body: "Named Claude agents take tasks, hand off, and review each other in a Slack-like room. Built with Abhishek Manyam.", links: [], commits: [{ msg: "router: @team broadcasts", off: 19 * D }] },
+  { id: "auris", name: "Auris", line: "Syscall tracer for ARM64 Linux", repo: "kuladeepmantri/auris", state: "Shipped", stack: "C · ptrace", last: "Nov 2025", body: "Profiles a program by every system call it makes, flags what is new, and can block a call before the kernel runs it.", links: [{ label: "Open site ↗", href: "https://auris.kuladeepmantri.com/" }] },
+  { id: "kintsugi", name: "Kintsugi", line: "Private recovery tracker", repo: "private", state: "Personal", stack: "Swift", last: "private", body: "Built for myself and used daily. Everything, including journal analysis, stays on the phone.", links: [] },
+  { id: "untilithappens", name: "untilithappens.org", line: "Cyber safety, plainly", repo: "kuladeepmantri/untilithappens", state: "Live", stack: "Next.js", last: "Oct 2024", body: "Guides for people who were never taught security, every claim linked to an official source.", links: [{ label: "Open site ↗", href: "https://untilithappens.kuladeepmantri.com/" }] },
+  { id: "deid", name: "DeID", line: "PII masking service", repo: "kuladeepmantri/DeID-Anonymizer", state: "Archived", stack: "Python", last: "Aug 2025", body: "A FastAPI service that finds and masks personal data in text, scaffolded for NER.", links: [] }
+];
+var POSTS = [
+  { text: "Rebuilding my site from scratch. Fewer graphics, more of what I'm actually working on.", off: 20 * H },
+  { text: "The summary every Kubernetes permission tool trusts under-reports on managed clusters.", off: 6 * D }
+];
+function rng(seed) { var s = seed >>> 0; return function () { s = (Math.imul(s, 1664525) + 1013904223) >>> 0; return s / 4294967296; }; }
+var GRID = [], CONTRIB = 0;
+(function () { var r = rng(9); for (var i = 0; i < 210; i++) { var hot = i > 168 ? 1.6 : 1; var v = r() < 0.3 ? 0 : Math.min(4, Math.floor(r() * 3.2 * hot) + 1); CONTRIB += v * 2; GRID.push("sq q" + v); } })();
+function ago(m) { if (m < 60) return m + " minutes ago"; var h = Math.round(m / 60); if (h < 24) return h === 1 ? "an hour ago" : h + " hours ago"; var d = Math.round(h / 24); return d === 1 ? "yesterday" : d + " days ago"; }
+function short(m) { if (m < 60) return m + "m ago"; var h = Math.round(m / 60); if (h < 24) return h + "h ago"; return Math.round(h / 24) + "d ago"; }
+function mood() {
+  var d = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Detroit" })), h = d.getHours(), we = d.getDay() === 0 || d.getDay() === 6;
+  if (h < 6) return "probably asleep"; if (h < 9) return "just getting started";
+  if (h < 18) return we ? "building something of my own" : "probably at my desk";
+  return "probably tinkering";
+}
+var TITLES = { about: "About", gh: "GitHub", x: "X", contact: "Contact" };
+class Component extends DCLogic {
+  componentDidMount() { var self = this; this._t = setInterval(function () { self.forceUpdate(); }, 30000); }
+  componentWillUnmount() { clearInterval(this._t); }
+  renderVals() {
+    var st = this.state || {};
+    var pal = this.props.palette ?? "paper", mode = this.props.mode ?? "sheet", start = this.props.start ?? "x";
+    var pane = st.pane !== undefined ? st.pane : (start === "none" ? "" : start);
+    var self = this;
+    var go = {}, c = {}, is = {};
+    ["about", "gh", "x", "contact"].concat(P.map(function (p) { return p.id; })).forEach(function (k) {
+      go[k] = function () { self.setState({ pane: pane === k ? "" : k }); };
+      c[k] = pane === k ? "tk on" : "tk"; is[k] = pane === k;
+    });
+    var cur = null;
+    var items = P.map(function (p) {
+      var cm = p.commits || [], fresh = cm.length && cm[0].off < 7 * D;
+      if (pane === p.id) cur = Object.assign({}, p, { last: cm.length ? short(cm[0].off) : p.last, commits: cm.map(function (x, i) { return { msg: x.msg, ago: short(x.off), dot: i === 0 && fresh ? "dot live" : "dot" }; }) });
+      return { name: p.name, line: p.line, meta: cm.length ? short(cm[0].off) : p.last, dot: fresh ? "dot live" : "dot", open: go[p.id] };
+    });
+    var open = !!pane;
+    return {
+      root: "ms p-" + pal + (mode === "inline" ? " scrolls" : ""), wrap: "m-" + mode,
+      m: { sheet: mode === "sheet", push: mode === "push", headed: mode !== "push" },
+      go: go, c: c, is: is, items: items, open: open, showScrim: open && mode === "sheet",
+      isProject: !!cur, cur: cur || { links: [], commits: [] },
+      title: cur ? cur.name : TITLES[pane] || "",
+      close: function () { self.setState({ pane: "" }); },
+      pushAgo: ago(125), postAgo: ago(20 * H), mood: mood(),
+      time: new Date().toLocaleTimeString("en-US", { timeZone: "America/Detroit", hour: "numeric", minute: "2-digit" }),
+      posts: POSTS.map(function (t) { return { text: t.text, ago: short(t.off) }; }),
+      grid: GRID, contrib: CONTRIB,
+      copyLabel: st.copied ? "Copied" : "Copy",
+      copy: function () { try { navigator.clipboard.writeText("mantrikuladeep@gmail.com"); } catch (e) {} self.setState({ copied: true }); setTimeout(function () { self.setState({ copied: false }); }, 1600); }
+    };
+  }
+}
+</script>
+</body>
+</html>
