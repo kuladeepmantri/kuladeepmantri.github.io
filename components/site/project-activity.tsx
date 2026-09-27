@@ -52,10 +52,12 @@ export function ProjectActivity({
           {commits.map((c, i) => (
             <a key={c.sha} href={c.url} className="commit">
               <span className="commit-msg">
-                <span className={i === 0 && isFresh(c.date, now) ? 'dot live' : 'dot'} />
                 <span>{c.message}</span>
               </span>
-              <span className="commit-ago" suppressHydrationWarning>
+              <span
+                className={i === 0 && isFresh(c.date, now) ? 'commit-ago fresh' : 'commit-ago'}
+                suppressHydrationWarning
+              >
                 {shortAgo(c.date, now)}
               </span>
             </a>

@@ -5,13 +5,14 @@
 // single `now` that ticks every 30 s for the whole page.
 
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
-import type { RepoLive } from './live'
-import { refreshRepos } from './live-client'
+import type { Push, RepoLive } from './live'
+import { refresh } from './live-client'
 
 export type ClientLive = {
   builtAt: string
   sha: string
   repos: Record<string, RepoLive> | undefined
+  pushes: Push[] | undefined
   lastPostAt: string | null
 }
 
@@ -30,6 +31,7 @@ export function LiveProvider({
   // matches; the effect then switches to the real clock.
   const [now, setNow] = useState(() => Date.parse(value.builtAt))
   const [repos, setRepos] = useState(value.repos)
+  const [pushes, setPushes] = useState(value.pushes)
 
   useEffect(() => {
     setNow(Date.now())
@@ -40,8 +42,9 @@ export function LiveProvider({
   useEffect(() => {
     if (!value.repos) return
     const run = () =>
-      refreshRepos(value.repos!).then((next) => {
-        if (next) setRepos(next)
+      refresh(value.repos!, value.pushes ?? []).then((next) => {
+        if (next.repos) setRepos(next.repos)
+        if (next.pushes) setPushes(next.pushes)
       })
     run()
     const onVisible = () => {
@@ -49,9 +52,9 @@ export function LiveProvider({
     }
     document.addEventListener('visibilitychange', onVisible)
     return () => document.removeEventListener('visibilitychange', onVisible)
-  }, [value.repos])
+  }, [value.repos, value.pushes])
 
-  const store = useMemo(() => ({ ...value, repos, now }), [value, repos, now])
+  const store = useMemo(() => ({ ...value, repos, pushes, now }), [value, repos, pushes, now])
   return <LiveContext.Provider value={store}>{children}</LiveContext.Provider>
 }
 

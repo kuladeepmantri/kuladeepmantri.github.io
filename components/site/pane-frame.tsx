@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useCallback, useEffect, useRef, useSyncExternalStore } from 'react'
 import { PHONE_PATTERN, normalizePath, paneKind } from '@/lib/panes'
+import { UpdatedAt } from './updated-at'
 
 const PHONE_QUERY = '(max-width: 1023px)'
 
@@ -110,10 +111,7 @@ export function PaneFrame({
         ) : (
           <>
             <span>Work</span>
-            <span className="live-label">
-              <span className="dot live" />
-              Live from GitHub
-            </span>
+            <UpdatedAt />
           </>
         )}
       </div>

@@ -65,9 +65,8 @@ export const SIGNALS: Signal[] = [
     stack: 'Python · Raspberry Pi · React',
     dateFirst: '2026-01-15',
     dateLast: '2026-04-10',
-    repos: ['kuladeepmantri/rune'],
+    repos: ['meetrune/rune'],
     links: [{ label: 'Open site', href: 'https://rune.kuladeepmantri.com/' }],
-    quietNote: 'The repo is private, so its commits stay off this page.',
     tags: ['Python', 'Raspberry Pi', 'OBD-II', 'React', 'FastAPI'],
   },
   {
@@ -185,7 +184,7 @@ export const SIGNALS: Signal[] = [
 // Sentence one, as plain text for meta descriptions. The page renders it with
 // "Kuladeep" as a link, in components/site/intro.tsx; keep the two in sync.
 export const SENTENCE_ONE =
-  'I’m Kuladeep, a cybersecurity engineer in Michigan. I build security tools, and lately I’ve been studying how AI systems fail.'
+  'I’m Kuladeep, a cybersecurity engineer in Michigan. I build security tools.'
 
 // The Now line on the home page. Update both together.
 export const NOW =

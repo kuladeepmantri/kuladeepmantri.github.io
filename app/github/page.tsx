@@ -1,9 +1,8 @@
 import type { Metadata } from 'next'
 import { Avatar } from '@/components/site/avatar'
 import { ContributionGrid } from '@/components/site/contribution-grid'
-import { LastPush } from '@/components/site/last-push'
+import { LastPushFacts, RecentPushes } from '@/components/site/last-push'
 import { LIVE } from '@/lib/generated/live'
-import { latestProject, mostActive } from '@/lib/live'
 import { GITHUB_USER, projectRefs } from '../signals'
 
 export const metadata: Metadata = {
@@ -15,8 +14,6 @@ export const metadata: Metadata = {
 export default function GitHub() {
   const gh = LIVE.github
   const projects = projectRefs()
-  const active = mostActive(projects, gh?.repos)
-  const latest = latestProject(projects, gh?.repos)
   const langTotal = gh?.languages.reduce((s, l) => s + l.bytes, 0) ?? 0
 
   return (
@@ -32,6 +29,7 @@ export default function GitHub() {
         </a>
       </div>
       <h2 className="sr-only">GitHub</h2>
+      {gh?.user.bio && <p className="bio">{gh.user.bio}</p>}
 
       {gh ? (
         <>
@@ -40,31 +38,19 @@ export default function GitHub() {
               <span>Contributions, last year</span>
               <span>{gh.totalContributions.toLocaleString('en-US')}</span>
             </span>
-            {active ? (
-              <span className="fact big">
-                <span>Most active this month</span>
-                <span>{active.name}</span>
-              </span>
-            ) : (
-              <span className="fact big">
-                <span>Latest project</span>
-                <span>{latest?.project.name ?? 'None yet'}</span>
-              </span>
-            )}
-            <span className="fact big desk-only">
-              <span>Last push</span>
-              <LastPush projects={projects} />
-            </span>
+            <LastPushFacts />
           </div>
 
-          <h3 className="lab section-lab">Recent contributions</h3>
+          <h3 className="lab section-lab">Contributions, last 40 weeks</h3>
           <div className="grid-wrap">
             <ContributionGrid weeks={gh.weeks} total={gh.totalContributions} />
           </div>
 
+          <RecentPushes projects={projects} />
+
           {gh.languages.length > 0 && (
             <>
-              <h3 className="lab section-lab">Languages</h3>
+              <h3 className="lab section-lab">Languages in public repos</h3>
               <div className="langbar" aria-hidden="true">
                 {gh.languages.map((l, i) => (
                   <div

@@ -13,7 +13,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { SIGNALS, GITHUB_USER, X_HANDLE } from '../app/signals'
 import { WEBSITE_URL } from '../lib/constants'
-import type { LiveSnapshot, RepoLive } from '../lib/live'
+import type { LiveSnapshot, Push, RepoLive } from '../lib/live'
 
 const ROOT = process.cwd()
 const OUT_TS = join(ROOT, 'lib/generated/live.ts')
@@ -118,6 +118,20 @@ type GqlRepo = null | {
     }
   }
 }
+const SITE_REPO = `${GITHUB_USER}/${GITHUB_USER}.github.io`.toLowerCase()
+
+type GqlPushed = {
+  nameWithOwner: string
+  isPrivate: boolean
+  isFork: boolean
+  url: string
+  description: string | null
+  primaryLanguage: { name: string } | null
+  defaultBranchRef: null | {
+    target: null | { mine?: { nodes: { committedDate: string }[] } }
+  }
+}
+
 type GqlUser = {
   name: string | null
   avatarUrl: string
@@ -133,9 +147,29 @@ type GqlUser = {
   repositories: {
     nodes: { languages: { edges: { size: number; node: { name: string } }[] } }[]
   }
+  pushed: { nodes: GqlPushed[] }
+}
+
+async function gql(token: string, query: string, variables: Record<string, unknown>) {
+  return (await fetchJson('https://api.github.com/graphql', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      'User-Agent': 'kuladeepmantri.com build',
+    },
+    body: JSON.stringify({ query, variables }),
+  })) as { data?: Record<string, unknown>; errors?: { message: string }[] }
 }
 
 async function fetchGithub(token: string): Promise<Github> {
+  // The node id lets the main query keep only commits I authored.
+  const who = await gql(token, 'query($login: String!) { user(login: $login) { id } }', {
+    login: GITHUB_USER,
+  })
+  const uid = (who.data?.user as { id: string } | undefined)?.id
+  if (!uid) throw new Error('could not resolve the GitHub user id')
+
   const repos = [...new Set(SIGNALS.flatMap((s) => s.repos))]
   const since = new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString()
   const aliases = repos
@@ -145,13 +179,19 @@ async function fetchGithub(token: string): Promise<Github> {
     })
     .join('\n')
   const query = `
-query($login: String!, $since: GitTimestamp!) {
+query($login: String!, $since: GitTimestamp!, $uid: ID!) {
   user(login: $login) {
     name avatarUrl bio
     contributionsCollection { contributionCalendar { totalContributions
       weeks { contributionDays { date contributionCount contributionLevel } } } }
     repositories(first: 100, ownerAffiliations: OWNER, isFork: false, privacy: PUBLIC) {
       nodes { languages(first: 5, orderBy: {field: SIZE, direction: DESC}) { edges { size node { name } } } }
+    }
+    pushed: repositories(first: 25, orderBy: {field: PUSHED_AT, direction: DESC},
+      ownerAffiliations: [OWNER, ORGANIZATION_MEMBER, COLLABORATOR]) {
+      nodes { nameWithOwner isPrivate isFork url description primaryLanguage { name }
+        defaultBranchRef { target { ... on Commit {
+          mine: history(first: 1, author: {id: $uid}) { nodes { committedDate } } } } } }
     }
   }
   ${aliases}
@@ -164,15 +204,7 @@ fragment R on Repository {
   } } }
 }`
 
-  const res = (await fetchJson('https://api.github.com/graphql', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-      'User-Agent': 'kuladeepmantri.com build',
-    },
-    body: JSON.stringify({ query, variables: { login: GITHUB_USER, since } }),
-  })) as { data?: Record<string, unknown>; errors?: { message: string }[] }
+  const res = await gql(token, query, { login: GITHUB_USER, since, uid })
 
   // Partial data is normal (a private repo errors, the rest still resolve).
   if (res.errors?.length) log(`github: ${res.errors.length} partial error(s): ${res.errors[0].message}`)
@@ -221,18 +253,51 @@ fragment R on Repository {
     }
   })
 
+  // Only repos where my own latest commit is known, newest first. Private repos
+  // contribute a timestamp and nothing else: live.json is public.
+  const pushes: Push[] = user.pushed.nodes
+    .filter((r) => !r.isFork && r.nameWithOwner.toLowerCase() !== SITE_REPO)
+    .flatMap((r): Push[] => {
+      const at = r.defaultBranchRef?.target?.mine?.nodes[0]?.committedDate
+      if (!at) return []
+      return r.isPrivate
+        ? [{ repo: null, isPrivate: true, pushedAt: at, url: null, description: null, language: null }]
+        : [
+            {
+              repo: r.nameWithOwner,
+              isPrivate: false,
+              pushedAt: at,
+              url: r.url,
+              description: r.description,
+              language: r.primaryLanguage?.name ?? null,
+            },
+          ]
+    })
+    .sort((a, b) => Date.parse(b.pushedAt) - Date.parse(a.pushedAt))
+    .slice(0, 12)
+
   return {
     user: { name: user.name ?? 'Kuladeep Mantri', avatarUrl: user.avatarUrl, bio: user.bio },
     totalContributions: cal.totalContributions,
     weeks,
     languages,
     repos: repoOut,
+    pushes,
   }
 }
 
 // ── X ──
 
-type XUser = { data?: { id: string; name: string; description: string; profile_image_url: string } }
+type XUser = {
+  data?: {
+    id: string
+    name: string
+    description: string
+    profile_image_url: string
+    verified?: boolean
+    verified_type?: string
+  }
+}
 type XTweets = { data?: { id: string; text: string; created_at: string }[] }
 
 async function fetchX(token: string, prev: X | null): Promise<X> {
@@ -242,7 +307,7 @@ async function fetchX(token: string, prev: X | null): Promise<X> {
     !prev || Date.now() - new Date(prev.profileFetchedAt).getTime() > 24 * 3600 * 1000
   if (stale) {
     const u = (await fetchJson(
-      `https://api.x.com/2/users/by/username/${X_HANDLE}?user.fields=description,profile_image_url,name`,
+      `https://api.x.com/2/users/by/username/${X_HANDLE}?user.fields=description,profile_image_url,name,verified,verified_type`,
       { headers },
     )) as XUser
     if (!u.data) throw new Error('no user in X response')
@@ -251,6 +316,7 @@ async function fetchX(token: string, prev: X | null): Promise<X> {
       name: u.data.name,
       bio: u.data.description,
       avatarUrl: u.data.profile_image_url,
+      verified: !!u.data.verified || (!!u.data.verified_type && u.data.verified_type !== 'none'),
       profileFetchedAt: new Date().toISOString(),
     }
     log('x: profile refreshed')
@@ -260,6 +326,7 @@ async function fetchX(token: string, prev: X | null): Promise<X> {
       name: prev.name,
       bio: prev.bio,
       avatarUrl: prev.avatarUrl,
+      verified: prev.verified,
       profileFetchedAt: prev.profileFetchedAt,
     }
   }

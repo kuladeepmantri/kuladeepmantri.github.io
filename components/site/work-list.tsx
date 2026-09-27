@@ -35,8 +35,10 @@ export function WorkList({ projects }: { projects: ProjectRef[] }) {
               </span>
               <span className="row-line">{p.line}</span>
             </span>
-            <span className="row-meta" suppressHydrationWarning>
-              <span className={commit && isFresh(commit.date, now) ? 'dot live' : 'dot'} />
+            <span
+              className={commit && isFresh(commit.date, now) ? 'row-meta fresh' : 'row-meta'}
+              suppressHydrationWarning
+            >
               {meta}
             </span>
           </Link>
