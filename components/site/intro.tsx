@@ -1,7 +1,6 @@
 import Link from 'next/link'
 import { projectRefs } from '@/app/signals'
 import { LiveSentence } from './live-sentence'
-import { BuiltLine } from './built-line'
 import { TweetCard } from './tweet-card'
 import { TopNav } from './top-nav'
 import { Token } from './token'
@@ -23,8 +22,7 @@ export function Intro() {
 
       <div className="sentences">
         <p className="sentence s1">
-          I’m <Token href="/about">Kuladeep</Token>, a security engineer in Michigan who builds apps
-          out of curiosity.
+          I’m <Token href="/about">Kuladeep</Token>, a security engineer in Michigan.
         </p>
         <LiveSentence projects={projects} />
       </div>
@@ -38,10 +36,6 @@ export function Intro() {
           </h2>
           <WorkList projects={projects} />
         </nav>
-        <div className="foot">
-          <BuiltLine />
-          <span className="desk-only">Every underlined word opens something</span>
-        </div>
       </div>
     </section>
   )
