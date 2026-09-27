@@ -118,25 +118,6 @@ export function clock(now: number): string {
     .replace(/\s/g, ' ')
 }
 
-const PARTS = new Intl.DateTimeFormat('en-US', {
-  timeZone: TIMEZONE,
-  hour: 'numeric',
-  hourCycle: 'h23',
-  weekday: 'short',
-})
-
-export function mood(now: number): string {
-  const parts = PARTS.formatToParts(new Date(now))
-  const hour = Number(parts.find((p) => p.type === 'hour')?.value ?? 12)
-  const weekday = parts.find((p) => p.type === 'weekday')?.value
-  const weekend = weekday === 'Sat' || weekday === 'Sun'
-  if (hour < 6) return 'I’m probably asleep'
-  if (hour < 9) return 'I’m probably just getting started'
-  if (hour < 18)
-    return weekend ? 'I’m probably building something of my own' : 'I’m probably at my desk'
-  return 'I’m probably tinkering on something'
-}
-
 // ── Projects × live data ──
 
 type ProjectRef = { slug: string; name: string; repos: string[]; dateLast: string }
