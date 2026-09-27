@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Avatar } from '@/components/site/avatar'
 import { RelTime } from '@/components/site/rel-time'
 import { Verified } from '@/components/site/verified'
+import { postText } from '@/lib/x-text'
 import { LIVE } from '@/lib/generated/live'
 import { X_HANDLE } from '../signals'
 
@@ -41,7 +42,7 @@ export default function XPane() {
           </h3>
           {x.posts.map((p) => (
             <a key={p.id} href={p.url} className="post">
-              <span className="post-text">{p.text}</span>
+              <span className="post-text">{postText(p.text)}</span>
               <span className="post-ago">
                 <RelTime iso={p.createdAt} />
               </span>

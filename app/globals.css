@@ -854,7 +854,7 @@ a.pill:hover,
   .pane-col {
     order: 4;
   }
-  .x-card {
+  .tweet {
     order: 5;
   }
   .work-phone {
@@ -1419,54 +1419,65 @@ a.repo:hover .repo-name {
   border-radius: 0;
 }
 
-/* ── X profile card (bottom of the left column) ── */
+/* ── Latest post, shaped like a post (bottom of the left column) ── */
 
-.x-card {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 10px 16px;
-  max-width: 480px;
-}
-
-.x-card-who {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-width: 0;
-}
-
-.x-card-who:hover {
-  text-decoration: none;
-}
-
-.x-card-who:hover .x-card-name span:first-child {
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  text-decoration-color: var(--und);
-}
-
-.x-card-name {
+.tweet {
   display: flex;
   flex-direction: column;
-  min-width: 0;
-  line-height: 1.35;
+  gap: 10px;
+  max-width: 480px;
+  box-sizing: border-box;
+  padding: 16px 18px 18px;
+  background: var(--surf);
+  border: 1px solid var(--rule);
+  border-radius: 16px;
+  transition: border-color 0.2s;
 }
 
-.x-card-name span:first-child {
+.tweet:hover {
+  text-decoration: none;
+  border-color: var(--und);
+}
+
+.tweet-head {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.tweet-who {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  min-width: 0;
+  line-height: 1.3;
+}
+
+.tweet-name {
+  font-size: 15px;
   font-weight: 600;
 }
 
-.x-card-name span:last-child {
+.tweet-handle {
   font-size: 13px;
   color: var(--faint);
 }
 
-.x-card-bio {
-  grid-column: 1 / -1;
-  color: var(--sub);
-  font-size: 14px;
+.tweet-logo {
+  align-self: flex-start;
+  color: var(--ink);
+  flex-shrink: 0;
+}
+
+.tweet-text {
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: 15px;
   line-height: 1.5;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
 }
 
 /* ── About ── */
@@ -1603,13 +1614,9 @@ a.repo:hover .repo-name {
     margin-top: 24px;
   }
 
-  .x-card {
+  .tweet {
     margin-top: 36px;
     max-width: none;
-    padding: 16px 18px;
-    background: var(--surf);
-    border: 1px solid var(--rule);
-    border-radius: 16px;
   }
 
   .work-phone {
