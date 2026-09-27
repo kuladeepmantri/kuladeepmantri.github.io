@@ -60,3 +60,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .obsidian/
+
+# live snapshot written by scripts/fetch-live.ts at build time
+/public/live.json

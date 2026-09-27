@@ -1,400 +1,208 @@
+// The content source for the whole site. Every project page, the Work list,
+// the feeds, and the sitemap read from SIGNALS. Live data (pushes, commits)
+// comes from lib/generated/live.ts and is matched to projects by `repos`.
 
-// ── Types ──
-
-/**
- * Every entry in the lab is a Signal: a dated, versioned record with a stable
- * permalink (`id`, format KM-YYYY-NNNN), a URL-friendly `slug`, a lifecycle
- * `state`, and optional provenance (GitHub repos, signing commit).
- *
- * The legacy `status` field is preserved so components that haven't been
- * rewritten yet keep rendering while routes migrate to `/signals/[id]` over
- * time. New UI should use `state`.
- *
- * Deviation from plan: the plan used `title`/`summary`/`body`. This file keeps
- * the existing `name`/`tagline`/`description` to avoid churning six legacy
- * consumers. Semantics are identical; rename is deferred to a future pass.
- */
 export type SignalState = 'active' | 'shipped' | 'paused' | 'archived'
-export type SignalType = 'project' | 'finding' | 'thought' | 'ship'
-
-/**
- * Long-form writeup, authored as an ordered list of blocks so a detail page can
- * render real prose, diagrams, and code-style figures without an MDX pipeline.
- * Only set on entries that have a full article; most signals leave `article` null
- * and rely on `description` alone.
- *
- * - prose:    a paragraph of body text
- * - heading:  a section break
- * - ascii:    a monospace figure (box-drawing / terminal output), matches the ledger aesthetic
- * - diagram:  a raw inline SVG string (themed via CSS vars so it adapts light/dark)
- * - callout:  a labelled aside (note, caveat, scope statement)
- * - steps:    an ordered chain of short lines
- */
-export type ArticleBlock =
-  | { kind: 'prose'; text: string }
-  | { kind: 'heading'; text: string }
-  | { kind: 'ascii'; title?: string; art: string }
-  | { kind: 'diagram'; title?: string; svg: string }
-  | { kind: 'callout'; label: string; text: string }
-  | { kind: 'steps'; items: string[] }
 
 export type Signal = {
-  // Identity
-  id: string // 'KM-2024-0001' — stable permalink, format: KM-YYYY-NNNN
-  slug: string // URL-friendly slug (e.g., 'rune') — used by /apps/[slug]
-  type: SignalType
+  id: string // KM-YYYY-NNNN, assigned in order of dateFirst
+  slug: string
+  type: 'project'
   name: string
-  tagline: string
-  description: string
-
-  // Lifecycle
+  line: string // row subtitle in the Work list and the project lead
+  tagline: string // feeds
+  body: string // the project pane paragraph
+  description: string // feeds and meta description
   state: SignalState
-  // Legacy status surface; new UI should use `state` instead.
-  status: 'live' | 'beta' | 'building' | 'personal'
-  // Optional human phrase shown next to the state label (e.g. "open for more ideas").
-  // The state gives the color/word; this gives the nuance.
-  statusNote?: string | null
-  dateFirst: string // ISO 8601 — when the signal started
-  dateLast: string // ISO 8601 — last meaningful update
-  // Optional manual ordering for the home project log (lower = earlier). When
-  // absent, sortedByRelevance falls back to dateFirst order. LabTimeline stays
-  // chronological regardless of this.
-  featureRank?: number
-
-  // Provenance
-  repos: string[] // e.g., ['kuladeepmantri/auris'] — resolved at build time
-  signatureRef: string | null // commit SHA of a signed commit anchoring this entry
-
-  // Presentation
-  link: string | null
-  image: string | null
-  video: string | null
-  embedUrl: string | null
-  accentColor: string
+  stateLabel: string
+  stack: string
+  dateFirst: string
+  dateLast: string
+  repos: string[]
+  links: { label: string; href: string }[]
+  // Add a Source link to the repo, but only if the build confirms it is public.
+  sourceIfPublic?: boolean
+  quietNote?: string
+  repoNote?: string
+  collaborator?: { name: string; href: string }
   tags: string[]
-  deviceType: 'iphone' | 'browser'
-  collaborator: { name: string; github: string } | null
-
-  // Optional long-form writeup rendered on the detail page (see ArticleBlock).
-  article?: ArticleBlock[] | null
-
-  // Populated only for type='finding' or security-research projects
-  advisory?: {
-    affectedSystems: string[]
-    impact: string
-    mitigation: string
-  }
 }
 
-// Backward-compat alias so pre-rename imports of AppProject keep resolving.
-export type AppProject = Signal
-
-export type SocialLink = {
-  label: 'GitHub' | 'Instagram'
-  link: string
-}
-
-type Certification = {
-  id: string
-  name: string
-  issuer: string
-  link: string
-}
-
-export const STATUS_DOT: Record<AppProject['status'], string> = {
-  live: 'bg-emerald-400',
-  beta: 'bg-yellow-400',
-  building: 'bg-zinc-500',
-  personal: 'bg-violet-400',
-}
-
-export const STATUS_LABEL: Record<AppProject['status'], string> = {
-  live: 'Live',
-  beta: 'Beta',
-  building: 'In Development',
-  personal: 'Personal Use',
-}
-
-// Semantic labels for the signal state lifecycle (new UI).
-export const STATE_LABEL: Record<SignalState, string> = {
-  active: 'Active',
-  shipped: 'Shipped',
-  paused: 'Paused',
-  archived: 'Archived',
-}
-
-// ── Data ──
-
-// IDs assigned in chronological order of creation (dateFirst) so a reader
-// scanning the log sees ID and year move in the same direction even though
-// the log itself is sorted by last-updated.
 export const SIGNALS: Signal[] = [
   {
     id: 'KM-2026-0006',
     slug: 'kubereach',
-    featureRank: 1,
     type: 'project',
     name: 'kubereach',
-    tagline: 'Kubernetes Foothold-to-Cloud Recon',
+    line: 'What a stolen Kubernetes pod can really reach',
+    tagline: 'Kubernetes foothold to cloud recon',
+    body: 'If someone gets a shell inside one pod, what can they actually get to from there? kubereach works that out. It checks what the pod’s identity is really allowed to do, then follows it into the AWS account behind the cluster. Before writing the tool I tested the two ideas it rests on against a real EKS cluster. The permission summary most tools rely on misses access on managed clusters, and an IRSA token taken off a pod still works from a laptop outside the cluster, with the pod’s full AWS role.',
     description:
-      'A post-foothold Kubernetes recon technique: drop into one compromised pod, map what the stolen identity can actually reach, and follow the trail out into the AWS account behind the cluster. The two hardest parts are proven against real infrastructure.',
+      'Post-foothold Kubernetes recon: map what one compromised pod’s identity can reach, then follow it into the AWS account behind the cluster.',
     state: 'active',
-    status: 'building',
-    statusNote: 'proven against real infra · shaping the tool',
+    stateLabel: 'Active',
+    stack: 'Go · Kubernetes · AWS',
     dateFirst: '2026-06-27',
     dateLast: '2026-07-03',
     repos: ['getnullpkg/kubereach'],
-    signatureRef: null,
-    link: 'https://github.com/getnullpkg/kubereach',
-    image: null,
-    video: null,
-    embedUrl: null,
-    accentColor: '#fb7185',
-    tags: [
-      'Go',
-      'Kubernetes',
-      'AWS',
-      'EKS',
-      'IRSA',
-      'RBAC',
-      'Offensive Security',
+    links: [
+      { label: 'Open repository', href: 'https://github.com/getnullpkg/kubereach' },
     ],
-    deviceType: 'browser',
-    collaborator: null,
-    advisory: {
-      affectedSystems: [
-        'Amazon EKS clusters using IRSA (IAM Roles for Service Accounts)',
-        'Any managed Kubernetes (EKS / GKE / AKS) where tooling trusts SelfSubjectRulesReview behind a webhook authorizer',
-      ],
-      impact:
-        "Two findings, both proven in a lab. First: a token read from a single pod can be redeemed off-cluster for that pod's full cloud permissions, with no path back to the cluster. Second: permission-enumeration tools that trust SelfSubjectRulesReview under-report what a stolen identity can do on any cluster with a webhook authorizer, which is the norm on managed Kubernetes.",
-      mitigation:
-        'Prefer EKS Pod Identity over IRSA, since its tokens are cluster-bound and cannot be redeemed off-box. Scope workload IAM roles tightly and alert on AssumeRoleWithWebIdentity calls from unexpected networks. When auditing blast radius, probe permissions with SelfSubjectAccessReview per action rather than trusting the summarized rule list.',
-    },
+    tags: ['Go', 'Kubernetes', 'AWS', 'EKS', 'IRSA', 'RBAC'],
   },
   {
     id: 'KM-2026-0005',
     slug: 'rune',
-    featureRank: 6,
     type: 'project',
     name: 'Rune',
-    tagline: 'Real-Time Vehicle Diagnostics',
+    line: 'Live diagnostics for my car',
+    tagline: 'Real-time vehicle diagnostics',
+    body: 'My car knows a lot about itself and shows me almost none of it, so I built Rune. A Raspberry Pi 4B in the armrest of my 2026 Accord reads the engine data and checks it three ways: against safe ranges, with a streaming anomaly model, and with slow trend forecasts. A phone on the dash shows the result as a live health score. Anything sent back to the car has to pass an allowlist first.',
     description:
-      'Real-time diagnostic system for a 2026 Honda Accord SE. A Raspberry Pi 4B in the armrest streams OBD-II data through three layers of health analysis (threshold checks, streaming anomaly detection, trend forecasting) to a React PWA on a mounted Pixel 6 Pro, with a 3D visualization of subsystem health zones and sensor fusion across vibration, audio, and environmental data.',
+      'Real-time diagnostics for a 2026 Honda Accord: a Raspberry Pi reads the engine data, runs three layers of analysis, and shows a live health score on the dash.',
     state: 'active',
-    status: 'live',
-    statusNote: 'in daily use · adding sensors',
+    stateLabel: 'In daily use',
+    stack: 'Python · Raspberry Pi · React',
     dateFirst: '2026-01-15',
     dateLast: '2026-04-10',
     repos: ['kuladeepmantri/rune'],
-    signatureRef: null,
-    link: 'https://rune.kuladeepmantri.com/',
-    image: null,
-    video: null,
-    embedUrl: 'https://rune.kuladeepmantri.com/',
-    accentColor: '#4ade80',
-    tags: ['React', 'Three.js', 'FastAPI', 'Python', 'Raspberry Pi', 'OBD-II'],
-    deviceType: 'browser',
-    collaborator: null,
+    links: [{ label: 'Open site', href: 'https://rune.kuladeepmantri.com/' }],
+    repoNote:
+      'This repo is the Rune case study site. The car software runs on the Pi.',
+    tags: ['Python', 'Raspberry Pi', 'OBD-II', 'React', 'FastAPI'],
   },
   {
     id: 'KM-2025-0003',
     slug: 'shipcrew',
-    featureRank: 4,
     type: 'project',
     name: 'ShipCrew',
-    tagline: 'Multi-Agent AI Dev Team',
+    line: 'A team of Claude agents that ships code',
+    tagline: 'Multi-agent dev team',
+    body: 'A Slack-style workspace where the team is Claude agents: a project manager, a few developers, and a reviewer. They pick up tasks, hand work to each other, and review each other’s output. I built the agent side: the router that decides who answers, the executor on the Claude Agent SDK, the MCP tools, and streaming. Abhishek Manyam built auth, storage, and the frontend.',
     description:
-      'A Slack-shaped room of named Claude agents that take tasks, review each other, and ship. Message routing, live token streaming, per-agent memory and budgets, automatic handoffs. Built with Abhishek Manyam.',
+      'A Slack-style workspace of named Claude agents that take tasks, hand off work, and review each other. Built with Abhishek Manyam.',
     state: 'active',
-    status: 'building',
-    statusNote: 'working prototype',
+    stateLabel: 'Prototype',
+    stack: 'TypeScript · Claude Agent SDK',
     dateFirst: '2025-01-01',
     dateLast: '2026-04-15',
     repos: ['kuladeepmantri/shipcrew'],
-    signatureRef: null,
-    link: null,
-    image: '/images/shipmate.png',
-    video: null,
-    embedUrl: null,
-    accentColor: '#818cf8',
-    tags: ['Next.js', 'Express', 'Claude SDK', 'WebSocket', 'Docker'],
-    deviceType: 'browser',
+    links: [],
+    sourceIfPublic: true,
     collaborator: {
       name: 'Abhishek Manyam',
-      github: 'https://github.com/abhishekmanyam',
+      href: 'https://github.com/abhishekmanyam',
     },
-  },
-  {
-    id: 'KM-2024-0002',
-    slug: 'auris',
-    featureRank: 3,
-    type: 'project',
-    name: 'Auris',
-    tagline: 'ARM64 Linux Security Toolkit',
-    description:
-      'Syscall tracer and security analyzer for ARM64 Linux. Covers both defense (behavioral profiling, anomaly detection) and offense (process injection, ROP gadget scanning).',
-    state: 'shipped',
-    status: 'live',
-    statusNote: 'runs on ARM64',
-    dateFirst: '2024-09-01',
-    dateLast: '2025-11-15',
-    repos: ['kuladeepmantri/auris'],
-    signatureRef: null,
-    link: 'https://auris.kuladeepmantri.com/',
-    image: '/images/auris.png',
-    video: null,
-    embedUrl: null,
-    accentColor: '#c084fc',
-    tags: ['C', 'ARM64', 'ptrace', 'eBPF', 'Next.js'],
-    deviceType: 'browser',
-    collaborator: null,
-    advisory: {
-      affectedSystems: [
-        'ARM64 Linux userspace binaries',
-        'Production workloads on aarch64 servers',
-      ],
-      impact:
-        'Demonstrates fine-grained syscall tracing, behavioral profiling, process injection, and ROP gadget scanning on ARM64. Covers both defensive observability (anomaly detection across syscall sequences) and offensive tooling (gadget enumeration, injected-code measurement).',
-      mitigation:
-        'Apply standard ARM64 exploit mitigations: ASLR, PAC (Pointer Authentication), BTI (Branch Target Identification), W^X. Monitor for anomalous ptrace() / process_vm_writev() usage. Harden seccomp-bpf profiles around ptrace scope. Auris itself can be used defensively to baseline normal syscall patterns.',
-    },
+    tags: ['TypeScript', 'Claude Agent SDK', 'MCP', 'multi-agent'],
   },
   {
     id: 'KM-2026-0004',
     slug: 'kintsugi',
-    featureRank: 7,
-    // Note: kept at 0004 (Kintsugi predates Rune by a few days). Rune is 0005.
     type: 'project',
     name: 'Kintsugi',
-    tagline: 'Personal Recovery Tracker',
+    line: 'A private recovery tracker for iOS',
+    tagline: 'Personal recovery tracker',
+    body: 'I built this one for myself and use it every day. There’s no account, no server, and no analytics. Even the sentiment analysis on journal entries runs on Apple’s on-device NaturalLanguage framework, so nothing I write leaves the phone.',
     description:
-      'Recovery tracker with streak tracking, a panic mode for tough moments, and journaling with mood analysis. Built with SwiftUI and iOS 26 Liquid Glass.',
+      'A personal iOS recovery tracker that keeps everything on the device, including the sentiment analysis on journal entries.',
     state: 'active',
-    status: 'personal',
-    statusNote: 'in personal use',
+    stateLabel: 'Personal',
+    stack: 'Swift · SwiftUI',
     dateFirst: '2026-01-10',
     dateLast: '2026-03-22',
     repos: [],
-    signatureRef: null,
-    link: null,
-    image: null,
-    video: '/videos/kintsugi.mp4',
-    embedUrl: null,
-    accentColor: '#a78bfa',
-    tags: ['SwiftUI', 'iOS 26', 'Liquid Glass', 'NLP', 'SwiftData'],
-    deviceType: 'iphone',
-    collaborator: null,
+    links: [],
+    quietNote: 'The repo is private, so its commits stay off this page.',
+    tags: ['Swift', 'SwiftUI', 'SwiftData', 'on-device NLP'],
+  },
+  {
+    id: 'KM-2024-0002',
+    slug: 'auris',
+    type: 'project',
+    name: 'Auris',
+    line: 'Syscall tracer for ARM64 Linux',
+    tagline: 'ARM64 syscall tracer',
+    body: 'Every program talks to the kernel through system calls, so that’s where Auris watches. It attaches to an ARM64 process with ptrace, records each call, and builds a baseline of what normal looks like. From there it flags anything new, and in block mode it rewrites the registers so a call that isn’t allowed never reaches the kernel.',
+    description:
+      'An ARM64 Linux syscall tracer: records every system call a process makes, baselines normal behavior, flags what is new, and can block disallowed calls.',
+    state: 'shipped',
+    stateLabel: 'Shipped',
+    stack: 'C · ptrace · ARM64',
+    dateFirst: '2024-09-01',
+    dateLast: '2025-11-15',
+    repos: ['kuladeepmantri/auris'],
+    links: [
+      { label: 'Open site', href: 'https://auris.kuladeepmantri.com/' },
+      { label: 'Source', href: 'https://github.com/kuladeepmantri/auris' },
+    ],
+    quietNote: 'Shipped and stable. No pushes in the last few months.',
+    tags: ['C', 'ARM64', 'ptrace', 'Linux'],
   },
   {
     id: 'KM-2024-0001',
     slug: 'untilithappens',
-    featureRank: 9,
     type: 'project',
     name: 'untilithappens.org',
-    tagline: 'Digital Safety Platform',
+    line: 'Online safety guides in plain language',
+    tagline: 'Plain-language cyber safety',
+    body: 'Most security advice is written for people who already understand security. This site is for everyone else: short guided steps on what to do now, what to avoid, and what to do if something already happened. Every claim is dated and links to an official source like the FTC, the FBI’s IC3, or CISA.',
     description:
-      'Practical digital safety guides and tools. Plain-language security without the jargon.',
+      'Plain-language online safety guides for people who were never taught security, with every claim linked to an official source.',
     state: 'shipped',
-    status: 'live',
-    statusNote: 'live',
+    stateLabel: 'Live',
+    stack: 'Next.js',
     dateFirst: '2024-03-01',
     dateLast: '2024-10-15',
     repos: ['kuladeepmantri/untilithappens'],
-    signatureRef: null,
-    link: 'https://untilithappens.kuladeepmantri.com/',
-    image: '/images/untilithappens.png',
-    video: null,
-    embedUrl: null,
-    accentColor: '#e879f9',
-    tags: ['Next.js', 'Security UX', 'Education'],
-    deviceType: 'browser',
-    collaborator: null,
+    links: [
+      { label: 'Open site', href: 'https://untilithappens.kuladeepmantri.com/' },
+    ],
+    quietNote: 'Live and stable.',
+    tags: ['Next.js', 'security education'],
   },
   {
     id: 'KM-2023-0001',
     slug: 'deid',
-    featureRank: 8,
     type: 'project',
-    name: 'DeID-Anonymizer',
+    name: 'DeID',
+    line: 'PII masking service',
     tagline: 'PII masking service',
+    body: 'A FastAPI service that finds personal data in text, like emails and phone numbers, and masks it. Detection is regex for now. The job queue and object storage are already wired in for a proper NER model to take its place.',
     description:
-      'A PII de-identification service: a FastAPI endpoint that detects and masks personal data, behind a queue and object storage. Regex detection today, with the pipeline scaffolded for NER.',
+      'A FastAPI service that detects and masks personal data in text, with a queue and object storage in place for NER.',
     state: 'archived',
-    status: 'building',
-    statusNote: 'regex detection · scaffolded for NER',
+    stateLabel: 'Archived',
+    stack: 'Python · FastAPI',
     dateFirst: '2023-04-26',
     dateLast: '2025-08-11',
     repos: ['kuladeepmantri/DeID-Anonymizer'],
-    signatureRef: null,
-    link: null,
-    image: null,
-    video: null,
-    embedUrl: null,
-    accentColor: '#b58a5e',
-    tags: ['FastAPI', 'Celery', 'React'],
-    deviceType: 'browser',
-    collaborator: null,
+    links: [],
+    sourceIfPublic: true,
+    quietNote: 'Archived.',
+    tags: ['Python', 'FastAPI', 'Celery', 'PII'],
   },
 ]
 
-// Back-compat name — PROJECTS used to be the canonical export.
-export const PROJECTS = SIGNALS
-
-export const CERTIFICATIONS: Certification[] = [
-  {
-    id: 'ceh',
-    name: 'Certified Ethical Hacker',
-    issuer: 'EC-Council',
-    link: 'https://aspen.eccouncil.org/Verify',
-  },
-]
-
-export const SOCIAL_LINKS: SocialLink[] = [
-  { label: 'GitHub', link: 'https://github.com/kuladeepmantri' },
-  { label: 'Instagram', link: 'https://www.instagram.com/kuladeep.mantri/' },
-]
+// The Now line on the home page. Update both together.
+export const NOW =
+  'Learning AI security properly, mostly how you watch and contain an AI agent while it runs, and building small tools as I go.'
+export const NOW_UPDATED = '2026-09-27'
 
 export const EMAIL = 'mantrikuladeep@gmail.com'
-
-// ── Helpers ──
-
-export function findSignalById(id: string): Signal | undefined {
-  return SIGNALS.find((s) => s.id.toUpperCase() === id.toUpperCase())
+export const GITHUB_USER = 'kuladeepmantri'
+export const X_HANDLE = 'kuladeepmantri'
+export const INSTAGRAM = {
+  handle: 'kuladeep.mantri',
+  href: 'https://www.instagram.com/kuladeep.mantri/',
 }
 
 export function findSignalBySlug(slug: string): Signal | undefined {
   return SIGNALS.find((s) => s.slug === slug)
 }
 
-/**
- * Sorted by when each signal was started (dateFirst), newest first.
- * The log shows "started MON YYYY" per row, so this sort keeps the visible
- * date monotonic top-to-bottom.
- */
+/** Newest dateFirst first. Feeds and anything chronological use this. */
 export function sortedByStart(): Signal[] {
   return [...SIGNALS].sort(
-    (a, b) =>
-      new Date(b.dateFirst).getTime() - new Date(a.dateFirst).getTime()
+    (a, b) => new Date(b.dateFirst).getTime() - new Date(a.dateFirst).getTime(),
   )
-}
-
-/**
- * Back-compat alias. Prefer `sortedByStart`.
- */
-export const sortedByRecency = sortedByStart
-
-/**
- * Ordering for the home project log: by `featureRank` ascending (lower = earlier),
- * so the most role-relevant work leads regardless of date. Signals without a rank
- * sort to the back, newest-first among themselves. The LabTimeline intentionally
- * keeps `sortedByStart` so the timeline stays chronological.
- */
-export function sortedByRelevance(): Signal[] {
-  return [...SIGNALS].sort((a, b) => {
-    const ra = a.featureRank ?? Number.POSITIVE_INFINITY
-    const rb = b.featureRank ?? Number.POSITIVE_INFINITY
-    if (ra !== rb) return ra - rb
-    return new Date(b.dateFirst).getTime() - new Date(a.dateFirst).getTime()
-  })
 }
