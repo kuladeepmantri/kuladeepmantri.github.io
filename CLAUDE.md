@@ -2,6 +2,8 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+> **A full redesign is approved and pending: read `docs/redesign/PLAN.md` first.** It replaces the immersive site described below (the living-sentence split layout, Mona Sans, Paper and Graphite themes, live GitHub and X data). Until it is implemented, the rest of this file describes the current code; once implemented, rewrite this file per section 11 of the plan.
+
 ## What this is
 
 Personal portfolio / "public lab" for Kuladeep Mantri, built as a Next.js 15 (App Router, React 19) static export deployed to GitHub Pages. Styled with Tailwind v4, animated with Motion, 3D via react-three-fiber/drei. The visual concept is a light-mode, mono-first "signal log".

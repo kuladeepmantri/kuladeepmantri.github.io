@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Living sentence, polished</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Mona+Sans:wdth,wght@75..125,200..900&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+.p-paper{--bg:#F7F6F2;--surf:#FFFFFF;--ink:#151412;--sub:#56534D;--s2:#96928A;--faint:#76726B;--rule:#E5E2DC;--und:#CFCBC2;--live:#1F9D55;--idle:#D4D1CA;--selbg:#151412;--seltx:#F7F6F2;--tok:#151412;--q0:#ECEAE4;--q1:#D3D0C8;--q2:#A8A59E;--q3:#5E5B55;--q4:#151412;--btn:#151412;--btntx:#F7F6F2}
+.p-snow{--bg:#FFFFFF;--surf:#F5F6F8;--ink:#0B0B0C;--sub:#50505A;--s2:#8E8E96;--faint:#6E6E76;--rule:#ECECEF;--und:#C3CEFA;--live:#2447E0;--idle:#D9D9DE;--selbg:#2447E0;--seltx:#FFFFFF;--tok:#2447E0;--q0:#EEF0F6;--q1:#C9D3FA;--q2:#8FA4F2;--q3:#4E6BE8;--q4:#2447E0;--btn:#0B0B0C;--btntx:#FFFFFF}
+.p-graphite{--bg:#111110;--surf:#1A1A19;--ink:#EEECE7;--sub:#B0ADA7;--s2:#7A7771;--faint:#8F8C86;--rule:#262523;--und:#4A4845;--live:#3FCF7A;--idle:#3A3936;--selbg:#EEECE7;--seltx:#111110;--tok:#EEECE7;--q0:#1F1F1D;--q1:#3A3936;--q2:#6E6C67;--q3:#A3A09A;--q4:#EEECE7;--btn:#EEECE7;--btntx:#111110}
+.p-sage{--bg:#EBEDE6;--surf:#F5F6F1;--ink:#1A1D18;--sub:#4E544A;--s2:#848B7E;--faint:#666D61;--rule:#D6DACF;--und:#A9BCAC;--live:#2F5D3A;--idle:#C5CABE;--selbg:#2F5D3A;--seltx:#EBEDE6;--tok:#2F5D3A;--q0:#DDE1D6;--q1:#B7C6B6;--q2:#86A08A;--q3:#4E7A58;--q4:#2F5D3A;--btn:#1A1D18;--btntx:#EBEDE6}
+.site{font-family:'Mona Sans',system-ui,sans-serif;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums;font-size:15px;line-height:1.6}
+.site a{color:var(--ink);text-decoration:none}
+.site a:hover{text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--und)}
+.tk{all:unset;cursor:pointer;color:var(--tok);text-decoration:underline;text-decoration-color:var(--und);text-decoration-thickness:2px;text-underline-offset:7px;border-radius:7px;transition:text-decoration-color .2s,background-color .2s,color .2s}
+.tk:hover{text-decoration-color:var(--tok)}
+.tk.on{background:var(--selbg);color:var(--seltx);text-decoration-color:transparent;padding:0 .16em;margin:0 -.08em;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+.tk:focus-visible,.bk:focus-visible,.row:focus-visible,.cp:focus-visible{outline:2px solid var(--ink);outline-offset:4px}
+.bk{all:unset;cursor:pointer;color:var(--faint);font-size:13px}
+.bk:hover{color:var(--ink)}
+.row{all:unset;box-sizing:border-box;cursor:pointer;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;align-items:baseline;width:100%;padding:14px 0;border-top:1px solid var(--rule)}
+.row:hover .nm{text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--und)}
+.row:hover .ar{opacity:1;transform:none}
+.ar{opacity:0;transform:translateX(-4px);transition:opacity .15s,transform .15s;color:var(--faint)}
+.cp{all:unset;cursor:pointer;font-size:13px;font-weight:500;padding:7px 14px;border-radius:999px;background:var(--btn);color:var(--btntx)}
+.pill{font-size:13px;font-weight:500;padding:7px 14px;border-radius:999px;background:var(--btn);color:var(--btntx) !important}
+.pill:hover{text-decoration:none !important;opacity:.88}
+.scroll{overflow-y:auto;scrollbar-width:none}
+.lab{font-size:13px;font-weight:500;color:var(--faint)}
+.dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;background:var(--idle)}
+.dot.live{background:var(--live)}
+@keyframes pulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--live) 55%,transparent)}70%{box-shadow:0 0 0 6px transparent}100%{box-shadow:0 0 0 0 transparent}}
+.dot.beat{background:var(--live);animation:pulse 2.4s infinite}
+.av{position:relative;overflow:hidden;border-radius:50%;flex-shrink:0;background:var(--rule)}
+.av img{position:absolute;display:block}
+.sq{width:9px;height:9px;border-radius:2px}
+.q0{background:var(--q0)}.q1{background:var(--q1)}.q2{background:var(--q2)}.q3{background:var(--q3)}.q4{background:var(--q4)}
+@keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.pane{animation:rise .24s cubic-bezier(.2,.7,.2,1)}
+.fact{display:flex;flex-direction:column;gap:1px}
+.fact span:first-child{font-size:12.5px;color:var(--faint)}
+.fact span:last-child{font-size:14px}
+</style>
+</helmet>
+<div class="{{root}}" style="width: 1440px; height: 900px; display: grid; grid-template-columns: minmax(0, 1fr) 620px">
+
+<div style="box-sizing: border-box; height: 900px; padding: 72px 88px 48px 96px; display: flex; flex-direction: column; justify-content: space-between">
+<div style="display: flex; justify-content: space-between; align-items: center">
+<span style="font-weight: 600">Kuladeep Mantri</span>
+<span style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--faint)"><span class="dot beat"></span>Live</span>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 30px; max-width: 660px">
+<p style="margin: 0; font-size: 38px; line-height: 1.2; font-weight: 500; letter-spacing: -0.032em">I'm <button class="{{c.about}}" onClick="{{go.about}}">Kuladeep</button>, a cybersecurity engineer in Michigan. I build security tools and AI systems, and study how they fail.</p>
+<p style="margin: 0; font-size: 38px; line-height: 1.2; font-weight: 500; letter-spacing: -0.032em; color: var(--s2)">I pushed to <button class="{{c.kubereach}}" onClick="{{go.kubereach}}">kubereach</button> on <button class="{{c.gh}}" onClick="{{go.gh}}">GitHub</button> {{pushAgo}}, posted on <button class="{{c.x}}" onClick="{{go.x}}">X</button> {{postAgo}}, and it's <button class="{{c.contact}}" onClick="{{go.contact}}">{{time}}</button> here, so {{mood}}.</p>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 22px">
+<p style="margin: 0; max-width: 540px; color: var(--sub)"><span style="font-weight: 600; color: var(--ink)">Now</span>&#160;&#160;Securing AI systems: model weights, the infrastructure that trains them, and agents while they run.</p>
+<div style="display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; color: var(--faint)">
+<span>Built from 5d9e667 · rebuilds on every push</span>
+<span>Every underlined word opens something</span>
+</div>
+</div>
+</div>
+
+<div class="scroll" style="box-sizing: border-box; height: 900px; padding: 72px 96px 64px 72px; border-left: 1px solid var(--rule)">
+
+<div style="display: flex; justify-content: space-between; align-items: baseline; min-height: 21px">
+<span style="display: flex; gap: 8px; font-size: 13px; color: var(--faint)"><button class="bk" onClick="{{go.work}}">Work</button><sc-if value="{{deep}}" hint-placeholder-val="{{false}}"><span>/</span><span style="color: var(--ink)">{{crumb}}</span></sc-if></span>
+<sc-if value="{{deep}}" hint-placeholder-val="{{false}}"><button class="bk" onClick="{{go.work}}">Close</button></sc-if>
+<sc-if value="{{is.work}}" hint-placeholder-val="{{true}}"><span style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--faint)"><span class="dot live"></span>Live from GitHub</span></sc-if>
+</div>
+
+<sc-if value="{{is.work}}" hint-placeholder-val="{{true}}">
+<div class="pane" style="display: flex; flex-direction: column; margin-top: 18px; border-bottom: 1px solid var(--rule)">
+<sc-for list="{{items}}" as="p" hint-placeholder-count="7">
+<button class="row" onClick="{{p.open}}">
+<span style="display: flex; flex-direction: column"><span><span class="nm" style="font-weight: 550">{{p.name}}</span> <span class="ar">→</span></span><span style="color: var(--sub)">{{p.line}}</span></span>
+<span style="display: flex; align-items: center; gap: 7px; font-size: 13px; color: var(--faint)"><span class="{{p.dot}}"></span>{{p.meta}}</span>
+</button>
+</sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{isProject}}" hint-placeholder-val="{{false}}">
+<div class="pane" style="display: flex; flex-direction: column; padding-top: 40px">
+<span style="font-size: 13px; color: var(--faint)">{{cur.repo}} · {{cur.state}}</span>
+<h2 style="margin: 6px 0 0; font-size: 32px; line-height: 1.12; font-weight: 600; letter-spacing: -0.03em">{{cur.name}}</h2>
+<p style="margin: 6px 0 0; font-size: 17px; color: var(--sub)">{{cur.line}}</p>
+<p style="margin: 24px 0 0; font-size: 15.5px; line-height: 1.65">{{cur.body}}</p>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 28px; padding: 16px 0; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule)">
+<span class="fact"><span>Stack</span><span>{{cur.stack}}</span></span>
+<span class="fact"><span>Started</span><span>{{cur.started}}</span></span>
+<span class="fact"><span>Last push</span><span>{{cur.last}}</span></span>
+</div>
+<sc-if value="{{cur.hasCommits}}" hint-placeholder-val="{{true}}">
+<span class="lab" style="padding: 28px 0 6px">Recent commits</span>
+<sc-for list="{{cur.commits}}" as="k" hint-placeholder-count="3"><div style="display: flex; justify-content: space-between; gap: 16px; padding: 10px 0; border-top: 1px solid var(--rule); font-size: 14.5px"><span style="display: flex; align-items: center; gap: 10px"><span class="{{k.dot}}"></span>{{k.msg}}</span><span style="font-size: 13px; color: var(--faint); white-space: nowrap">{{k.ago}}</span></div></sc-for>
+</sc-if>
+<sc-if value="{{cur.hasNote}}" hint-placeholder-val="{{false}}">
+<p style="margin: 24px 0 0; font-size: 14px; color: var(--faint)">{{cur.note}}</p>
+</sc-if>
+<div style="display: flex; gap: 12px; padding-top: 28px"><sc-for list="{{cur.links}}" as="l" hint-placeholder-count="1"><a class="{{l.cls}}" href="{{l.href}}">{{l.label}}</a></sc-for></div>
+</div>
+</sc-if>
+
+<sc-if value="{{is.gh}}" hint-placeholder-val="{{false}}">
+<div class="pane" style="display: flex; flex-direction: column; padding-top: 40px">
+<div style="display: flex; align-items: center; gap: 16px">
+<span class="av" style="width: 64px; height: 64px"><img src="/_blob/3d6c05485ce13e35811cad5ead8fb96b" alt="" style="width: 218px; left: -87px; top: -65px"></span>
+<span style="display: flex; flex-direction: column; flex-grow: 1; line-height: 1.35"><span style="font-size: 20px; font-weight: 600; letter-spacing: -0.015em">Kuladeep Mantri</span><span style="color: var(--faint)">@kuladeepmantri on GitHub</span></span>
+<a class="pill" href="https://github.com/kuladeepmantri">Follow</a>
+</div>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 28px; padding: 16px 0; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule)">
+<span class="fact"><span>Contributions, last year</span><span style="font-size: 22px; font-weight: 500; letter-spacing: -0.02em">{{contrib}}</span></span>
+<span class="fact"><span>Most active this month</span><span style="font-size: 22px; font-weight: 500; letter-spacing: -0.02em">kubereach</span></span>
+<span class="fact"><span>Last push</span><span style="font-size: 22px; font-weight: 500; letter-spacing: -0.02em">{{pushShort}}</span></span>
+</div>
+<span class="lab" style="padding: 28px 0 10px">A year of commits</span>
+<div style="display: grid; grid-template-columns: repeat(40, 9px); grid-template-rows: repeat(7, 9px); grid-auto-flow: column; gap: 2px">
+<sc-for list="{{grid}}" as="q" hint-placeholder-count="280"><span class="{{q}}"></span></sc-for>
+</div>
+<span class="lab" style="padding: 28px 0 8px">Languages</span>
+<div style="display: flex; height: 6px; border-radius: 3px; overflow: hidden"><div class="q4" style="width: 32%"></div><div class="q3" style="width: 22%"></div><div class="q2" style="width: 20%"></div><div class="q1" style="width: 16%"></div><div class="q0" style="width: 10%"></div></div>
+<div style="display: flex; gap: 18px; padding-top: 8px; font-size: 13px; color: var(--sub)"><span>Go</span><span>C</span><span>TypeScript</span><span>Python</span><span>Swift</span></div>
+</div>
+</sc-if>
+
+<sc-if value="{{is.x}}" hint-placeholder-val="{{false}}">
+<div class="pane" style="display: flex; flex-direction: column; padding-top: 40px">
+<div style="display: flex; align-items: center; gap: 16px">
+<span class="av" style="width: 64px; height: 64px"><img src="/_blob/3d6c05485ce13e35811cad5ead8fb96b" alt="" style="width: 218px; left: -87px; top: -65px"></span>
+<span style="display: flex; flex-direction: column; flex-grow: 1; line-height: 1.35"><span style="font-size: 20px; font-weight: 600; letter-spacing: -0.015em">Kuladeep Mantri</span><span style="color: var(--faint)">@kuladeepmantri on X</span></span>
+<a class="pill" href="https://x.com/kuladeepmantri">Follow</a>
+</div>
+<p style="margin: 20px 0 0; color: var(--sub)">Cybersecurity engineer. Building kubereach. Security, AI, and what breaks.</p>
+<span class="lab" style="padding: 32px 0 6px">Latest posts</span>
+<sc-for list="{{posts}}" as="t" hint-placeholder-count="3"><div style="display: flex; flex-direction: column; gap: 4px; padding: 14px 0; border-top: 1px solid var(--rule)"><span style="font-size: 15.5px">{{t.text}}</span><span style="font-size: 13px; color: var(--faint)">{{t.ago}}</span></div></sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{is.about}}" hint-placeholder-val="{{false}}">
+<div class="pane" style="display: flex; flex-direction: column; padding-top: 40px">
+<div style="display: flex; align-items: center; gap: 16px">
+<span class="av" style="width: 64px; height: 64px"><img src="/_blob/3d6c05485ce13e35811cad5ead8fb96b" alt="" style="width: 218px; left: -87px; top: -65px"></span>
+<span style="display: flex; flex-direction: column; line-height: 1.35"><span style="font-size: 20px; font-weight: 600; letter-spacing: -0.015em">Kuladeep Mantri</span><span style="color: var(--faint)">Hyderabad → Michigan</span></span>
+</div>
+<p style="margin: 28px 0 0; font-size: 15.5px; line-height: 1.7">I got into computers by breaking them. Windows XP was the first casualty, then Vista, then 7. Linux pulled me in one night, and I went from barely knowing what it was to running Arch and rolling my own distro.</p>
+<p style="margin: 14px 0 0; font-size: 15.5px; line-height: 1.7">Then I learned to build instead of just poke: Python, then C and C++ with GDB open, then the web, APIs, cloud and Kubernetes. Lately it's AI, running and fine-tuning open-weight models on my own hardware and working out how they fail too.</p>
+<p style="margin: 14px 0 0; font-size: 15.5px; line-height: 1.7">At the core I'm an engineer. I just like understanding how things work, and how they fail.</p>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 28px; padding: 16px 0; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule)">
+<span class="fact"><span>From</span><span>Hyderabad, India</span></span>
+<span class="fact"><span>Based in</span><span>Michigan, USA</span></span>
+<span class="fact"><span>Certified</span><span>CEH, EC-Council</span></span>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{is.contact}}" hint-placeholder-val="{{false}}">
+<div class="pane" style="display: flex; flex-direction: column; padding-top: 40px">
+<span style="font-size: 13px; color: var(--faint)">{{time}} in Michigan · Eastern time</span>
+<h2 style="margin: 6px 0 0; font-size: 32px; line-height: 1.12; font-weight: 600; letter-spacing: -0.03em">Say hello</h2>
+<p style="margin: 10px 0 0; color: var(--sub)">Security, AI, Kubernetes, or anything that breaks in an interesting way.</p>
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 32px; padding: 18px 20px; background: var(--surf); border: 1px solid var(--rule); border-radius: 12px">
+<span style="display: flex; flex-direction: column"><span style="font-size: 12.5px; color: var(--faint)">Email</span><a href="mailto:mantrikuladeep@gmail.com" style="font-size: 19px; font-weight: 500; letter-spacing: -0.01em">mantrikuladeep@gmail.com</a></span>
+<button class="cp" onClick="{{copy}}">{{copyLabel}}</button>
+</div>
+<div style="display: flex; flex-direction: column; margin-top: 20px">
+<a href="https://x.com/kuladeepmantri" style="display: flex; justify-content: space-between; padding: 13px 0; border-top: 1px solid var(--rule)"><span>X</span><span style="color: var(--faint)">@kuladeepmantri ↗</span></a>
+<a href="https://github.com/kuladeepmantri" style="display: flex; justify-content: space-between; padding: 13px 0; border-top: 1px solid var(--rule)"><span>GitHub</span><span style="color: var(--faint)">kuladeepmantri ↗</span></a>
+<a href="https://www.instagram.com/kuladeep.mantri/" style="display: flex; justify-content: space-between; padding: 13px 0; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule)"><span>Instagram</span><span style="color: var(--faint)">kuladeep.mantri ↗</span></a>
+</div>
+</div>
+</sc-if>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"palette":{"editor":"enum","options":["paper","snow","graphite","sage"],"default":"paper"},"$preview":{"width":1440,"height":900}}'>
+var H = 60, D = 1440;
+var P = [
+  { id: "kubereach", name: "kubereach", line: "Kubernetes foothold to cloud recon", repo: "getnullpkg/kubereach", state: "Active", stack: "Go · AWS", started: "Jun 27, 2026", body: "You get a shell in one Kubernetes pod. kubereach maps what that stolen identity can actually reach, then follows the trail into the AWS account behind the cluster. I proved the two riskiest claims on a real EKS cluster before writing product code: permission tools that trust SelfSubjectRulesReview under-report access on managed clusters, and an IRSA token read off a pod redeems from a laptop for the pod's full AWS role.", links: [{ label: "Open repository", href: "https://github.com/getnullpkg/kubereach" }], commits: [{ msg: "sar: fan out access checks across workers", off: 125 }, { msg: "irsa: document the unsigned STS request", off: 26 * H }, { msg: "readme: scope and lab-only usage", off: 3 * D }] },
+  { id: "rune", name: "Rune", line: "Live diagnostics for my car", repo: "kuladeepmantri/rune", state: "In daily use", stack: "Python · Pi · React", started: "Jan 2026", body: "A Raspberry Pi 4B in the armrest of my Accord reads the CAN bus and runs three layers of analysis: threshold checks, streaming anomaly detection, and trend forecasting. The result is a live health score on a phone on the dash, and nothing is ever written back to the car without passing an allowlist.", links: [{ label: "Open site", href: "https://rune.kuladeepmantri.com/" }], commits: [{ msg: "thermal: back off scoring when the Pi runs hot", off: 6 * D }, { msg: "pids: decode two more Honda fuel trim values", off: 11 * D }] },
+  { id: "shipcrew", name: "ShipCrew", line: "A team of Claude agents that ships code", repo: "kuladeepmantri/shipcrew", state: "Prototype", stack: "TypeScript", started: "Jan 2025", body: "A Slack-shaped room where named Claude agents take tasks, hand off, and review each other. I built the agent platform: the router that decides who answers, the executor on the Claude Agent SDK, MCP tools, and streaming. Built with Abhishek Manyam.", links: [], commits: [{ msg: "router: send @team broadcasts to every agent", off: 19 * D }] },
+  { id: "auris", name: "Auris", line: "Syscall tracer for ARM64 Linux", repo: "kuladeepmantri/auris", state: "Shipped", stack: "C · ptrace", started: "Sep 2024", last: "Nov 2025", body: "Auris attaches to an ARM64 process through ptrace and records every system call it makes. From that stream it builds a behavioral baseline, flags what is new, and in block mode rewrites the registers so a disallowed call never reaches the kernel.", links: [{ label: "Open site", href: "https://auris.kuladeepmantri.com/" }, { label: "Source", href: "https://github.com/kuladeepmantri/auris" }], note: "Shipped and stable. No pushes in the last few months." },
+  { id: "kintsugi", name: "Kintsugi", line: "Private recovery tracker for iOS", repo: "private repo", state: "Personal", stack: "Swift · SwiftUI", started: "Jan 2026", last: "private", body: "Built for myself and used every day. No account, no server, no analytics. Journal sentiment runs on Apple's on-device NaturalLanguage framework, so nothing I write leaves the phone.", links: [], note: "The repo is private, so its commits stay off this page." },
+  { id: "untilithappens", name: "untilithappens.org", line: "Cyber safety in plain language", repo: "kuladeepmantri/untilithappens", state: "Live", stack: "Next.js", started: "Mar 2024", last: "Oct 2024", body: "Guides for people who were never taught security, in a calm guided sequence. Every claim is dated and linked to an official source like the FTC, the FBI's IC3, or CISA.", links: [{ label: "Open site", href: "https://untilithappens.kuladeepmantri.com/" }], note: "Live and stable." },
+  { id: "deid", name: "DeID", line: "PII masking service", repo: "kuladeepmantri/DeID-Anonymizer", state: "Archived", stack: "Python · FastAPI", started: "Apr 2023", last: "Aug 2025", body: "A FastAPI service that detects and masks personal data in text, with a queue and object storage scaffolded for the NER model that replaces the regex detector.", links: [], note: "Archived." }
+];
+var POSTS = [
+  { text: "Rebuilding my site from scratch. Fewer graphics, more of what I'm actually working on.", off: 20 * H },
+  { text: "The summary every Kubernetes permission tool trusts under-reports on managed clusters. Ask the exact question, one action at a time.", off: 6 * D },
+  { text: "A Pi sealed in a car armrest in July gets hot. Rune now backs off the analysis it can afford to slow.", off: 70 * D }
+];
+function rng(seed) { var s = seed >>> 0; return function () { s = (Math.imul(s, 1664525) + 1013904223) >>> 0; return s / 4294967296; }; }
+var GRID = [], CONTRIB = 0;
+(function () { var r = rng(9); for (var i = 0; i < 280; i++) { var hot = i > 238 ? 1.6 : 1; var v = r() < 0.3 ? 0 : Math.min(4, Math.floor(r() * 3.2 * hot) + 1); CONTRIB += v * 2; GRID.push("sq q" + v); } })();
+function ago(m) { if (m < 60) return m + " minutes ago"; var h = Math.round(m / 60); if (h < 24) return h === 1 ? "an hour ago" : h + " hours ago"; var d = Math.round(h / 24); return d === 1 ? "yesterday" : d + " days ago"; }
+function short(m) { if (m < 60) return m + "m ago"; var h = Math.round(m / 60); if (h < 24) return h + "h ago"; return Math.round(h / 24) + "d ago"; }
+function mood() {
+  var d = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Detroit" })), h = d.getHours(), we = d.getDay() === 0 || d.getDay() === 6;
+  if (h < 6) return "I'm probably asleep";
+  if (h < 9) return "I'm probably just getting started";
+  if (h < 18) return we ? "I'm probably building something of my own" : "I'm probably at my desk";
+  return "I'm probably tinkering on something";
+}
+class Component extends DCLogic {
+  componentDidMount() { var self = this; this._t = setInterval(function () { self.forceUpdate(); }, 30000); }
+  componentWillUnmount() { clearInterval(this._t); }
+  renderVals() {
+    var st = this.state || {};
+    var pane = st.pane || "work";
+    var self = this;
+    var pal = this.props.palette ?? "paper";
+    var go = {}, c = {}, is = {};
+    var ids = ["work", "about", "gh", "x", "contact"].concat(P.map(function (p) { return p.id; }));
+    ids.forEach(function (k) {
+      go[k] = function () { self.setState({ pane: pane === k && k !== "work" ? "work" : k }); };
+      c[k] = pane === k ? "tk on" : "tk"; is[k] = pane === k;
+    });
+    var cur = null;
+    var items = P.map(function (p) {
+      var cm = p.commits || [], fresh = cm.length && cm[0].off < 7 * D;
+      if (pane === p.id) cur = Object.assign({}, p, {
+        hasCommits: cm.length > 0, hasNote: !!p.note && !cm.length,
+        commits: cm.map(function (x, i) { return { msg: x.msg, ago: short(x.off), dot: i === 0 && x.off < 7 * D ? "dot live" : "dot" }; }),
+        last: cm.length ? short(cm[0].off) : p.last,
+        links: p.links.map(function (l, i) { return { label: l.label + " ↗", href: l.href, cls: i === 0 ? "pill" : "" }; })
+      });
+      return { name: p.name, line: p.line, meta: cm.length ? short(cm[0].off) : p.last, dot: fresh ? "dot live" : "dot", open: go[p.id] };
+    });
+    var crumbs = { about: "About", gh: "GitHub", x: "X", contact: "Contact" };
+    return {
+      root: "site p-" + pal, go: go, c: c, is: is, items: items,
+      isProject: !!cur, cur: cur || { links: [], commits: [] },
+      deep: pane !== "work", crumb: cur ? cur.name : crumbs[pane],
+      pushAgo: ago(125), postAgo: ago(20 * H), pushShort: short(125), mood: mood(),
+      time: new Date().toLocaleTimeString("en-US", { timeZone: "America/Detroit", hour: "numeric", minute: "2-digit" }),
+      posts: POSTS.map(function (t) { return { text: t.text, ago: short(t.off) }; }),
+      grid: GRID, contrib: CONTRIB.toLocaleString("en-US"),
+      copyLabel: st.copied ? "Copied" : "Copy",
+      copy: function () { try { navigator.clipboard.writeText("mantrikuladeep@gmail.com"); } catch (e) {} self.setState({ copied: true }); setTimeout(function () { self.setState({ copied: false }); }, 1600); }
+    };
+  }
+}
+</script>
+</body>
+</html>
