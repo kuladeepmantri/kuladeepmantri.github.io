@@ -1,21 +1,20 @@
 'use client'
 
 import type { ProjectRef } from '@/app/signals'
-import { ago, clock, latestProject, mood, olderThan, type Push } from '@/lib/live'
+import { ago, clock, latestProject, olderThan, type Push } from '@/lib/live'
 import { useLive } from '@/lib/live-store'
 import { Token } from './token'
 
 type Target = { at: string; node: React.ReactNode }
 
-/** Whatever I last committed to: a project page, a public repo, or "a private repo". */
+/** The public repo I last committed to: its project page when it has one. */
 function lastPushTarget(
   pushes: Push[] | undefined,
   projects: ProjectRef[],
   fallback: ReturnType<typeof latestProject>,
 ): Target | null {
-  const push = pushes?.[0]
-  if (push) {
-    if (push.isPrivate || !push.repo) return { at: push.pushedAt, node: 'a private repo' }
+  const push = pushes?.find((p) => !p.isPrivate && p.repo)
+  if (push?.repo) {
     const repo = push.repo.toLowerCase()
     const project = projects.find((p) => p.repos.some((r) => r.toLowerCase() === repo))
     if (project)
@@ -65,7 +64,7 @@ export function LiveSentence({ projects }: { projects: ProjectRef[] }) {
 
   return (
     <p className="sentence s2" suppressHydrationWarning>
-      {lead}, and it’s {time} here, so {mood(now)}.
+      {lead}, and it’s {time} here.
     </p>
   )
 }
