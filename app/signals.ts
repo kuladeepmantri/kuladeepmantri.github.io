@@ -67,8 +67,7 @@ export const SIGNALS: Signal[] = [
     dateLast: '2026-04-10',
     repos: ['kuladeepmantri/rune'],
     links: [{ label: 'Open site', href: 'https://rune.kuladeepmantri.com/' }],
-    repoNote:
-      'This repo is the Rune case study site. The car software runs on the Pi.',
+    quietNote: 'The repo is private, so its commits stay off this page.',
     tags: ['Python', 'Raspberry Pi', 'OBD-II', 'React', 'FastAPI'],
   },
   {
@@ -86,7 +85,7 @@ export const SIGNALS: Signal[] = [
     stack: 'TypeScript · Claude Agent SDK',
     dateFirst: '2025-01-01',
     dateLast: '2026-04-15',
-    repos: ['kuladeepmantri/shipcrew'],
+    repos: ['shipcrew-ai/shipcrew'],
     links: [],
     sourceIfPublic: true,
     collaborator: {
@@ -153,7 +152,7 @@ export const SIGNALS: Signal[] = [
     stack: 'Next.js',
     dateFirst: '2024-03-01',
     dateLast: '2024-10-15',
-    repos: ['kuladeepmantri/untilithappens'],
+    repos: ['kuladeepmantri/untilithappens.org'],
     links: [
       { label: 'Open site', href: 'https://untilithappens.kuladeepmantri.com/' },
     ],
@@ -183,9 +182,14 @@ export const SIGNALS: Signal[] = [
   },
 ]
 
+// Sentence one, as plain text for meta descriptions. The page renders it with
+// "Kuladeep" as a link, in components/site/intro.tsx; keep the two in sync.
+export const SENTENCE_ONE =
+  'I’m Kuladeep, a cybersecurity engineer in Michigan. I build security tools, and lately I’ve been studying how AI systems fail.'
+
 // The Now line on the home page. Update both together.
 export const NOW =
-  'Learning AI security properly, mostly how you watch and contain an AI agent while it runs, and building small tools as I go.'
+  'Learning how to monitor and contain AI agents while they run, and building small tools along the way.'
 export const NOW_UPDATED = '2026-09-27'
 
 export const EMAIL = 'mantrikuladeep@gmail.com'
@@ -205,4 +209,17 @@ export function sortedByStart(): Signal[] {
   return [...SIGNALS].sort(
     (a, b) => new Date(b.dateFirst).getTime() - new Date(a.dateFirst).getTime(),
   )
+}
+
+/** The slim shape client components need (keeps bodies out of the JS bundle). */
+export type ProjectRef = Pick<Signal, 'slug' | 'name' | 'line' | 'repos' | 'dateLast'>
+
+export function projectRefs(): ProjectRef[] {
+  return SIGNALS.map(({ slug, name, line, repos, dateLast }) => ({
+    slug,
+    name,
+    line,
+    repos,
+    dateLast,
+  }))
 }

@@ -6,33 +6,17 @@ export const dynamic = 'force-static'
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const lastModified = new Date()
-
-  const appPages = SIGNALS.map((signal) => ({
-    url: `${WEBSITE_URL}/apps/${signal.slug}`,
+  const page = (path: string, priority: number) => ({
+    url: `${WEBSITE_URL}${path}`,
     lastModified,
-    changeFrequency: 'monthly' as const,
-    priority: 0.8,
-  }))
-
+    priority,
+  })
   return [
-    {
-      url: WEBSITE_URL,
-      lastModified,
-      changeFrequency: 'weekly',
-      priority: 1,
-    },
-    {
-      url: `${WEBSITE_URL}/now`,
-      lastModified,
-      changeFrequency: 'weekly',
-      priority: 0.7,
-    },
-    {
-      url: `${WEBSITE_URL}/about`,
-      lastModified,
-      changeFrequency: 'monthly',
-      priority: 0.7,
-    },
-    ...appPages,
+    page('', 1),
+    page('/about', 0.8),
+    page('/github', 0.6),
+    page('/x', 0.6),
+    page('/contact', 0.6),
+    ...SIGNALS.map((s) => page(`/apps/${s.slug}`, 0.8)),
   ]
 }

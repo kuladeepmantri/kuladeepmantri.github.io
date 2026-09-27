@@ -1,0 +1,3 @@
+export const THEME_COLORS = { light: '#F7F6F2', dark: '#111110' } as const
+/** Runs in <head> before paint: stored choice, else the system setting. */
+export const THEME_SCRIPT = `(function(){var d=document.documentElement,m=matchMedia('(prefers-color-scheme: dark)');function s(t){d.dataset.theme=t;var e=document.querySelector('meta[name="theme-color"]');if(e)e.setAttribute('content',t==='dark'?'${THEME_COLORS.dark}':'${THEME_COLORS.light}')}function g(){try{return localStorage.getItem('km-theme')}catch(e){return null}}var t=g();s(t==='light'||t==='dark'?t:(m.matches?'dark':'light'));m.addEventListener('change',function(e){if(!g())s(e.matches?'dark':'light')})})()`
