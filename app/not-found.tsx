@@ -1,15 +1,16 @@
 import Link from 'next/link'
+import { PaneHead } from '@/components/site/pane-head'
 
 export const metadata = { title: 'Not found' }
 
 export default function NotFound() {
   return (
-    <div className="p-body">
-      <h2 className="p-title">Nothing here.</h2>
-      <p className="p-text">
-        That page doesn’t exist, or it moved in the redesign. <Link href="/">Back to the work</Link>
-        .
+    <article>
+      <PaneHead title="Not found" />
+      <p>
+        That page doesn’t exist, or it moved in the redesign. Everything that’s here opens from the
+        list on the left, or <Link href="/">start over</Link>.
       </p>
-    </div>
+    </article>
   )
 }

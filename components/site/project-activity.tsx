@@ -3,7 +3,7 @@
 import { isFresh, lastCommit, monthYear, olderThan, shortAgo } from '@/lib/live'
 import { useLive } from '@/lib/live-store'
 
-/** Facts row and recent commits for one project; updates with the browser refresh. */
+/** Stack, dates, and recent commits for one project; updates with the browser refresh. */
 export function ProjectActivity({
   repos: projectRepos,
   stack,
@@ -26,43 +26,45 @@ export function ProjectActivity({
     .slice(0, 3)
   const quiet =
     hidden || !commits.length || (!!quietNote && !!commit && olderThan(commit.date, now, 60))
-  const last = commit ? shortAgo(commit.date, now) : hidden ? 'private' : monthYear(dateLast)
+  const last = commit ? shortAgo(commit.date, now) : hidden ? 'Private repo' : monthYear(dateLast)
 
   return (
     <>
-      <div className="facts">
-        <span className="fact">
-          <span>Stack</span>
-          <span>{stack}</span>
-        </span>
-        <span className="fact desk-only">
-          <span>Started</span>
-          <span>{started}</span>
-        </span>
-        <span className="fact">
-          <span>Last push</span>
-          <span suppressHydrationWarning>{last}</span>
-        </span>
-      </div>
-      {quiet ? (
-        quietNote && <p className="p-note">{quietNote}</p>
-      ) : (
-        <div className="commits">
-          <h3 className="lab">Recent commits</h3>
-          {commits.map((c, i) => (
-            <a key={c.sha} href={c.url} className="commit">
-              <span className="commit-msg">
-                <span>{c.message}</span>
-              </span>
-              <span
-                className={i === 0 && isFresh(c.date, now) ? 'commit-ago fresh' : 'commit-ago'}
-                suppressHydrationWarning
-              >
-                {shortAgo(c.date, now)}
-              </span>
-            </a>
-          ))}
+      <dl className="facts">
+        <div>
+          <dt>Stack</dt>
+          <dd>{stack}</dd>
         </div>
+        <div>
+          <dt>Started</dt>
+          <dd>{started}</dd>
+        </div>
+        <div>
+          <dt>Last push</dt>
+          <dd suppressHydrationWarning>{last}</dd>
+        </div>
+      </dl>
+      {quiet ? (
+        quietNote && <p className="muted">{quietNote}</p>
+      ) : (
+        <section>
+          <h2 className="list-lab">Recent commits</h2>
+          <ul className="commits">
+            {commits.map((c, i) => (
+              <li key={c.sha}>
+                <a href={c.url}>
+                  <span className="commit-msg">{c.message}</span>
+                  <span
+                    className={i === 0 && isFresh(c.date, now) ? 'when fresh' : 'when'}
+                    suppressHydrationWarning
+                  >
+                    {shortAgo(c.date, now)}
+                  </span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
     </>
   )

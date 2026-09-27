@@ -4,9 +4,17 @@ import type { ProjectRef } from '@/app/signals'
 import { ago, clock, latestProject, type Push } from '@/lib/live'
 import { useEffect, useState } from 'react'
 import { useLive } from '@/lib/live-store'
-import { Token } from './token'
+import Link from 'next/link'
 
 type Target = { at: string; node: React.ReactNode }
+
+function Token({ href, children }: { href: string; children: React.ReactNode }) {
+  return (
+    <Link href={href} scroll={false} className="tk">
+      {children}
+    </Link>
+  )
+}
 
 /** The public repo I last committed to: its project page when it has one. */
 function lastPushTarget(

@@ -1,10 +1,10 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
+import { PaneHead } from '@/components/site/pane-head'
 import { ProjectActivity } from '@/components/site/project-activity'
-import { ProjectNav } from '@/components/site/project-nav'
 import { LIVE } from '@/lib/generated/live'
 import { monthYear } from '@/lib/live'
-import { SIGNALS, findSignalBySlug, projectRefs, type Signal } from '../../signals'
+import { SIGNALS, findSignalBySlug, type Signal } from '../../signals'
 
 export function generateStaticParams() {
   return SIGNALS.map((s) => ({ slug: s.slug }))
@@ -41,7 +41,7 @@ function Body({ s }: { s: Signal }) {
   )
 }
 
-export default async function ProjectPage({ params }: Props) {
+export default async function Project({ params }: Props) {
   const s = findSignalBySlug((await params).slug)
   if (!s) notFound()
 
@@ -51,13 +51,13 @@ export default async function ProjectPage({ params }: Props) {
   if (s.sourceIfPublic && shown) links.push({ label: 'Source', href: `https://github.com/${repo}` })
 
   return (
-    <article className="p-body">
-      <span className="p-meta">
-        {shown ? repo : 'private repo'} · {s.stateLabel}
-      </span>
-      <h2 className="p-title">{s.name}</h2>
-      <p className="p-lead">{s.line}</p>
-      <p className="p-text">
+    <article>
+      <PaneHead title={s.name} />
+      <p className="lead">{s.line}</p>
+      <p className="muted">
+        {shown ? repo : 'Private repo'} · {s.stateLabel}
+      </p>
+      <p>
         <Body s={s} />
       </p>
       <ProjectActivity
@@ -68,15 +68,14 @@ export default async function ProjectPage({ params }: Props) {
         quietNote={s.quietNote}
       />
       {links.length > 0 && (
-        <div className="p-links">
-          {links.map((l, i) => (
-            <a key={l.href} href={l.href} className={i === 0 ? 'pill' : undefined}>
-              {l.label} ↗
-            </a>
+        <ul className="list">
+          {links.map((l) => (
+            <li key={l.href}>
+              <a href={l.href}>{l.label} ↗</a>
+            </li>
           ))}
-        </div>
+        </ul>
       )}
-      <ProjectNav slug={s.slug} projects={projectRefs()} />
     </article>
   )
 }
