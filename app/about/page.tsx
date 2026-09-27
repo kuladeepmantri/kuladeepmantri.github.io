@@ -1,9 +1,11 @@
 import type { Metadata } from 'next'
+import Link from 'next/link'
 import { Avatar } from '@/components/site/avatar'
 
 export const metadata: Metadata = {
   title: 'About',
-  description: 'How Kuladeep Mantri got into security, and what he works on now.',
+  description:
+    'Kuladeep Mantri is a cybersecurity engineer in Michigan. He builds security tools and works on applications that meet NIST 800-53, CJIS, FERPA, and HIPAA requirements.',
   alternates: { canonical: '/about' },
 }
 
@@ -14,38 +16,34 @@ export default function About() {
         <Avatar size={64} />
         <span className="profile-name">
           <span>Kuladeep Mantri</span>
-          <span>Hyderabad → Michigan</span>
+          <span>Cybersecurity engineer</span>
         </span>
       </div>
-      <h2 className="sr-only" id="about-title">
-        About
-      </h2>
+      <h2 className="sr-only">About</h2>
       <p className="p-text" style={{ marginTop: 28 }}>
-        I got into computers by breaking them: Windows XP first, then Vista, then 7. One night I
-        installed Linux without really knowing what it was, and a few years later I was running
-        Arch and building my own distro.
+        I’m a cybersecurity engineer. I build security tools, and I work on applications that
+        organizations run under real compliance requirements.
       </p>
       <p className="p-text">
-        The building came later. Python, then C and C++ with GDB open beside them, then web apps,
-        APIs, cloud and Kubernetes. Lately it’s AI: I run and fine-tune open-weight models on my
-        own hardware and look for where they break.
+        On that side I work with NIST 800-53, CJIS, FERPA, and HIPAA. In practice that means
+        access control, audit logging, and knowing where sensitive data lives and who can reach it.
       </p>
       <p className="p-text">
-        I still work the way I started. I want to know how a thing works, and what it takes to
-        make it fail.
+        Outside of work I build my own projects, mostly in Go, C, Python, and TypeScript. A few of
+        them are on this site. I post about what I’m working on over on{' '}
+        <Link href="/x" scroll={false}>
+          X
+        </Link>
+        .
       </p>
-      <div className="facts">
+      <div className="facts two">
         <span className="fact">
-          <span>From</span>
-          <span>Hyderabad, India</span>
-        </span>
-        <span className="fact">
-          <span>Based in</span>
+          <span>Currently in</span>
           <span>Michigan, USA</span>
         </span>
         <span className="fact">
-          <span>Certified</span>
-          <span>CEH, EC-Council</span>
+          <span>Compliance work</span>
+          <span>NIST 800-53 · CJIS · FERPA · HIPAA</span>
         </span>
       </div>
     </article>
