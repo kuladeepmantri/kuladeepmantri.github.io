@@ -1,4 +1,4 @@
-import { sortedByRecency } from '@/app/signals'
+import { sortedByStart } from '@/app/signals'
 import { WEBSITE_URL } from '@/lib/constants'
 
 export const dynamic = 'force-static'
@@ -13,7 +13,7 @@ function escapeXml(s: string): string {
 }
 
 export function GET(): Response {
-  const signals = sortedByRecency()
+  const signals = sortedByStart()
   const latest = signals[0]
   const lastBuild = latest
     ? new Date(latest.dateLast).toUTCString()
