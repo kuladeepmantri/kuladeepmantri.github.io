@@ -61,14 +61,7 @@ export default function XPane() {
             </a>
           ))}
         </>
-      ) : (
-        <div className="x-empty">
-          <p>I post on X about what I’m building and what I’m learning in security.</p>
-          <a className="pill" href={follow}>
-            Follow @{X_HANDLE} ↗
-          </a>
-        </div>
-      )}
+      ) : null}
     </article>
   )
 }
