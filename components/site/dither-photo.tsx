@@ -1,15 +1,12 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import { PALETTES, buildLUT } from '@/lib/wall'
+import { PALETTES, buildLUT } from '@/lib/field'
 
 const B4 = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5].map((v) => (v + 0.5) / 16)
-const PX = 2
+const PX = 1
 
-/**
- * My photo printed in the same four-ink dither as the background, in the
- * About palette. Hover or focus shows the photo itself.
- */
+/** My photo printed in the same four-ink dither as the background, in the About palette. */
 export function DitherPhoto({ src, alt }: { src: string; alt: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
@@ -68,10 +65,8 @@ export function DitherPhoto({ src, alt }: { src: string; alt: string }) {
   }, [src])
 
   return (
-    <figure className="portrait" tabIndex={0}>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={src} alt={alt} />
-      <canvas ref={canvasRef} aria-hidden="true" />
+    <figure className="portrait">
+      <canvas ref={canvasRef} role="img" aria-label={alt} />
     </figure>
   )
 }

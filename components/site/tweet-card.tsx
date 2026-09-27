@@ -26,7 +26,7 @@ export function TweetCard() {
         </span>
         <XLogo />
       </span>
-      <span className="tweet-text">{postText(post.text).replace(/\s*\n+\s*/g, ' ')}</span>
+      <span className="tweet-text">{postText(post.text).replace(/\n\s*\n+/g, '\n')}</span>
     </a>
   )
 }

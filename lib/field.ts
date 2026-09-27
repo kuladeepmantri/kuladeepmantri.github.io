@@ -1,10 +1,10 @@
-// The wall behind every page: palettes, value noise, and the helpers that turn
-// a list of active days into a per-day heat curve. No DOM here.
+// The field behind every page: palettes, value noise, and the helper that turns
+// a list of active days into per-day counts. No DOM here.
 
 /** Low to high. Low values are the resting field, high values are lit by data. */
 export const PALETTES: Record<string, string[]> = {
-  // Northern lights over Michigan: night to teal at rest, activity in violet.
-  home: ['#03070f', '#061426', '#0a2a3f', '#0f4a55', '#17806c', '#8f7cff', '#c9a8ff', '#f4e4ff'],
+  // Cool steel at rest, a soft periwinkle signal.
+  home: ['#04060a', '#0a1018', '#111c29', '#1a2c3e', '#2a4a5e', '#5f7f9a', '#aab4ff', '#eceeff'],
   about: ['#140b24', '#2a1646', '#4a2366', '#7a3474', '#b64f78', '#e9807d', '#ffc29a', '#ffe6cf'],
   github: ['#04110a', '#08260f', '#0d4420', '#136b31', '#1f9c47', '#3ecf67', '#9df0b3', '#e6fff0'],
   x: ['#05080d', '#0b1420', '#132438', '#1b3a5c', '#1d6fb0', '#1d9bf0', '#8ecdfa', '#e9f6ff'],
