@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { projectRefs } from '@/app/signals'
 import { LiveSentence } from './live-sentence'
 import { BuiltLine } from './built-line'
-import { LatestPost } from './latest-post'
+import { XCard } from './x-card'
 import { TopNav } from './top-nav'
 import { Token } from './token'
 import { WorkList } from './work-list'
@@ -30,7 +30,7 @@ export function Intro() {
       </div>
 
       <div className="bottom">
-        <LatestPost />
+        <XCard />
         <nav className="work-phone" aria-label="Work">
           <h2 className="work-phone-head">
             <span>Work</span>
