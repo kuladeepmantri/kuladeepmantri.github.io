@@ -1,4 +1,4 @@
-export function Avatar({ size }: { size: 40 | 48 | 64 | 80 }) {
+export function Avatar({ size }: { size: 28 | 40 | 48 | 64 | 80 }) {
   return (
     <picture>
       <source srcSet="/images/avatar.webp" type="image/webp" />
