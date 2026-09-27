@@ -12,7 +12,7 @@ import { execSync } from 'node:child_process'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { SIGNALS, GITHUB_USER, X_HANDLE } from '../app/signals'
-import { WEBSITE_URL } from '../lib/constants'
+import { TIMEZONE, WEBSITE_URL } from '../lib/constants'
 import type { LiveSnapshot, Push, RepoLive } from '../lib/live'
 
 const ROOT = process.cwd()
@@ -121,18 +121,16 @@ type GqlRepo = null | {
   }
 }
 
-const MONTHS = 12
+const LOCAL_DAY = new Intl.DateTimeFormat('en-CA', { timeZone: TIMEZONE })
 
-// Commits per calendar month for the last MONTHS months, oldest first.
-function monthly(dates: string[], now: Date): number[] {
-  const out = new Array<number>(MONTHS).fill(0)
-  const nowIdx = now.getUTCFullYear() * 12 + now.getUTCMonth()
+// My commits per local calendar day, oldest first: [['2026-06-27', 23], ...].
+function daily(dates: string[]): [string, number][] {
+  const out = new Map<string, number>()
   for (const d of dates) {
-    const t = new Date(d)
-    const age = nowIdx - (t.getUTCFullYear() * 12 + t.getUTCMonth())
-    if (age >= 0 && age < MONTHS) out[MONTHS - 1 - age]++
+    const day = LOCAL_DAY.format(new Date(d))
+    out.set(day, (out.get(day) ?? 0) + 1)
   }
-  return out
+  return [...out.entries()].sort((a, b) => (a[0] < b[0] ? -1 : 1))
 }
 const SITE_REPO = `${GITHUB_USER}/${GITHUB_USER}.github.io`.toLowerCase()
 
@@ -217,7 +215,7 @@ fragment R on Repository {
   defaultBranchRef { target { ... on Commit {
     history(first: 3) { nodes { oid messageHeadline committedDate url } }
     recent: history(since: $since) { totalCount }
-    year: history(since: $yearAgo, first: 100) { totalCount nodes { committedDate } }
+    year: history(since: $yearAgo, first: 100, author: {id: $uid}) { totalCount nodes { committedDate } }
   } } }
 }`
 
@@ -264,10 +262,7 @@ fragment R on Repository {
       commits30d: target?.recent?.totalCount ?? 0,
       language: r.primaryLanguage?.name ?? null,
       commitsYear: target?.year?.totalCount ?? 0,
-      monthly: monthly(
-        (target?.year?.nodes ?? []).map((n) => n.committedDate),
-        new Date(),
-      ),
+      days: daily((target?.year?.nodes ?? []).map((n) => n.committedDate)),
       recent: (target?.history?.nodes ?? []).map((c) => ({
         sha: c.oid,
         message: c.messageHeadline,

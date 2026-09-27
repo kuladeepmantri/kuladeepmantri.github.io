@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { Mona_Sans } from 'next/font/google'
+import { Geist_Mono, Mona_Sans } from 'next/font/google'
 import './globals.css'
 import { Shell } from '@/components/site/shell'
 import { WEBSITE_URL } from '@/lib/constants'
@@ -10,6 +10,12 @@ const mona = Mona_Sans({
   subsets: ['latin'],
   axes: ['wdth'],
   variable: '--font-sans',
+  display: 'swap',
+})
+
+const mono = Geist_Mono({
+  subsets: ['latin'],
+  variable: '--font-mono',
   display: 'swap',
 })
 
@@ -45,7 +51,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={mona.variable} suppressHydrationWarning>
+    <html lang="en" className={`${mona.variable} ${mono.variable}`} suppressHydrationWarning>
       <head>
         <meta name="theme-color" content={THEME_COLORS.dark} />
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />

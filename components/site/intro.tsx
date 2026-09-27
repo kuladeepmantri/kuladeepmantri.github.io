@@ -22,7 +22,10 @@ export function Intro() {
 
       <div className="sentences">
         <p className="sentence s1">
-          I’m <Token href="/about">Kuladeep</Token>. Security Engineer, Michigan.
+          <span>
+            I’m <Token href="/about">Kuladeep</Token>.
+          </span>{' '}
+          <span className="s1-role">Security Engineer, Michigan.</span>
         </p>
         <LiveSentence projects={projects} />
       </div>
@@ -30,10 +33,7 @@ export function Intro() {
       <div className="bottom">
         <TweetCard />
         <nav className="work-phone" aria-label="Work">
-          <h2 className="work-phone-head">
-            <span>Work</span>
-            <span>{projects.length} projects · latest push first</span>
-          </h2>
+          <h2 className="work-phone-head">Work</h2>
           <WorkList projects={projects} />
         </nav>
       </div>
