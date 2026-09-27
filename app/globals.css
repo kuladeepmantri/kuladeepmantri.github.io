@@ -277,6 +277,14 @@ button {
   color: var(--text);
 }
 
+.pane p.loc {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+  color: var(--muted);
+}
+
 .sentence.s2 {
   margin-top: 12px;
   font-size: 14.5px;
