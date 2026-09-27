@@ -9,10 +9,14 @@ on:
   push:
     branches: ["main"]
 
-  # Daily rebuild so scripts/fetch-github.ts refreshes commit counts in
-  # lib/generated/github.ts even when no code has changed.
+  # Hourly rebuild so scripts/fetch-live.ts refreshes GitHub and X data even
+  # when no code has changed. Off the top of the hour to avoid the rush.
   schedule:
-    - cron: "0 6 * * *"
+    - cron: "7 * * * *"
+
+  # Project repos ping this on push (notify-site.yml in each project repo).
+  repository_dispatch:
+    types: [project-push]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -72,12 +76,14 @@ jobs:
             ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json', '**/yarn.lock') }}-
       - name: Install dependencies
         run: ${{ steps.detect-package-manager.outputs.manager }} ${{ steps.detect-package-manager.outputs.command }}
-      - name: Build with Next.js (triggers prebuild → fetch-github)
+      - name: Build with Next.js (triggers prebuild → fetch-live)
         run: ${{ steps.detect-package-manager.outputs.manager }} run build
         env:
-          # GITHUB_TOKEN lets scripts/fetch-github.ts query the GraphQL API for
-          # commit counts. Read-only; see .github/workflows permissions above.
+          # scripts/fetch-live.ts: GH_PAT if set (fuller contribution data),
+          # else the read-only GITHUB_TOKEN. X is skipped if its token is unset.
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_PAT: ${{ secrets.GH_PAT }}
+          X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
