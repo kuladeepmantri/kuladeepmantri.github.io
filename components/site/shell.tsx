@@ -5,7 +5,8 @@ import { LIVE } from '@/lib/generated/live'
 import { LiveProvider } from '@/lib/live-store'
 import { Deck } from './deck'
 import { HomePane } from './home-pane'
-import { Wall, type Source } from './wall'
+import { Background } from './background'
+import type { Source } from './wall'
 
 const LOCAL_DAY = new Intl.DateTimeFormat('en-CA', { timeZone: TIMEZONE })
 
@@ -45,7 +46,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
         lastPostAt: LIVE.x?.posts[0]?.createdAt ?? null,
       }}
     >
-      <Wall sources={sources()} builtAt={LIVE.builtAt} />
+      <Background sources={sources()} builtAt={LIVE.builtAt} />
       <Deck home={<HomePane projects={projectRefs()} />}>{children}</Deck>
     </LiveProvider>
   )
