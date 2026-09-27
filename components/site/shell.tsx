@@ -19,6 +19,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
         builtAt: LIVE.builtAt,
         sha: LIVE.sha,
         repos: LIVE.github?.repos,
+        pushes: LIVE.github?.pushes,
         lastPostAt: LIVE.x?.posts[0]?.createdAt ?? null,
       }}
     >

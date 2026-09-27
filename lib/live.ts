@@ -14,6 +14,16 @@ export type RepoLive = {
   recent: Commit[] // newest first, up to 3
 }
 
+/** A recently pushed repo. Private repos keep only the time, never the name. */
+export type Push = {
+  repo: string | null // 'owner/name', null when private
+  isPrivate: boolean
+  pushedAt: string
+  url: string | null
+  description: string | null
+  language: string | null
+}
+
 export type LiveSnapshot = {
   builtAt: string
   sha: string
@@ -23,6 +33,7 @@ export type LiveSnapshot = {
     weeks: { date: string; count: number; level: 0 | 1 | 2 | 3 | 4 }[][]
     languages: { name: string; bytes: number }[]
     repos: Record<string, RepoLive>
+    pushes: Push[] // newest first, this site's repo and forks excluded
   }
   x: null | {
     userId: string
@@ -30,6 +41,7 @@ export type LiveSnapshot = {
     bio: string
     name: string
     avatarUrl: string
+    verified?: boolean
     posts: { id: string; text: string; createdAt: string; url: string }[]
     sinceId: string | null
   }

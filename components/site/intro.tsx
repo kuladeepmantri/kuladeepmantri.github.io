@@ -2,8 +2,7 @@ import Link from 'next/link'
 import { NOW, projectRefs } from '@/app/signals'
 import { LiveSentence } from './live-sentence'
 import { BuiltLine } from './built-line'
-import { Clock } from './rel-time'
-import { ThemeToggle } from './theme-toggle'
+import { TopNav } from './top-nav'
 import { Token } from './token'
 import { WorkList } from './work-list'
 
@@ -18,22 +17,13 @@ export function Intro() {
             Kuladeep Mantri
           </Link>
         </h1>
-        <div className="topbar-right">
-          <span className="live-label">
-            <span className="dot beat" />
-            <span className="desk-only">Live</span>
-            <span className="phone-only">
-              <Clock />
-            </span>
-          </span>
-          <ThemeToggle />
-        </div>
+        <TopNav />
       </div>
 
       <div className="sentences">
         <p className="sentence s1">
           I’m <Token href="/about">Kuladeep</Token>, a cybersecurity engineer in Michigan. I build
-          security tools, and lately I’ve been studying how AI systems fail.
+          security tools.
         </p>
         <LiveSentence projects={projects} />
       </div>

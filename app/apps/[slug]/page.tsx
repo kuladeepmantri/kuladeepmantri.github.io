@@ -1,9 +1,10 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { ProjectActivity } from '@/components/site/project-activity'
+import { ProjectNav } from '@/components/site/project-nav'
 import { LIVE } from '@/lib/generated/live'
 import { monthYear } from '@/lib/live'
-import { SIGNALS, findSignalBySlug, type Signal } from '../../signals'
+import { SIGNALS, findSignalBySlug, projectRefs, type Signal } from '../../signals'
 
 export function generateStaticParams() {
   return SIGNALS.map((s) => ({ slug: s.slug }))
@@ -75,6 +76,7 @@ export default async function ProjectPage({ params }: Props) {
           ))}
         </div>
       )}
+      <ProjectNav slug={s.slug} projects={projectRefs()} />
     </article>
   )
 }
