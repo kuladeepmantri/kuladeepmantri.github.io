@@ -48,8 +48,18 @@ export function HomePane({ projects }: { projects: ProjectRef[] }) {
             Kuladeep Mantri
           </Link>
         </h1>
-        <p className="bio">
-          I’m a Security Engineer in Michigan, curious by default and usually building something.
+        <p className="bio">Security Engineer</p>
+        <p className="loc">
+          <svg width="12" height="14" viewBox="0 0 12 14" aria-hidden="true">
+            <path
+              d="M6 13.2S1.2 8.6 1.2 5.3a4.8 4.8 0 0 1 9.6 0C10.8 8.6 6 13.2 6 13.2Z"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.3"
+            />
+            <circle cx="6" cy="5.3" r="1.6" fill="currentColor" />
+          </svg>
+          Michigan
         </p>
         <LiveSentence projects={projects} />
 
