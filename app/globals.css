@@ -1,17 +1,19 @@
 @import 'tailwindcss';
 
 /*
- * The wall (a canvas of rounded tiles) fills the window. Panes sit on it,
- * aligned to its cells: the canvas paints their background, so they carve
- * out of the grid instead of floating over it. Everything else is type.
+ * A living background (a dithered print of the last year) fills the window.
+ * Panes float on it as dark cards: the home pane, and one pane per opened
+ * page to its right. One typeface, Geist, at a few sizes.
  */
 
 :root {
   --bg: #050609;
   --pane: #0b0c10; /* matches PANE in components/site/wall.tsx */
-  --text: #eceef3;
-  --muted: #8b919e;
-  --faint: #5d6370;
+  --card: #111318;
+  --line: rgb(255 255 255 / 0.07);
+  --text: #e9ebf0;
+  --muted: #858b97;
+  --faint: #565c68;
   --accent: #b9a6ff;
   --cell: 18px;
   --ox: 0px;
@@ -21,7 +23,7 @@
   color-scheme: dark;
 }
 
-/* Each page's links take the colour of its wall. */
+/* Each page's links take the colour of its background. */
 :root[data-palette='about'] {
   --accent: #ffb7a6;
 }
@@ -66,9 +68,9 @@ body {
 body {
   color: var(--text);
   font-family: var(--font-sans), system-ui, sans-serif;
-  font-size: 15.5px;
-  line-height: 1.5;
-  font-variation-settings: 'wdth' 92;
+  font-size: 14.5px;
+  line-height: 1.6;
+  letter-spacing: -0.006em;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -87,7 +89,7 @@ button {
 :focus-visible {
   outline: 1.5px solid var(--accent);
   outline-offset: 3px;
-  border-radius: 3px;
+  border-radius: 4px;
 }
 
 ::selection {
@@ -104,7 +106,11 @@ button {
   white-space: nowrap;
 }
 
-/* ── Wall ── */
+.ico {
+  flex-shrink: 0;
+}
+
+/* ── Background ── */
 
 .wall {
   position: fixed;
@@ -121,11 +127,13 @@ button {
   padding: 5px 9px;
   border-radius: 6px;
   background: var(--pane);
+  box-shadow:
+    0 8px 24px -8px rgb(0 0 0 / 0.7),
+    inset 0 0 0 1px var(--line);
   color: var(--text);
-  font-size: 12.5px;
+  font-size: 12px;
   white-space: nowrap;
   pointer-events: none;
-  box-shadow: 0 6px 20px -6px rgb(0 0 0 / 0.6);
   transition: opacity 0.15s;
 }
 
@@ -174,19 +182,34 @@ button {
 }
 
 .pane-home {
-  width: calc(17 * var(--cell));
+  width: calc(18 * var(--cell));
 }
 
 .pane-page {
-  width: calc(22 * var(--cell));
-  box-shadow: inset 1px 0 0 rgb(255 255 255 / 0.05);
+  width: calc(23 * var(--cell));
 }
 
 .deck-end {
   flex: 0 0 calc(var(--cell) * 2);
 }
 
-/* Text arrives once the tiles under it have turned, and leaves first. */
+/* Floating cards on the living backgrounds; cut from the grid on tiles. */
+:root[data-bg]:not([data-bg='tiles']) .pane {
+  background: rgb(11 12 16 / 0.96);
+  border-radius: 14px;
+  box-shadow:
+    0 24px 60px -24px rgb(0 0 0 / 0.8),
+    inset 0 0 0 1px var(--line);
+}
+
+:root[data-bg]:not([data-bg='tiles']) .pane-page {
+  margin-left: 10px;
+}
+
+:root[data-bg='tiles'] .pane-page {
+  box-shadow: inset 1px 0 0 var(--line);
+}
+
 @keyframes text-in {
   from {
     opacity: 0;
@@ -194,8 +217,15 @@ button {
   }
 }
 
+@keyframes card-in {
+  from {
+    opacity: 0;
+    transform: translateX(-12px) scale(0.985);
+  }
+}
+
 .home {
-  animation: text-in 0.5s var(--ease) 0.4s both;
+  animation: text-in 0.5s var(--ease) 0.3s both;
 }
 
 .pane-content {
@@ -203,7 +233,11 @@ button {
 }
 
 .pane[data-phase='in'] .pane-content {
-  animation-delay: 0.36s;
+  animation-delay: 0.3s;
+}
+
+:root[data-bg]:not([data-bg='tiles']) .pane-page[data-phase='in'] {
+  animation: card-in 0.45s var(--ease) both;
 }
 
 .pane[data-phase='out'] .pane-content {
@@ -211,10 +245,32 @@ button {
   transition: opacity 0.12s;
 }
 
-/* ── Type inside panes ── */
+:root[data-bg]:not([data-bg='tiles']) .pane-page[data-phase='out'] {
+  opacity: 0;
+  transform: translateX(-8px);
+  transition:
+    opacity 0.3s,
+    transform 0.3s var(--ease);
+}
+
+/* ── Type ── */
 
 .pane p {
   margin-top: 14px;
+}
+
+.name {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.lead {
+  color: var(--text);
 }
 
 .pane article > p a,
@@ -223,8 +279,8 @@ button {
   color: var(--accent);
   text-decoration: underline;
   text-decoration-thickness: 1px;
-  text-underline-offset: 0.18em;
-  text-decoration-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  text-underline-offset: 0.2em;
+  text-decoration-color: color-mix(in srgb, var(--accent) 40%, transparent);
   transition:
     color 0.6s,
     text-decoration-color 0.2s;
@@ -236,36 +292,41 @@ button {
   text-decoration-color: var(--accent);
 }
 
-.name {
-  font-size: 15.5px;
-  font-weight: 600;
-}
-
-.muted {
-  color: var(--muted);
-}
-
-.lead {
-  color: var(--text);
+/* Small labels: section names, counts, dates. */
+.lab,
+.list-lab {
+  display: flex;
+  justify-content: space-between;
+  margin: 30px 0 8px;
+  font-size: 12.5px;
+  font-weight: 400;
+  color: var(--faint);
 }
 
 .pane-head {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 8px;
+  padding-bottom: 14px;
+  box-shadow: inset 0 -1px 0 var(--line);
 }
 
 .close {
   display: grid;
   place-items: center;
-  width: 22px;
-  height: 22px;
-  margin: -4px;
-  color: var(--accent);
-  transition: color 0.6s;
+  width: 24px;
+  height: 24px;
+  margin: -5px;
+  color: var(--muted);
+  transition: color 0.2s;
 }
 
-/* Home */
+.close:hover {
+  color: var(--accent);
+}
+
+/* ── Home pane ── */
 
 .home {
   display: flex;
@@ -273,7 +334,8 @@ button {
   min-height: 100%;
 }
 
-.bio {
+.id .role {
+  margin-top: 6px;
   color: var(--text);
 }
 
@@ -285,15 +347,18 @@ button {
   color: var(--muted);
 }
 
+.loc .dot {
+  color: var(--faint);
+}
+
 .sentence.s2 {
-  margin-top: 12px;
-  font-size: 14.5px;
+  margin-top: 18px;
   color: var(--muted);
 }
 
 .sentence.s2 .tk {
   color: var(--text);
-  text-decoration-color: rgb(255 255 255 / 0.25);
+  text-decoration-color: rgb(255 255 255 / 0.22);
 }
 
 .sentence.s2 .tk:hover {
@@ -309,21 +374,161 @@ button {
   transition: opacity 0.4s;
 }
 
-.list-lab {
-  margin: 24px 0 4px;
+/* Latest post */
+.tweet {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 22px;
+  padding: 14px 16px 15px;
+  border-radius: 12px;
+  background: var(--card);
+  box-shadow: inset 0 0 0 1px var(--line);
+  transition: box-shadow 0.2s;
+}
+
+.tweet:hover {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+.tweet-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.tweet-head .ico {
+  margin-left: auto;
+  color: var(--muted);
+}
+
+.tweet-who {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.35;
+}
+
+.tweet-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.tweet-meta {
+  font-size: 12.5px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tweet-text {
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: 14px;
+  line-height: 1.55;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+/* Work: name on the left, language on the right */
+.rows,
+.tabs,
+.list,
+.commits,
+.posts,
+.langs {
+  list-style: none;
+  padding: 0;
+}
+
+.rows a {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  margin: 0 -8px;
+  padding: 4px 8px;
+  border-radius: 7px;
+  transition: background-color 0.15s;
+}
+
+.rows a:hover,
+.rows a[aria-current='page'] {
+  background: rgb(255 255 255 / 0.05);
+}
+
+.item-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--accent);
+  transition: color 0.6s;
+}
+
+.rows a:hover .item-label {
+  color: var(--text);
+  transition: color 0.15s;
+}
+
+.item-meta {
   font-size: 13px;
-  font-weight: 400;
   color: var(--faint);
 }
 
-.list {
-  list-style: none;
-  padding: 0;
-  margin-top: 16px;
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 20px;
+  margin-top: 30px;
 }
 
-.list-lab + .list {
-  margin-top: 0;
+.tabs a {
+  display: inline-flex;
+  color: var(--muted);
+  transition: color 0.15s;
+}
+
+.tabs a .item-label {
+  color: inherit;
+}
+
+.tabs a:hover,
+.tabs a[aria-current='page'] {
+  color: var(--text);
+}
+
+.home-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: auto;
+  padding-top: 28px;
+  font-size: 13px;
+  color: var(--faint);
+}
+
+.sound {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--muted);
+  transition: color 0.2s;
+}
+
+.sound:hover,
+.sound[aria-pressed='true'] {
+  color: var(--text);
+}
+
+/* ── Page panes ── */
+
+.list {
+  margin-top: 18px;
 }
 
 .list a {
@@ -339,37 +544,6 @@ button {
   transition: color 0.15s;
 }
 
-.list a svg {
-  flex-shrink: 0;
-}
-
-.home-foot {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: auto;
-  padding-top: 32px;
-  font-size: 13.5px;
-  color: var(--muted);
-}
-
-.sound {
-  display: grid;
-  place-items: center;
-  width: 30px;
-  height: 30px;
-  margin: -7px;
-  color: var(--muted);
-  transition: color 0.2s;
-}
-
-.sound:hover,
-.sound[aria-pressed='true'] {
-  color: var(--text);
-}
-
-/* Profiles, facts, lists of commits and posts */
-
 .who {
   display: flex;
   align-items: center;
@@ -383,10 +557,6 @@ button {
 
 .who-name {
   font-weight: 600;
-}
-
-.who .muted {
-  font-size: 14px;
 }
 
 a.who:hover .muted {
@@ -410,7 +580,7 @@ a.who:hover .muted {
   display: grid;
   grid-template-columns: 104px minmax(0, 1fr);
   gap: 10px 14px;
-  margin-top: 20px;
+  margin-top: 22px;
 }
 
 .facts > div {
@@ -418,24 +588,13 @@ a.who:hover .muted {
 }
 
 .facts dt {
-  font-size: 13.5px;
-  color: var(--muted);
+  font-size: 13px;
+  color: var(--faint);
   padding-top: 1px;
 }
 
 .facts dd {
   min-width: 0;
-}
-
-.about .facts > div:first-child dd {
-  color: var(--text);
-}
-
-.commits,
-.posts,
-.langs {
-  list-style: none;
-  padding: 0;
 }
 
 .commits a,
@@ -444,7 +603,7 @@ a.who:hover .muted {
   justify-content: space-between;
   align-items: baseline;
   gap: 14px;
-  padding: 4px 0;
+  padding: 3px 0;
 }
 
 .commit-msg {
@@ -471,7 +630,7 @@ a.who:hover .muted {
 .when {
   flex-shrink: 0;
   font-size: 13px;
-  color: var(--muted);
+  color: var(--faint);
 }
 
 .when.fresh {
@@ -479,7 +638,7 @@ a.who:hover .muted {
 }
 
 .posts li + li {
-  margin-top: 4px;
+  margin-top: 2px;
 }
 
 .posts a {
@@ -500,7 +659,7 @@ a.who:hover .muted {
 
 .langs li {
   display: grid;
-  grid-template-columns: 92px minmax(0, 1fr) 36px;
+  grid-template-columns: 96px minmax(0, 1fr) 36px;
   align-items: center;
   gap: 12px;
   padding: 3px 0;
@@ -536,11 +695,11 @@ a.who:hover .muted {
   color: var(--accent);
   text-decoration: underline;
   text-decoration-thickness: 1px;
-  text-underline-offset: 0.18em;
+  text-underline-offset: 0.2em;
 }
 
 .pill {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--muted);
   transition: color 0.2s;
 }
@@ -549,15 +708,44 @@ a.who:hover .muted {
   color: var(--text);
 }
 
-/* Panes float on the non-tile backgrounds instead of being cut from them. */
-:root[data-bg]:not([data-bg='tiles']) .pane {
-  background: rgb(11 12 16 / 0.96);
-  border-radius: 14px;
-  box-shadow: 0 20px 50px -20px rgb(0 0 0 / 0.6);
+/* About: the portrait, printed in the same dither as the background */
+.portrait {
+  position: relative;
+  margin-top: 18px;
+  aspect-ratio: 16 / 10;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #111;
+  box-shadow: inset 0 0 0 1px var(--line);
+  outline-offset: 3px;
 }
 
-:root[data-bg]:not([data-bg='tiles']) .pane-page {
-  margin-left: 10px;
+.portrait img,
+.portrait canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 35%;
+}
+
+.portrait canvas {
+  image-rendering: pixelated;
+  transition: opacity 0.5s var(--ease);
+}
+
+.portrait:hover canvas,
+.portrait:focus-visible canvas {
+  opacity: 0;
+}
+
+.about-id {
+  margin-top: 12px;
+}
+
+.about-id p {
+  margin: 0;
 }
 
 /* Lab switcher, shown on localhost only */
@@ -571,8 +759,10 @@ a.who:hover .muted {
   padding: 4px;
   border-radius: 999px;
   background: rgb(11 12 16 / 0.92);
-  box-shadow: 0 10px 30px -10px rgb(0 0 0 / 0.7), inset 0 0 0 1px rgb(255 255 255 / 0.08);
-  font-size: 13px;
+  box-shadow:
+    0 10px 30px -10px rgb(0 0 0 / 0.7),
+    inset 0 0 0 1px var(--line);
+  font-size: 12.5px;
 }
 
 .lab-switch button {
@@ -585,7 +775,7 @@ a.who:hover .muted {
 }
 
 .lab-switch button span {
-  font-size: 11px;
+  font-size: 10.5px;
   color: var(--faint);
 }
 
@@ -598,7 +788,7 @@ a.who:hover .muted {
 
 @media (max-width: 639px) {
   body {
-    font-size: 15px;
+    font-size: 14.5px;
   }
 
   .stage {
@@ -606,23 +796,21 @@ a.who:hover .muted {
     pointer-events: auto;
   }
 
-  .pane {
+  .pane,
+  .pane-home,
+  .pane-page {
     width: calc((var(--cols) - 4) * var(--cell));
     padding: 20px 18px 16px;
     scroll-snap-align: start;
     scroll-margin-left: calc(var(--ox) + var(--cell));
   }
 
-  .pane-home,
-  .pane-page {
-    width: calc((var(--cols) - 4) * var(--cell));
-  }
-
   .deck-end {
     flex-basis: calc(var(--cell) * 3);
   }
 
-  .wall-tip {
+  .wall-tip,
+  .lab-switch {
     display: none;
   }
 }

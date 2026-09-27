@@ -1,13 +1,12 @@
 import type { Metadata, Viewport } from 'next'
-import { Instrument_Sans } from 'next/font/google'
+import { Geist } from 'next/font/google'
 import './globals.css'
 import { Shell } from '@/components/site/shell'
 import { WEBSITE_URL } from '@/lib/constants'
 import { SENTENCE_ONE } from './signals'
 
-const sans = Instrument_Sans({
+const sans = Geist({
   subsets: ['latin'],
-  axes: ['wdth'],
   variable: '--font-sans',
   display: 'swap',
 })

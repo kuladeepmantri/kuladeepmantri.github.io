@@ -9,7 +9,7 @@ import { usePathname } from 'next/navigation'
 import { useEffect, useRef } from 'react'
 import { TIMEZONE } from '@/lib/constants'
 import { normalizePath, placeFor } from '@/lib/panes'
-import { DAY, PALETTES, YEAR_DAYS, buildLUT, dailyHeat, fbm, noise3 } from '@/lib/wall'
+import { DAY, PALETTES, YEAR_DAYS, buildLUT, dailyHeat, fbm, noise3, smoothstep } from '@/lib/wall'
 import type { Source } from './wall'
 
 export type Mode = 'aurora' | 'contours' | 'currents' | 'signal' | 'stars' | 'dither'
@@ -35,7 +35,11 @@ type Frame = {
 
 type Renderer = { draw: (f: Frame) => void }
 
-const DAY_FMT = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', timeZone: TIMEZONE })
+const DAY_FMT = new Intl.DateTimeFormat('en-US', {
+  month: 'short',
+  day: 'numeric',
+  timeZone: TIMEZONE,
+})
 
 function hash1(n: number) {
   const s = Math.sin(n * 127.1 + 311.7) * 43758.5453
@@ -44,7 +48,11 @@ function hash1(n: number) {
 
 /* ── 1. Aurora: curtains of light over a lake, tall where the year was busy ── */
 function aurora(): Renderer {
-  const stars = Array.from({ length: 220 }, (_, i) => ({ x: hash1(i), y: hash1(i + 99) * 0.7, p: hash1(i + 7) }))
+  const stars = Array.from({ length: 220 }, (_, i) => ({
+    x: hash1(i),
+    y: hash1(i + 99) * 0.7,
+    p: hash1(i + 7),
+  }))
   const sprite = document.createElement('canvas')
   sprite.width = 1
   sprite.height = 256
@@ -82,8 +90,11 @@ function aurora(): Renderer {
       for (let r = 0; r < 3; r++) {
         for (let x = -40; x < W + 40; x += 3) {
           const line =
-            horizon - H * (0.1 + 0.09 * r) - H * 0.16 * (fbm(x * 0.0012 + r * 10, t * 0.035 + r, r) - 0.5)
-          const amb = Math.max(0, fbm(x * 0.0028 + t * 0.03 + r * 5, r * 3.1, t * 0.05) - 0.38) * 1.6
+            horizon -
+            H * (0.1 + 0.09 * r) -
+            H * 0.16 * (fbm(x * 0.0012 + r * 10, t * 0.035 + r, r) - 0.5)
+          const amb =
+            Math.max(0, fbm(x * 0.0028 + t * 0.03 + r * 5, r * 3.1, t * 0.05) - 0.38) * 1.6
           const a = f.soft(x)
           let glow = 0
           let lean = 18 * (noise3(x * 0.01, r, t * 0.4) - 0.5)
@@ -110,7 +121,17 @@ function aurora(): Renderer {
       ctx.translate(0, horizon * 2)
       ctx.scale(1, -1)
       const refl = Math.min(H - horizon, horizon)
-      ctx.drawImage(f.canvas, 0, (horizon - refl) * dpr, W * dpr, refl * dpr, 0, horizon - refl, W, refl)
+      ctx.drawImage(
+        f.canvas,
+        0,
+        (horizon - refl) * dpr,
+        W * dpr,
+        refl * dpr,
+        0,
+        horizon - refl,
+        W,
+        refl,
+      )
       ctx.restore()
       ctx.globalAlpha = 0.07
       ctx.fillStyle = '#fff'
@@ -173,14 +194,38 @@ function contours(): Renderer {
               ctx.lineTo(x2, y2)
             }
             switch (k) {
-              case 1: case 14: seg(x, left, bot, y + STEP); break
-              case 2: case 13: seg(bot, y + STEP, x + STEP, right); break
-              case 3: case 12: seg(x, left, x + STEP, right); break
-              case 4: case 11: seg(top, y, x + STEP, right); break
-              case 5: seg(x, left, top, y); seg(bot, y + STEP, x + STEP, right); break
-              case 6: case 9: seg(top, y, bot, y + STEP); break
-              case 7: case 8: seg(x, left, top, y); break
-              case 10: seg(top, y, x + STEP, right); seg(x, left, bot, y + STEP); break
+              case 1:
+              case 14:
+                seg(x, left, bot, y + STEP)
+                break
+              case 2:
+              case 13:
+                seg(bot, y + STEP, x + STEP, right)
+                break
+              case 3:
+              case 12:
+                seg(x, left, x + STEP, right)
+                break
+              case 4:
+              case 11:
+                seg(top, y, x + STEP, right)
+                break
+              case 5:
+                seg(x, left, top, y)
+                seg(bot, y + STEP, x + STEP, right)
+                break
+              case 6:
+              case 9:
+                seg(top, y, bot, y + STEP)
+                break
+              case 7:
+              case 8:
+                seg(x, left, top, y)
+                break
+              case 10:
+                seg(top, y, x + STEP, right)
+                seg(x, left, bot, y + STEP)
+                break
             }
           }
         ctx.strokeStyle = f.col(0.42 + 0.56 * (l / LEVELS))
@@ -338,7 +383,12 @@ function signal(): Renderer {
 
 /* ── 5. Stars: every active day is a star; bursts become constellations ── */
 function stars(): Renderer {
-  const dust = Array.from({ length: 480 }, (_, i) => ({ x: hash1(i + 3), y: hash1(i + 501), p: hash1(i + 77), z: 0.3 + hash1(i + 9) }))
+  const dust = Array.from({ length: 480 }, (_, i) => ({
+    x: hash1(i + 3),
+    y: hash1(i + 501),
+    p: hash1(i + 77),
+    z: 0.3 + hash1(i + 9),
+  }))
   const neb = document.createElement('canvas')
   const nctx = neb.getContext('2d')!
   const glow = document.createElement('canvas')
@@ -417,42 +467,87 @@ function stars(): Renderer {
   }
 }
 
-/* ── 6. Dither: an ordered-dither print of rising light, four inks per page ── */
+/* ── 6. Dither: an ordered-dither print of the year, in four inks per page ──
+   The field is computed on a coarse 8px lattice and interpolated per pixel;
+   each 2px pixel is then snapped to one of four inks by an 8x8 Bayer matrix.
+   Mostly dark ink, soft clouds, light rising where the year was busy, a slow
+   scan band, and registration marks. */
 function dither(): Renderer {
-  const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5].map((v) => (v + 0.5) / 16)
-  const PX = 3
+  const B8 = [
+    0, 32, 8, 40, 2, 34, 10, 42, 48, 16, 56, 24, 50, 18, 58, 26, 12, 44, 4, 36, 14, 46, 6, 38, 60,
+    28, 52, 20, 62, 30, 54, 22, 3, 35, 11, 43, 1, 33, 9, 41, 51, 19, 59, 27, 49, 17, 57, 25, 15, 47,
+    7, 39, 13, 45, 5, 37, 63, 31, 55, 23, 61, 29, 53, 21,
+  ].map((v) => (v + 0.5) / 64)
+  const PX = 2
+  const G = 8
   const buf = document.createElement('canvas')
   const bctx = buf.getContext('2d')!
+  let img: ImageData | null = null
+  let px32: Uint32Array | null = null
+  let lattice = new Float32Array(0)
   return {
     draw(f) {
       const { ctx, W, H, t } = f
       const bw = Math.ceil(W / PX)
       const bh = Math.ceil(H / PX)
-      if (buf.width !== bw || buf.height !== bh) {
+      if (buf.width !== bw || buf.height !== bh || !img) {
         buf.width = bw
         buf.height = bh
+        img = bctx.createImageData(bw, bh)
+        px32 = new Uint32Array(img.data.buffer)
       }
-      const inks = [0.03, 0.3, 0.62, 0.95].map((v) => f.rgb(v))
-      const img = bctx.createImageData(bw, bh)
-      const colAct = new Float32Array(bw)
-      for (let i = 0; i < bw; i++) colAct[i] = f.soft(i * PX)
-      for (let j = 0; j < bh; j++) {
-        const hgt = 1 - j / bh
-        for (let i = 0; i < bw; i++) {
-          let v = 0.12 + 0.55 * noise3(i * 0.018 + t * 0.12, j * 0.018 - t * 0.05, t * 0.1)
-          const a = colAct[i]
-          if (a > 0) v += a * Math.exp(-hgt / (0.12 + 0.5 * a)) * 0.9
+      // Inks: near-black, a dim tone, the page colour, and its highlight.
+      const inks = [0.0, 0.22, 0.55, 0.9].map((v, k) => {
+        const [r, g, b] = f.rgb(v)
+        const m = k === 0 ? 0.55 : 1
+        return (255 << 24) | (((b * m) | 0) << 16) | (((g * m) | 0) << 8) | ((r * m) | 0)
+      })
+
+      const gw = Math.ceil(W / G) + 2
+      const gh = Math.ceil(H / G) + 2
+      if (lattice.length !== gw * gh) lattice = new Float32Array(gw * gh)
+      const scanY = (((t * 0.06) % 1.3) - 0.15) * H
+      for (let j = 0; j < gh; j++) {
+        const y = j * G
+        const hgt = 1 - y / H
+        const vy = (y / H - 0.5) ** 2
+        const scan = 0.13 * Math.exp(-(((y - scanY) / 26) ** 2))
+        for (let i = 0; i < gw; i++) {
+          const x = i * G
+          const n = fbm(x * 0.0021 + t * 0.018, y * 0.0021 - t * 0.011, t * 0.028)
+          let v = smoothstep(0.38, 0.82, n) * 0.36
+          const a = f.soft(x)
+          if (a > 0.01) v += a * Math.exp(-hgt / (0.1 + 0.45 * a)) * 0.95
           if (f.pointer.on) {
-            const d2 = (i * PX - f.pointer.x) ** 2 + (j * PX - f.pointer.y) ** 2
-            v += 0.5 * Math.exp(-d2 / (2 * 70 * 70))
+            const d2 = (x - f.pointer.x) ** 2 + (y - f.pointer.y) ** 2
+            v += 0.42 * Math.exp(-d2 / (2 * 85 * 85))
           }
-          const q = Math.min(3, Math.max(0, Math.floor(v * 3 + BAYER[(j & 3) * 4 + (i & 3)])))
-          const [r, g, b] = inks[q]
-          const o = (j * bw + i) * 4
-          img.data[o] = r
-          img.data[o + 1] = g
-          img.data[o + 2] = b
-          img.data[o + 3] = 255
+          v += scan
+          v *= 1 - 0.7 * ((x / W - 0.5) ** 2 + vy)
+          lattice[j * gw + i] = v
+        }
+      }
+
+      const out = px32!
+      const k = PX / G
+      for (let j = 0; j < bh; j++) {
+        const gy = j * k
+        const j0 = gy | 0
+        const fy = gy - j0
+        const row0 = j0 * gw
+        const row1 = row0 + gw
+        const brow = (j & 7) * 8
+        for (let i = 0; i < bw; i++) {
+          const gx = i * k
+          const i0 = gx | 0
+          const fx = gx - i0
+          const top = lattice[row0 + i0] + (lattice[row0 + i0 + 1] - lattice[row0 + i0]) * fx
+          const bot = lattice[row1 + i0] + (lattice[row1 + i0 + 1] - lattice[row1 + i0]) * fx
+          const v = top + (bot - top) * fy
+          let q = (v * 3 + B8[brow + (i & 7)]) | 0
+          if (q < 0) q = 0
+          else if (q > 3) q = 3
+          out[j * bw + i] = inks[q]
         }
       }
       bctx.putImageData(img, 0, 0)
@@ -461,6 +556,17 @@ function dither(): Renderer {
       ctx.imageSmoothingEnabled = false
       ctx.drawImage(buf, 0, 0, bw * PX, bh * PX)
       ctx.imageSmoothingEnabled = true
+
+      // Registration marks, like the corners of a print sheet.
+      ctx.fillStyle = f.col(0.45)
+      ctx.globalAlpha = 0.5
+      const step = 144
+      for (let y = step / 2; y < H; y += step)
+        for (let x = step / 2; x < W; x += step) {
+          ctx.fillRect(x - 4, y, 9, 1)
+          ctx.fillRect(x, y - 4, 1, 9)
+        }
+      ctx.globalAlpha = 1
     },
   }
 }
@@ -609,7 +715,24 @@ export function Backdrop({ mode, sources }: { mode: Mode; sources: Record<string
       for (let i = 0; i < YEAR_DAYS; i++)
         if (raw[i]) days.push({ day: i, n: raw[i], x: x0 + (i / (YEAR_DAYS - 1)) * span })
 
-      renderer.draw({ ctx, canvas, W, H, dpr, t, dt, col, rgb, act, soft, x0, x1, pointer, days, peak })
+      renderer.draw({
+        ctx,
+        canvas,
+        W,
+        H,
+        dpr,
+        t,
+        dt,
+        col,
+        rgb,
+        act,
+        soft,
+        x0,
+        x1,
+        pointer,
+        days,
+        peak,
+      })
 
       // Hover: the nearest active day within a few days of the pointer.
       const src = heatKey ? sources[heatKey] : null
