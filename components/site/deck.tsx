@@ -2,75 +2,76 @@
 
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
+import { emit, takeOrigin } from '@/lib/bus'
 import { normalizePath, placeFor } from '@/lib/panes'
 import { tick } from '@/lib/sound'
 
-type Open = { key: string; node: React.ReactNode; phase: 'in' | 'open' | 'out'; t0: number }
+type Phase = 'in' | 'open' | 'out'
+type Open = { key: string; node: React.ReactNode; phase: Phase; y: number | null }
 
-const IN_MS = 820
-const OUT_MS = 620
+const IN_MS = 650
+const OUT_MS = 440
 
 /**
  * The home pane plus at most one pane to its right, for the current route.
- * Opening and closing are timed to the wall's tile wave: the pane's text
- * fades in once the tiles under it have turned, and fades out before they turn back.
+ * A pane opens out of the row that was clicked: a line at that row's height
+ * runs across, then unfolds up and down into the pane. Closing folds it back
+ * into the same line.
  */
 export function Deck({ home, children }: { home: React.ReactNode; children: React.ReactNode }) {
   const path = normalizePath(usePathname())
   const router = useRouter()
   const key = placeFor(path).key
   const [open, setOpen] = useState<Open | null>(() =>
-    key ? { key, node: children, phase: 'in', t0: 0 } : null,
+    key ? { key, node: children, phase: 'in', y: null } : null,
   )
-  const [homeT0, setHomeT0] = useState(0)
   const openRef = useRef(open)
   openRef.current = open
   const stageRef = useRef<HTMLDivElement>(null)
+  const paneRef = useRef<HTMLElement>(null)
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined)
   const first = useRef(true)
 
   useEffect(() => {
     clearTimeout(timer.current)
-    const now = performance.now()
     const cur = openRef.current
     const settle = (k: string) =>
       setTimeout(() => setOpen((o) => (o && o.key === k ? { ...o, phase: 'open' } : o)), IN_MS)
 
     if (first.current) {
-      // First load: the home pane and any routed pane wave in together.
       first.current = false
-      setHomeT0(now)
-      if (cur) {
-        setOpen({ ...cur, t0: now })
-        timer.current = settle(cur.key)
-      }
+      if (cur) timer.current = settle(cur.key)
       return
     }
+    const from = takeOrigin()
     if (key) {
+      if (from) emit('open', from)
       if (cur && cur.phase !== 'out') {
-        // Already open: swap the content in place; the tiles stay.
-        setOpen({ ...cur, key, node: children })
+        // Already open: swap the content in place.
+        tick('open')
+        setOpen({ ...cur, key, node: children, y: from?.y ?? cur.y })
         return
       }
       tick('open')
-      setOpen({ key, node: children, phase: 'in', t0: now })
+      setOpen({ key, node: children, phase: 'in', y: from?.y ?? null })
       timer.current = settle(key)
     } else if (cur && cur.phase !== 'out') {
       tick('close')
-      setOpen({ ...cur, phase: 'out', t0: now })
+      setOpen({ ...cur, phase: 'out' })
       timer.current = setTimeout(() => setOpen((o) => (o?.phase === 'out' ? null : o)), OUT_MS)
     }
   }, [key, children])
 
-  // On phones the deck scrolls sideways: bring a newly opened pane into view.
+  // On phones the deck scrolls sideways: bring the open pane into view once
+  // it exists, or go back to the home pane when it closes.
+  const openKey = open && open.phase !== 'out' ? open.key : null
   useEffect(() => {
     const stage = stageRef.current
-    if (!stage) return
-    if (stage.scrollWidth <= stage.clientWidth) return
-    const target = key ? stage.querySelector<HTMLElement>('[data-depth="1"]') : null
-    if (target) target.scrollIntoView({ inline: 'start', block: 'nearest', behavior: 'smooth' })
-    else stage.scrollTo({ left: 0, behavior: 'smooth' })
-  }, [key])
+    if (!stage || stage.scrollWidth <= stage.clientWidth) return
+    if (openKey && paneRef.current)
+      paneRef.current.scrollIntoView({ inline: 'start', block: 'nearest', behavior: 'smooth' })
+    else if (!openKey) stage.scrollTo({ left: 0, behavior: 'smooth' })
+  }, [openKey])
 
   useEffect(() => {
     if (!key) return
@@ -81,26 +82,35 @@ export function Deck({ home, children }: { home: React.ReactNode; children: Reac
     return () => window.removeEventListener('keydown', onKey)
   }, [key, router])
 
+  // Where the pane unfolds from, relative to its own box.
+  const fold = (() => {
+    if (!open || open.y === null || typeof window === 'undefined') return undefined
+    const cell =
+      parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--cell')) || 18
+    const top = cell
+    const bottom = window.innerHeight - cell
+    const y = Math.min(bottom - 2, Math.max(top + 2, open.y))
+    return { '--ft': `${y - top}px`, '--fb': `${bottom - y}px` } as React.CSSProperties
+  })()
+
   return (
     <div className="stage" ref={stageRef}>
       <div className="deck">
         <section
           className="pane pane-home"
           data-pane
-          data-depth="0"
-          data-phase="in"
-          data-t0={homeT0}
+          data-phase="open"
           aria-label="Kuladeep Mantri"
         >
           {home}
         </section>
         {open && (
           <section
+            ref={paneRef}
             className="pane pane-page"
             data-pane
-            data-depth="1"
             data-phase={open.phase}
-            data-t0={open.t0}
+            style={fold}
             aria-live="polite"
           >
             <div className="pane-content" key={open.key}>

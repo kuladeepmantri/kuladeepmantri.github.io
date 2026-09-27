@@ -2,12 +2,13 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { ProjectRef } from '@/app/signals'
 import { orderProjects } from '@/lib/live'
 import { useLive } from '@/lib/live-store'
 import { normalizePath } from '@/lib/panes'
-import { savedPreference, setSound, soundOn, subscribe, tick } from '@/lib/sound'
+import { emit, on, setOrigin } from '@/lib/bus'
+import { LABELS, current, cycle, saved, setPreset, subscribe, tick, type Preset } from '@/lib/sound'
 import { LiveSentence } from './live-sentence'
 import { CloseIcon } from './pane-head'
 import { PinIcon } from './icons'
@@ -23,28 +24,46 @@ const PAGES = [
 function Item({
   href,
   label,
-  meta,
   path,
+  slug,
+  lit,
 }: {
   href: string
   label: string
-  meta?: string
   path: string
+  slug?: string
+  lit?: boolean
 }) {
   const active = path === href
+  const ref = useRef<HTMLAnchorElement>(null)
   return (
     <li>
       <Link
+        ref={ref}
         href={active ? '/' : href}
         scroll={false}
         aria-current={active ? 'page' : undefined}
-        onPointerEnter={() => tick('hover')}
+        data-lit={lit || undefined}
+        onPointerEnter={() => {
+          tick('hover')
+          if (slug) emit('focus', { slug })
+        }}
+        onPointerLeave={() => slug && emit('focus', { slug: null })}
+        onClick={() => {
+          // The pane opens out of this row, and the background ripples from it.
+          const r = ref.current?.getBoundingClientRect()
+          if (r) setOrigin({ x: r.right, y: r.top + r.height / 2 })
+          const el = ref.current
+          if (el) {
+            el.dataset.fire = ''
+            setTimeout(() => delete el.dataset.fire, 700)
+          }
+        }}
       >
         <span className="item-label">
           {label}
           {active && <CloseIcon />}
         </span>
-        {meta && <span className="item-meta">{meta}</span>}
       </Link>
     </li>
   )
@@ -54,6 +73,9 @@ function Item({
 export function HomePane({ projects, tweet }: { projects: ProjectRef[]; tweet: React.ReactNode }) {
   const path = normalizePath(usePathname())
   const { repos } = useLive()
+  // Hosts hovered on the background light up their projects here.
+  const [lit, setLit] = useState<string[]>([])
+  useEffect(() => on<{ slugs: string[] }>('node', (d) => setLit(d.slugs)), [])
   return (
     <div className="home">
       <header className="id">
@@ -77,21 +99,19 @@ export function HomePane({ projects, tweet }: { projects: ProjectRef[]; tweet: R
 
       {tweet}
 
-      <nav aria-label="Work" className="block">
-        <h2 className="lab">Work</h2>
+      <nav aria-label="Projects" className="block">
+        <h2 className="lab">Projects</h2>
         <ul className="rows">
-          {orderProjects(projects, repos).map((p) => {
-            const live = p.repos.map((r) => repos?.[r]).find((r) => r && !r.isPrivate)
-            return (
-              <Item
-                key={p.slug}
-                href={`/apps/${p.slug}`}
-                label={p.name}
-                meta={live?.language ?? p.stack.split(' · ')[0]}
-                path={path}
-              />
-            )
-          })}
+          {orderProjects(projects, repos).map((p) => (
+            <Item
+              key={p.slug}
+              href={`/apps/${p.slug}`}
+              label={p.name}
+              path={path}
+              slug={p.slug}
+              lit={lit.includes(p.slug)}
+            />
+          ))}
         </ul>
       </nav>
 
@@ -112,13 +132,14 @@ export function HomePane({ projects, tweet }: { projects: ProjectRef[]; tweet: R
 }
 
 function SoundToggle() {
-  const [on, setOn] = useState(false)
+  const [preset, setP] = useState<Preset>('off')
   useEffect(() => {
-    setOn(soundOn())
-    const off = subscribe(setOn)
-    // Browsers only allow audio after a gesture: resume a saved "on" at the first one.
-    if (savedPreference() && !soundOn()) {
-      const arm = () => setSound(true)
+    setP(current())
+    const off = subscribe(setP)
+    // Browsers only allow audio after a gesture: resume a saved choice at the first one.
+    const want = saved()
+    if (want !== 'off' && current() === 'off') {
+      const arm = () => setPreset(want)
       window.addEventListener('pointerdown', arm, { once: true })
       return () => {
         off()
@@ -129,15 +150,16 @@ function SoundToggle() {
       off()
     }
   }, [])
+  const on = preset !== 'off'
   return (
     <button
       type="button"
       className="sound"
       aria-pressed={on}
-      aria-label={on ? 'Turn sound off' : 'Turn sound on'}
-      onClick={() => setSound(!on)}
+      aria-label={`Sound: ${LABELS[preset]}. Change sound`}
+      onClick={() => cycle()}
     >
-      <span>{on ? 'Sound on' : 'Sound off'}</span>
+      <span>{LABELS[preset]}</span>
       <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
         <path d="M2.5 6h2.2L8 3.2v9.6L4.7 10H2.5z" fill="currentColor" />
         {on ? (

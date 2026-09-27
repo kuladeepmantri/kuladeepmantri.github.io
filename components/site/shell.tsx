@@ -6,12 +6,11 @@ import { LiveProvider } from '@/lib/live-store'
 import { Deck } from './deck'
 import { HomePane } from './home-pane'
 import { TweetCard } from './tweet-card'
-import { Background } from './background'
-import type { Source } from './wall'
+import { Field, type Source } from './field'
 
 const LOCAL_DAY = new Intl.DateTimeFormat('en-CA', { timeZone: TIMEZONE })
 
-/** What the wall can light up: all of GitHub, each project, and my posts on X. */
+/** What the field can show: all of GitHub, each project, and my posts on X. */
 function sources(): Record<string, Source> {
   const out: Record<string, Source> = {
     all: { days: allDays(), noun: ['contribution on GitHub', 'contributions on GitHub'] },
@@ -33,7 +32,7 @@ function sources(): Record<string, Source> {
 }
 
 /**
- * The site: the wall behind everything, the home pane, and one pane for the
+ * The site: the field behind everything, the home pane, and one pane for the
  * current route. Route pages render only their pane's content.
  */
 export function Shell({ children }: { children: React.ReactNode }) {
@@ -47,7 +46,10 @@ export function Shell({ children }: { children: React.ReactNode }) {
         lastPostAt: LIVE.x?.posts[0]?.createdAt ?? null,
       }}
     >
-      <Background sources={sources()} builtAt={LIVE.builtAt} />
+      <Field
+        sources={sources()}
+        names={Object.fromEntries(SIGNALS.map((s) => [s.slug, s.name]))}
+      />
       <Deck home={<HomePane projects={projectRefs()} tweet={<TweetCard />} />}>{children}</Deck>
     </LiveProvider>
   )

@@ -14,10 +14,7 @@ export default function Contact() {
   return (
     <article>
       <PaneHead title="Contact" />
-      <p>
-        Email is the best way to reach me. Security, AI, Kubernetes, or a bug you think I’d find
-        interesting.
-      </p>
+      <p>If you’d like to connect about anything, send me an email.</p>
       <p className="email">
         <a id="email-address" href={`mailto:${EMAIL}`}>
           {EMAIL}

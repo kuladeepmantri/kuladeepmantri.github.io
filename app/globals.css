@@ -1,25 +1,25 @@
 @import 'tailwindcss';
 
 /*
- * A living background (a dithered print of the last year) fills the window.
- * Panes float on it as dark cards: the home pane, and one pane per opened
- * page to its right. One typeface, Geist, at a few sizes.
+ * A living background (the field: a dithered print with a quiet network on
+ * top) fills the window. Panes float on it as dark rounded cards: the home
+ * pane, and one pane per opened page to its right. One typeface, Geist.
  */
 
 :root {
   --bg: #050609;
-  --pane: #0b0c10; /* matches PANE in components/site/wall.tsx */
+  --pane: rgb(11 12 16 / 0.96);
   --card: #111318;
   --line: rgb(255 255 255 / 0.07);
   --text: #e9ebf0;
-  --muted: #858b97;
-  --faint: #565c68;
-  --accent: #b9a6ff;
+  --muted: #868c98;
+  --faint: #5a606c;
+  --accent: #b3b9ff;
   --cell: 18px;
-  --ox: 0px;
-  --oy: 0px;
   --cols: 20;
+  --gap: 12px;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --snap: cubic-bezier(0.7, 0, 0.2, 1);
   color-scheme: dark;
 }
 
@@ -69,7 +69,7 @@ body {
   color: var(--text);
   font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 14.5px;
-  line-height: 1.6;
+  line-height: 1.65;
   letter-spacing: -0.006em;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -110,34 +110,34 @@ button {
   flex-shrink: 0;
 }
 
-/* ── Background ── */
+/* ── Field ── */
 
-.wall {
+.field {
   position: fixed;
   inset: 0;
   z-index: 0;
   display: block;
 }
 
-.wall-tip {
+.field-tip {
   position: fixed;
   top: 0;
   left: 0;
   z-index: 5;
-  padding: 5px 9px;
-  border-radius: 6px;
-  background: var(--pane);
+  padding: 5px 10px;
+  border-radius: 7px;
+  background: rgb(11 12 16 / 0.94);
   box-shadow:
     0 8px 24px -8px rgb(0 0 0 / 0.7),
     inset 0 0 0 1px var(--line);
   color: var(--text);
-  font-size: 12px;
+  font-size: 12.5px;
   white-space: nowrap;
   pointer-events: none;
   transition: opacity 0.15s;
 }
 
-.wall-tip[data-show='false'] {
+.field-tip[data-show='false'] {
   opacity: 0;
 }
 
@@ -160,20 +160,26 @@ button {
 
 .deck {
   display: flex;
+  gap: var(--gap);
   box-sizing: border-box;
   height: 100%;
   width: max-content;
-  padding: calc(var(--oy) + var(--cell)) 0 0 calc(var(--ox) + var(--cell));
+  padding: var(--cell) 0 0 var(--cell);
 }
 
 .pane {
   flex: 0 0 auto;
   box-sizing: border-box;
-  height: calc(100dvh - 2 * var(--oy) - 2 * var(--cell));
+  height: calc(100dvh - 2 * var(--cell));
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: none;
-  padding: 22px 22px 18px;
+  padding: 30px 28px 24px;
+  border-radius: 16px;
+  background: var(--pane);
+  box-shadow:
+    0 30px 70px -30px rgb(0 0 0 / 0.85),
+    inset 0 0 0 1px var(--line);
   pointer-events: auto;
 }
 
@@ -182,85 +188,83 @@ button {
 }
 
 .pane-home {
-  width: calc(18 * var(--cell));
+  width: 360px;
 }
 
 .pane-page {
-  width: calc(23 * var(--cell));
+  width: 440px;
 }
 
 .deck-end {
-  flex: 0 0 calc(var(--cell) * 2);
+  flex: 0 0 var(--cell);
 }
 
-/* Floating cards on the living backgrounds; cut from the grid on tiles. */
-:root[data-bg]:not([data-bg='tiles']) .pane {
-  background: rgb(11 12 16 / 0.96);
-  border-radius: 14px;
-  box-shadow:
-    0 24px 60px -24px rgb(0 0 0 / 0.8),
-    inset 0 0 0 1px var(--line);
+/* A pane opens out of the row that was clicked: a line at that height runs
+   across, then unfolds up and down. Closing folds it back into the line. */
+@keyframes unfold {
+  0% {
+    clip-path: inset(var(--ft, 50%) 100% var(--fb, 50%) 0 round 16px);
+  }
+  38% {
+    clip-path: inset(var(--ft, 50%) 0 var(--fb, 50%) 0 round 16px);
+  }
+  100% {
+    clip-path: inset(0 0 0 0 round 16px);
+  }
 }
 
-:root[data-bg]:not([data-bg='tiles']) .pane-page {
-  margin-left: 10px;
-}
-
-:root[data-bg='tiles'] .pane-page {
-  box-shadow: inset 1px 0 0 var(--line);
+@keyframes fold {
+  0% {
+    clip-path: inset(0 0 0 0 round 16px);
+  }
+  60% {
+    clip-path: inset(var(--ft, 50%) 0 var(--fb, 50%) 0 round 16px);
+  }
+  100% {
+    clip-path: inset(var(--ft, 50%) 0 var(--fb, 50%) 100% round 16px);
+  }
 }
 
 @keyframes text-in {
   from {
     opacity: 0;
-    transform: translateY(4px);
+    transform: translateY(6px);
   }
 }
 
-@keyframes card-in {
-  from {
-    opacity: 0;
-    transform: translateX(-12px) scale(0.985);
-  }
+.pane-page[data-phase='in'] {
+  animation: unfold 0.62s var(--snap) both;
+}
+
+.pane-page[data-phase='out'] {
+  animation: fold 0.42s var(--snap) both;
 }
 
 .home {
-  animation: text-in 0.5s var(--ease) 0.3s both;
+  animation: text-in 0.6s var(--ease) 0.1s both;
 }
 
 .pane-content {
-  animation: text-in 0.4s var(--ease) both;
+  animation: text-in 0.45s var(--ease) both;
 }
 
 .pane[data-phase='in'] .pane-content {
-  animation-delay: 0.3s;
-}
-
-:root[data-bg]:not([data-bg='tiles']) .pane-page[data-phase='in'] {
-  animation: card-in 0.45s var(--ease) both;
+  animation-delay: 0.36s;
 }
 
 .pane[data-phase='out'] .pane-content {
   opacity: 0;
-  transition: opacity 0.12s;
-}
-
-:root[data-bg]:not([data-bg='tiles']) .pane-page[data-phase='out'] {
-  opacity: 0;
-  transform: translateX(-8px);
-  transition:
-    opacity 0.3s,
-    transform 0.3s var(--ease);
+  transition: opacity 0.1s;
 }
 
 /* ── Type ── */
 
 .pane p {
-  margin-top: 14px;
+  margin-top: 16px;
 }
 
 .name {
-  font-size: 15px;
+  font-size: 15.5px;
   font-weight: 600;
   letter-spacing: -0.015em;
 }
@@ -270,11 +274,12 @@ button {
 }
 
 .lead {
+  font-size: 15.5px;
   color: var(--text);
 }
 
 .pane article > p a,
-.pane .facts a,
+.pane .cells a,
 .tk {
   color: var(--accent);
   text-decoration: underline;
@@ -287,17 +292,14 @@ button {
 }
 
 .pane article > p a:hover,
-.pane .facts a:hover,
+.pane .cells a:hover,
 .tk:hover {
   text-decoration-color: var(--accent);
 }
 
-/* Small labels: section names, counts, dates. */
 .lab,
 .list-lab {
-  display: flex;
-  justify-content: space-between;
-  margin: 30px 0 8px;
+  margin: 36px 0 10px;
   font-size: 12.5px;
   font-weight: 400;
   color: var(--faint);
@@ -308,16 +310,14 @@ button {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding-bottom: 14px;
-  box-shadow: inset 0 -1px 0 var(--line);
 }
 
 .close {
   display: grid;
   place-items: center;
-  width: 24px;
-  height: 24px;
-  margin: -5px;
+  width: 26px;
+  height: 26px;
+  margin: -6px;
   color: var(--muted);
   transition: color 0.2s;
 }
@@ -335,14 +335,13 @@ button {
 }
 
 .id .role {
-  margin-top: 6px;
-  color: var(--text);
+  margin-top: 8px;
 }
 
 .pane p.loc {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 7px;
   margin-top: 2px;
   color: var(--muted);
 }
@@ -352,7 +351,7 @@ button {
 }
 
 .sentence.s2 {
-  margin-top: 18px;
+  margin-top: 22px;
   color: var(--muted);
 }
 
@@ -379,12 +378,12 @@ button {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  margin-top: 22px;
-  padding: 14px 16px 15px;
+  margin-top: 26px;
+  padding: 15px 16px 16px;
   border-radius: 12px;
   background: var(--card);
   box-shadow: inset 0 0 0 1px var(--line);
-  transition: box-shadow 0.2s;
+  transition: box-shadow 0.25s;
 }
 
 .tweet:hover {
@@ -425,17 +424,17 @@ button {
 }
 
 .tweet-text {
+  white-space: pre-line;
   display: -webkit-box;
-  -webkit-line-clamp: 4;
+  -webkit-line-clamp: 5;
   -webkit-box-orient: vertical;
   overflow: hidden;
   font-size: 14px;
   line-height: 1.55;
-  white-space: pre-line;
   overflow-wrap: anywhere;
 }
 
-/* Work: name on the left, language on the right */
+/* Projects */
 .rows,
 .tabs,
 .list,
@@ -447,48 +446,64 @@ button {
 }
 
 .rows a {
+  position: relative;
   display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 12px;
-  margin: 0 -8px;
-  padding: 4px 8px;
-  border-radius: 7px;
-  transition: background-color 0.15s;
-}
-
-.rows a:hover,
-.rows a[aria-current='page'] {
-  background: rgb(255 255 255 / 0.05);
+  padding: 5px 0;
+  overflow: hidden;
 }
 
 .item-label {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: 8px;
   color: var(--accent);
   transition: color 0.6s;
 }
 
-.rows a:hover .item-label {
+.rows a:hover .item-label,
+.rows a[data-lit] .item-label {
   color: var(--text);
   transition: color 0.15s;
 }
 
-.item-meta {
-  font-size: 13px;
-  color: var(--faint);
+/* A click sends a band of light across the row before the pane opens. */
+@keyframes fire {
+  from {
+    transform: translateX(-100%);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+.rows a[data-fire]::after,
+.tabs a[data-fire]::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--accent) 30%, transparent),
+    transparent
+  );
+  animation: fire 0.6s var(--ease) both;
+  pointer-events: none;
 }
 
 .tabs {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px 20px;
-  margin-top: 30px;
+  gap: 6px 22px;
+  margin-top: 34px;
 }
 
 .tabs a {
+  position: relative;
   display: inline-flex;
+  overflow: hidden;
   color: var(--muted);
   transition: color 0.15s;
 }
@@ -507,7 +522,7 @@ button {
   align-items: center;
   justify-content: space-between;
   margin-top: auto;
-  padding-top: 28px;
+  padding-top: 36px;
   font-size: 13px;
   color: var(--faint);
 }
@@ -515,7 +530,7 @@ button {
 .sound {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: 8px;
   color: var(--muted);
   transition: color 0.2s;
 }
@@ -528,7 +543,11 @@ button {
 /* ── Page panes ── */
 
 .list {
-  margin-top: 18px;
+  margin-top: 22px;
+}
+
+.list li + li {
+  margin-top: 2px;
 }
 
 .list a {
@@ -547,11 +566,12 @@ button {
 .who {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-top: 18px;
+  gap: 14px;
+  margin-top: 22px;
 }
 
-.who p {
+.who p,
+.about-hero p {
   margin: 0;
 }
 
@@ -579,22 +599,24 @@ a.who:hover .muted {
 .facts {
   display: grid;
   grid-template-columns: 104px minmax(0, 1fr);
-  gap: 10px 14px;
-  margin-top: 22px;
+  gap: 10px 16px;
+  margin-top: 26px;
+}
+
+.facts > div,
+.cells > div {
+  min-width: 0;
 }
 
 .facts > div {
   display: contents;
 }
 
-.facts dt {
-  font-size: 13px;
+.facts dt,
+.cells dt {
+  font-size: 12.5px;
   color: var(--faint);
   padding-top: 1px;
-}
-
-.facts dd {
-  min-width: 0;
 }
 
 .commits a,
@@ -602,8 +624,8 @@ a.who:hover .muted {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  gap: 14px;
-  padding: 3px 0;
+  gap: 16px;
+  padding: 4px 0;
 }
 
 .commit-msg {
@@ -638,14 +660,14 @@ a.who:hover .muted {
 }
 
 .posts li + li {
-  margin-top: 2px;
+  margin-top: 4px;
 }
 
 .posts a {
   display: flex;
   flex-direction: column;
-  gap: 3px;
-  padding: 8px 0;
+  gap: 4px;
+  padding: 9px 0;
 }
 
 .post-text {
@@ -662,7 +684,7 @@ a.who:hover .muted {
   grid-template-columns: 96px minmax(0, 1fr) 36px;
   align-items: center;
   gap: 12px;
-  padding: 3px 0;
+  padding: 4px 0;
 }
 
 .langs .bar {
@@ -699,7 +721,7 @@ a.who:hover .muted {
 }
 
 .pill {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--muted);
   transition: color 0.2s;
 }
@@ -708,87 +730,71 @@ a.who:hover .muted {
   color: var(--text);
 }
 
-/* About: the portrait, printed in the same dither as the background */
-.portrait {
-  position: relative;
-  margin-top: 18px;
-  aspect-ratio: 16 / 10;
-  border-radius: 10px;
-  overflow: hidden;
-  background: #111;
-  box-shadow: inset 0 0 0 1px var(--line);
-  outline-offset: 3px;
-}
+/* ── About ── */
 
-.portrait img,
-.portrait canvas {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: 50% 35%;
-}
-
-.portrait canvas {
-  image-rendering: pixelated;
-  transition: opacity 0.5s var(--ease);
-}
-
-.portrait:hover canvas,
-.portrait:focus-visible canvas {
-  opacity: 0;
-}
-
-.about-id {
-  margin-top: 12px;
-}
-
-.about-id p {
-  margin: 0;
-}
-
-/* Lab switcher, shown on localhost only */
-.lab-switch {
-  position: fixed;
-  right: 16px;
-  bottom: 16px;
-  z-index: 20;
-  display: flex;
-  gap: 2px;
-  padding: 4px;
-  border-radius: 999px;
-  background: rgb(11 12 16 / 0.92);
-  box-shadow:
-    0 10px 30px -10px rgb(0 0 0 / 0.7),
-    inset 0 0 0 1px var(--line);
-  font-size: 12.5px;
-}
-
-.lab-switch button {
+.about-hero {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  border-radius: 999px;
+  gap: 16px;
+  margin-top: 26px;
+}
+
+.portrait {
+  flex-shrink: 0;
+  width: 72px;
+  height: 72px;
+  margin: 0;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #16121c;
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.portrait canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+}
+
+.about-lede {
+  font-size: 15.5px;
+  line-height: 1.7;
+}
+
+.pane .about-block p {
+  margin-top: 0;
   color: var(--muted);
 }
 
-.lab-switch button span {
-  font-size: 10.5px;
-  color: var(--faint);
+.cells {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px 24px;
+  margin-top: 36px;
 }
 
-.lab-switch button[aria-pressed='true'] {
-  background: rgb(255 255 255 / 0.1);
+.cells dd {
+  margin-top: 2px;
+}
+
+.about .tabs {
+  margin-top: 0;
+}
+
+.about .tabs a {
+  color: var(--accent);
+}
+
+.about .tabs a:hover {
   color: var(--text);
 }
 
 /* ── Phones: the panes become a sideways deck ── */
 
 @media (max-width: 639px) {
-  body {
-    font-size: 14.5px;
+  :root {
+    --gap: 10px;
   }
 
   .stage {
@@ -799,18 +805,17 @@ a.who:hover .muted {
   .pane,
   .pane-home,
   .pane-page {
-    width: calc((var(--cols) - 4) * var(--cell));
-    padding: 20px 18px 16px;
+    width: calc(100vw - 3 * var(--cell));
+    padding: 26px 22px 20px;
     scroll-snap-align: start;
-    scroll-margin-left: calc(var(--ox) + var(--cell));
+    scroll-margin-left: var(--cell);
   }
 
   .deck-end {
-    flex-basis: calc(var(--cell) * 3);
+    flex-basis: calc(var(--cell) * 2);
   }
 
-  .wall-tip,
-  .lab-switch {
+  .field-tip {
     display: none;
   }
 }

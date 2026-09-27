@@ -186,7 +186,7 @@ export const SIGNALS: Signal[] = [
 export const SENTENCE_ONE =
   'I’m Kuladeep. Security Engineer, Michigan.'
 
-export const EMAIL = 'mantrikuladeep@gmail.com'
+export const EMAIL = 'kuladeepbmantri@gmail.com'
 export const GITHUB_USER = 'kuladeepmantri'
 export const X_HANDLE = 'kuladeepmantri'
 export const INSTAGRAM = {

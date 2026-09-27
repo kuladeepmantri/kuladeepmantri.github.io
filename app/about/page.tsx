@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { PaneHead } from '@/components/site/pane-head'
 import { BuildingNow } from '@/components/site/building-now'
 import { DitherPhoto } from '@/components/site/dither-photo'
+import { PinIcon } from '@/components/site/icons'
 import { EMAIL, GITHUB_USER, X_HANDLE, projectRefs } from '../signals'
 
 export const metadata: Metadata = {
@@ -16,13 +17,20 @@ export default function About() {
   return (
     <article className="about">
       <PaneHead title="About" />
-      <DitherPhoto src="/images/avatar.jpg" alt="Kuladeep Mantri" />
-      <div className="about-id">
-        <p className="who-name">Kuladeep Mantri</p>
-        <p className="muted">Security Engineer · Michigan</p>
-      </div>
 
-      <p>
+      <header className="about-hero">
+        <DitherPhoto src="/images/avatar.jpg" alt="Kuladeep Mantri" />
+        <div>
+          <p className="who-name">Kuladeep Mantri</p>
+          <p className="muted">Security Engineer</p>
+          <p className="loc">
+            <PinIcon />
+            Michigan
+          </p>
+        </div>
+      </header>
+
+      <p className="about-lede">
         I’m curious by default and usually building something. Most of my own time goes into apps,
         AI, security ideas, and whatever I’m learning next. The engineering side of that lives{' '}
         <Link href="/" scroll={false}>
@@ -31,17 +39,18 @@ export default function About() {
         .
       </p>
 
-      <dl className="facts">
-        <div>
-          <dt>Work</dt>
-          <dd>
-            I’m an IT Security Analyst 3 supporting State of Michigan systems that handle sensitive
-            criminal justice, student, and health data. I review how those systems are designed and
-            secured, evaluate their system security plans, and assess risk against NIST 800-53, the
-            U.S. federal framework for security and privacy controls, before they move through
-            security authorization.
-          </dd>
-        </div>
+      <section className="about-block">
+        <h2 className="lab">Work</h2>
+        <p>
+          I’m an IT Security Analyst 3 supporting State of Michigan systems that handle sensitive
+          criminal justice, student, and health data. I review how those systems are designed and
+          secured, evaluate their system security plans, and assess risk against NIST 800-53, the
+          U.S. federal framework for security and privacy controls, before they move through
+          security authorization.
+        </p>
+      </section>
+
+      <dl className="cells">
         <div>
           <dt>Building now</dt>
           <dd>
@@ -60,15 +69,22 @@ export default function About() {
           <dt>Based in</dt>
           <dd>Michigan</dd>
         </div>
-        <div>
-          <dt>Elsewhere</dt>
-          <dd>
-            <a href={`https://x.com/${X_HANDLE}`}>X</a> ·{' '}
-            <a href={`https://github.com/${GITHUB_USER}`}>GitHub</a> ·{' '}
-            <a href={`mailto:${EMAIL}`}>Email</a>
-          </dd>
-        </div>
       </dl>
+
+      <section className="about-block">
+        <h2 className="lab">Elsewhere</h2>
+        <ul className="tabs">
+          <li>
+            <a href={`https://x.com/${X_HANDLE}`}>X ↗</a>
+          </li>
+          <li>
+            <a href={`https://github.com/${GITHUB_USER}`}>GitHub ↗</a>
+          </li>
+          <li>
+            <a href={`mailto:${EMAIL}`}>Email ↗</a>
+          </li>
+        </ul>
+      </section>
     </article>
   )
 }
