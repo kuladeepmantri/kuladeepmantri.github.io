@@ -1,29 +1,35 @@
-// How each pane opens below the desktop breakpoint. Changing a value here is
-// all it takes to move a route to another pattern.
-export type PhonePattern = 'sheet' | 'push' | 'inline'
+// Every route is a pane stacked to the right of the home pane. This maps a
+// path to the pane it opens, the wall's palette, and whose activity it shows.
 
-export const PHONE_PATTERN = {
-  github: 'sheet',
-  x: 'sheet',
-  contact: 'sheet',
-  about: 'push',
-  project: 'push',
-  notfound: 'inline',
-} as const satisfies Record<string, PhonePattern>
-
-export type PaneKind = keyof typeof PHONE_PATTERN | 'work'
+export type Place = {
+  key: string | null // null on home: only the home pane is open
+  palette: string
+  heat: string | null // a key into the wall's activity sources, or none
+}
 
 export function normalizePath(path: string | null): string {
   if (!path) return '/'
   return path.length > 1 ? path.replace(/\/+$/, '') : path
 }
 
-export function paneKind(path: string): PaneKind {
-  if (path === '/' || path === '/now') return 'work'
-  if (path.startsWith('/apps/')) return 'project'
-  if (path === '/about') return 'about'
-  if (path === '/github') return 'github'
-  if (path === '/x') return 'x'
-  if (path === '/contact') return 'contact'
-  return 'notfound'
+export function placeFor(path: string): Place {
+  if (path.startsWith('/apps/')) {
+    const slug = path.slice(6)
+    return { key: path, palette: slug, heat: slug }
+  }
+  switch (path) {
+    case '/about':
+      return { key: path, palette: 'about', heat: null }
+    case '/github':
+      return { key: path, palette: 'github', heat: 'all' }
+    case '/x':
+      return { key: path, palette: 'x', heat: 'x' }
+    case '/contact':
+      return { key: path, palette: 'contact', heat: null }
+    case '/':
+    case '/now':
+      return { key: null, palette: 'home', heat: 'all' }
+    default:
+      return { key: path, palette: 'contact', heat: null }
+  }
 }

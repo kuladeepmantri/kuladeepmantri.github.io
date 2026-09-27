@@ -13,6 +13,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   })
   return [
     page('', 1),
+    page('/work', 0.9),
     page('/about', 0.8),
     page('/github', 0.6),
     page('/x', 0.6),

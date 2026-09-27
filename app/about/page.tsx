@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { Avatar } from '@/components/site/avatar'
+import { PaneHead } from '@/components/site/pane-head'
 import { BuildingNow } from '@/components/site/building-now'
 import { EMAIL, GITHUB_USER, X_HANDLE, projectRefs } from '../signals'
 
@@ -13,16 +14,17 @@ export const metadata: Metadata = {
 
 export default function About() {
   return (
-    <article className="p-body about">
-      <header className="about-head">
-        <Avatar size={80} />
+    <article className="about">
+      <PaneHead title="About" />
+      <div className="who">
+        <Avatar size={48} />
         <div>
-          <h2 className="about-name">Kuladeep Mantri</h2>
-          <p className="about-role">Security Engineer · Michigan</p>
+          <p className="who-name">Kuladeep Mantri</p>
+          <p className="muted">Security Engineer · Michigan</p>
         </div>
-      </header>
+      </div>
 
-      <p className="about-intro">
+      <p>
         I’m curious by default and usually building something. Most of my own time goes into apps,
         AI, security ideas, and whatever I’m learning next. The engineering side of that lives{' '}
         <Link href="/" scroll={false}>
@@ -31,8 +33,8 @@ export default function About() {
         .
       </p>
 
-      <dl className="about-grid">
-        <div className="about-row about-row-work">
+      <dl className="facts">
+        <div>
           <dt>Work</dt>
           <dd>
             I’m an IT Security Analyst 3 supporting State of Michigan systems that handle sensitive
@@ -42,25 +44,25 @@ export default function About() {
             security authorization.
           </dd>
         </div>
-        <div className="about-row">
+        <div>
           <dt>Building now</dt>
           <dd>
             <BuildingNow projects={projectRefs()} />
           </dd>
         </div>
-        <div className="about-row">
+        <div>
           <dt>Into</dt>
           <dd>AI, Kubernetes, security tools</dd>
         </div>
-        <div className="about-row">
+        <div>
           <dt>Writes</dt>
           <dd>Python, Go, C, TypeScript, Rust</dd>
         </div>
-        <div className="about-row">
+        <div>
           <dt>Based in</dt>
           <dd>Michigan</dd>
         </div>
-        <div className="about-row">
+        <div>
           <dt>Elsewhere</dt>
           <dd>
             <a href={`https://x.com/${X_HANDLE}`}>X</a> ·{' '}

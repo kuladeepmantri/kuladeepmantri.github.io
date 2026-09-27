@@ -1,9 +1,10 @@
 import type { Metadata } from 'next'
 import { Avatar } from '@/components/site/avatar'
+import { PaneHead } from '@/components/site/pane-head'
 import { RelTime } from '@/components/site/rel-time'
 import { Verified } from '@/components/site/verified'
-import { postText } from '@/lib/x-text'
 import { LIVE } from '@/lib/generated/live'
+import { postText } from '@/lib/x-text'
 import { X_HANDLE } from '../signals'
 
 export const metadata: Metadata = {
@@ -14,42 +15,37 @@ export const metadata: Metadata = {
 
 export default function XPane() {
   const x = LIVE.x
-  const follow = `https://x.com/${X_HANDLE}`
-
   return (
-    <article className="p-body">
-      <div className="profile">
-        <Avatar size={64} />
-        <span className="profile-name">
-          <span>
+    <article>
+      <PaneHead title="X" />
+      <a className="who" href={`https://x.com/${X_HANDLE}`}>
+        <Avatar size={48} />
+        <div>
+          <p className="who-name">
             {x?.name || 'Kuladeep Mantri'}
-            {x?.verified && <Verified />}
-          </span>
-          <span>@{X_HANDLE} on X</span>
-        </span>
-        <a className="pill" href={follow}>
-          Follow
-        </a>
-      </div>
-      <h2 className="sr-only">X</h2>
-
-      {x && x.bio && <p className="bio">{x.bio}</p>}
-
-      {x && x.posts.length > 0 ? (
-        <>
-          <h3 className="lab" style={{ padding: '32px 0 6px' }}>
-            Latest posts
-          </h3>
-          {x.posts.map((p) => (
-            <a key={p.id} href={p.url} className="post">
-              <span className="post-text">{postText(p.text)}</span>
-              <span className="post-ago">
-                <RelTime iso={p.createdAt} />
-              </span>
-            </a>
-          ))}
-        </>
-      ) : null}
+            {x?.verified && <Verified size={15} />}
+          </p>
+          <p className="muted">@{X_HANDLE} ↗</p>
+        </div>
+      </a>
+      {x?.bio && <p>{x.bio}</p>}
+      {x && x.posts.length > 0 && (
+        <section>
+          <h2 className="list-lab">Latest posts</h2>
+          <ul className="posts">
+            {x.posts.map((p) => (
+              <li key={p.id}>
+                <a href={p.url}>
+                  <span className="post-text">{postText(p.text)}</span>
+                  <span className="when">
+                    <RelTime iso={p.createdAt} />
+                  </span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </article>
   )
 }
