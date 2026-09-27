@@ -1,8 +1,8 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { Avatar } from '@/components/site/avatar'
 import { PaneHead } from '@/components/site/pane-head'
 import { BuildingNow } from '@/components/site/building-now'
+import { DitherPhoto } from '@/components/site/dither-photo'
 import { EMAIL, GITHUB_USER, X_HANDLE, projectRefs } from '../signals'
 
 export const metadata: Metadata = {
@@ -16,12 +16,10 @@ export default function About() {
   return (
     <article className="about">
       <PaneHead title="About" />
-      <div className="who">
-        <Avatar size={48} />
-        <div>
-          <p className="who-name">Kuladeep Mantri</p>
-          <p className="muted">Security Engineer · Michigan</p>
-        </div>
+      <DitherPhoto src="/images/avatar.jpg" alt="Kuladeep Mantri" />
+      <div className="about-id">
+        <p className="who-name">Kuladeep Mantri</p>
+        <p className="muted">Security Engineer · Michigan</p>
       </div>
 
       <p>

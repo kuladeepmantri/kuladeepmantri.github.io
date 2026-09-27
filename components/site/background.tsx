@@ -19,12 +19,12 @@ const CHOICES: { id: Choice; label: string }[] = [
 const KEY = 'km-bg'
 
 /**
- * The site's background. On localhost a switcher (and keys 1 to 7) tries the
- * candidates in place; the published site always uses the tile wall.
+ * The site's background: the dither print. On localhost a switcher (and keys
+ * 1 to 7) still tries the other candidates in place.
  */
 export function Background({ sources, builtAt }: { sources: Record<string, Source>; builtAt: string }) {
   const [lab, setLab] = useState(false)
-  const [choice, setChoice] = useState<Choice>('tiles')
+  const [choice, setChoice] = useState<Choice>('dither')
 
   useEffect(() => {
     const local = ['localhost', '127.0.0.1'].includes(location.hostname)

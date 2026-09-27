@@ -10,6 +10,7 @@ import { normalizePath } from '@/lib/panes'
 import { savedPreference, setSound, soundOn, subscribe, tick } from '@/lib/sound'
 import { LiveSentence } from './live-sentence'
 import { CloseIcon } from './pane-head'
+import { PinIcon } from './icons'
 import { Clock } from './rel-time'
 
 const PAGES = [
@@ -19,7 +20,17 @@ const PAGES = [
   { href: '/contact', label: 'Contact' },
 ]
 
-function Item({ href, label, path }: { href: string; label: string; path: string }) {
+function Item({
+  href,
+  label,
+  meta,
+  path,
+}: {
+  href: string
+  label: string
+  meta?: string
+  path: string
+}) {
   const active = path === href
   return (
     <li>
@@ -29,62 +40,71 @@ function Item({ href, label, path }: { href: string; label: string; path: string
         aria-current={active ? 'page' : undefined}
         onPointerEnter={() => tick('hover')}
       >
-        {label}
-        {active && <CloseIcon />}
+        <span className="item-label">
+          {label}
+          {active && <CloseIcon />}
+        </span>
+        {meta && <span className="item-meta">{meta}</span>}
       </Link>
     </li>
   )
 }
 
 /** The first pane: who I am, what I did last, and everything that opens a pane. */
-export function HomePane({ projects }: { projects: ProjectRef[] }) {
+export function HomePane({ projects, tweet }: { projects: ProjectRef[]; tweet: React.ReactNode }) {
   const path = normalizePath(usePathname())
   const { repos } = useLive()
   return (
     <div className="home">
-      <div className="home-top">
+      <header className="id">
         <h1 className="name">
           <Link href="/" scroll={false}>
             Kuladeep Mantri
           </Link>
         </h1>
-        <p className="bio">Security Engineer</p>
+        <p className="role">Security Engineer</p>
         <p className="loc">
-          <svg width="12" height="14" viewBox="0 0 12 14" aria-hidden="true">
-            <path
-              d="M6 13.2S1.2 8.6 1.2 5.3a4.8 4.8 0 0 1 9.6 0C10.8 8.6 6 13.2 6 13.2Z"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.3"
-            />
-            <circle cx="6" cy="5.3" r="1.6" fill="currentColor" />
-          </svg>
+          <PinIcon />
           Michigan
+          <span className="dot" aria-hidden="true">
+            ·
+          </span>
+          <Clock />
         </p>
-        <LiveSentence projects={projects} />
+      </header>
 
-        <nav aria-label="Work">
-          <h2 className="list-lab">Work</h2>
-          <ul className="list">
-            {orderProjects(projects, repos).map((p) => (
-              <Item key={p.slug} href={`/apps/${p.slug}`} label={p.name} path={path} />
-            ))}
-          </ul>
-        </nav>
+      <LiveSentence projects={projects} />
 
-        <nav aria-label="More">
-          <ul className="list">
-            {PAGES.map((p) => (
-              <Item key={p.href} {...p} path={path} />
-            ))}
-          </ul>
-        </nav>
-      </div>
+      {tweet}
+
+      <nav aria-label="Work" className="block">
+        <h2 className="lab">Work</h2>
+        <ul className="rows">
+          {orderProjects(projects, repos).map((p) => {
+            const live = p.repos.map((r) => repos?.[r]).find((r) => r && !r.isPrivate)
+            return (
+              <Item
+                key={p.slug}
+                href={`/apps/${p.slug}`}
+                label={p.name}
+                meta={live?.language ?? p.stack.split(' · ')[0]}
+                path={path}
+              />
+            )
+          })}
+        </ul>
+      </nav>
+
+      <nav aria-label="More" className="block">
+        <ul className="tabs">
+          {PAGES.map((p) => (
+            <Item key={p.href} {...p} path={path} />
+          ))}
+        </ul>
+      </nav>
 
       <footer className="home-foot">
-        <span>
-          <Clock /> in Michigan
-        </span>
+        <span>© {new Date().getFullYear()}</span>
         <SoundToggle />
       </footer>
     </div>
@@ -117,6 +137,7 @@ function SoundToggle() {
       aria-label={on ? 'Turn sound off' : 'Turn sound on'}
       onClick={() => setSound(!on)}
     >
+      <span>{on ? 'Sound on' : 'Sound off'}</span>
       <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
         <path d="M2.5 6h2.2L8 3.2v9.6L4.7 10H2.5z" fill="currentColor" />
         {on ? (

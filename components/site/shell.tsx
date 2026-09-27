@@ -5,6 +5,7 @@ import { LIVE } from '@/lib/generated/live'
 import { LiveProvider } from '@/lib/live-store'
 import { Deck } from './deck'
 import { HomePane } from './home-pane'
+import { TweetCard } from './tweet-card'
 import { Background } from './background'
 import type { Source } from './wall'
 
@@ -47,7 +48,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
       }}
     >
       <Background sources={sources()} builtAt={LIVE.builtAt} />
-      <Deck home={<HomePane projects={projectRefs()} />}>{children}</Deck>
+      <Deck home={<HomePane projects={projectRefs()} tweet={<TweetCard />} />}>{children}</Deck>
     </LiveProvider>
   )
 }
