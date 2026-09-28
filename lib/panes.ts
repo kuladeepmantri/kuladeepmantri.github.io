@@ -1,10 +1,9 @@
 // Every route is a pane stacked to the right of the home pane. This maps a
-// path to the pane it opens, the wall's palette, and whose activity it shows.
+// path to the pane it opens and the colours the page takes.
 
 export type Place = {
   key: string | null // null on home: only the home pane is open
   palette: string
-  heat: string | null // a key into the wall's activity sources, or none
 }
 
 export function normalizePath(path: string | null): string {
@@ -15,21 +14,21 @@ export function normalizePath(path: string | null): string {
 export function placeFor(path: string): Place {
   if (path.startsWith('/apps/')) {
     const slug = path.slice(6)
-    return { key: path, palette: slug, heat: slug }
+    return { key: path, palette: slug }
   }
   switch (path) {
     case '/about':
-      return { key: path, palette: 'about', heat: null }
+      return { key: path, palette: 'about' }
     case '/github':
-      return { key: path, palette: 'github', heat: 'all' }
+      return { key: path, palette: 'github' }
     case '/x':
-      return { key: path, palette: 'x', heat: 'x' }
+      return { key: path, palette: 'x' }
     case '/contact':
-      return { key: path, palette: 'contact', heat: null }
+      return { key: path, palette: 'contact' }
     case '/':
     case '/now':
-      return { key: null, palette: 'home', heat: 'all' }
+      return { key: null, palette: 'home' }
     default:
-      return { key: path, palette: 'contact', heat: null }
+      return { key: path, palette: 'contact' }
   }
 }
