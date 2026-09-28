@@ -1,39 +1,13 @@
-import { SIGNALS, projectRefs } from '@/app/signals'
-import { TIMEZONE } from '@/lib/constants'
-import { allDays } from '@/lib/all-days'
+import { projectRefs } from '@/app/signals'
 import { LIVE } from '@/lib/generated/live'
 import { LiveProvider } from '@/lib/live-store'
 import { Deck } from './deck'
 import { HomePane } from './home-pane'
 import { TweetCard } from './tweet-card'
-import { Backdrop } from './backdrop'
-import type { Source } from './field'
-
-const LOCAL_DAY = new Intl.DateTimeFormat('en-CA', { timeZone: TIMEZONE })
-
-/** What the field can show: all of GitHub, each project, and my posts on X. */
-function sources(): Record<string, Source> {
-  const out: Record<string, Source> = {
-    all: { days: allDays(), noun: ['contribution on GitHub', 'contributions on GitHub'] },
-  }
-  for (const s of SIGNALS) {
-    const live = s.repos.map((r) => LIVE.github?.repos[r]).find((r) => r && !r.isPrivate)
-    out[s.slug] = {
-      days: live?.days ?? [],
-      noun: [`commit to ${s.name}`, `commits to ${s.name}`],
-    }
-  }
-  const posts = new Map<string, number>()
-  for (const p of LIVE.x?.posts ?? []) {
-    const d = LOCAL_DAY.format(new Date(p.createdAt))
-    posts.set(d, (posts.get(d) ?? 0) + 1)
-  }
-  out.x = { days: [...posts.entries()], noun: ['post on X', 'posts on X'] }
-  return out
-}
+import { Scenery } from './scenery'
 
 /**
- * The site: the field behind everything, the home pane, and one pane for the
+ * The site: the scenery behind everything, the home pane, and one pane for the
  * current route. Route pages render only their pane's content.
  */
 export function Shell({ children }: { children: React.ReactNode }) {
@@ -47,10 +21,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
         lastPostAt: LIVE.x?.posts[0]?.createdAt ?? null,
       }}
     >
-      <Backdrop
-        sources={sources()}
-        names={Object.fromEntries(SIGNALS.map((s) => [s.slug, s.name]))}
-      />
+      <Scenery />
       <Deck home={<HomePane projects={projectRefs()} tweet={<TweetCard />} />}>{children}</Deck>
     </LiveProvider>
   )
