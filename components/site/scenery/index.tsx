@@ -64,6 +64,26 @@ export function Scenery() {
     let t = 0
     let settled = true
     let idle = 0
+    let edgeT = 1
+    let edgeKey = ''
+    const meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')
+    // The large viewport (browser toolbars hidden). iOS draws the page under its
+    // floating toolbar, so the scenery must reach that far down, not just innerHeight.
+    const probe = document.createElement('div')
+    probe.style.cssText =
+      'position:fixed;top:0;left:0;width:0;height:100lvh;visibility:hidden;pointer-events:none'
+    document.body.appendChild(probe)
+    const css = (c: RGB) =>
+      '#' + c.map((v) => Math.round(v * 255).toString(16).padStart(2, '0')).join('')
+    // The browser paints its status bar and the strip under its toolbar with the
+    // page background, so that follows the sky of the scene on screen.
+    function paintEdges(top: RGB) {
+      const sky = css(top)
+      if (sky === edgeKey) return
+      edgeKey = sky
+      meta?.setAttribute('content', sky)
+      root.style.setProperty('--bg', sky)
+    }
 
     const skyOf = (s: Scene) => ({
       c: [hex(s.sky.top), hex(s.sky.bottom), hex(s.sky.cloud)],
@@ -77,7 +97,7 @@ export function Scenery() {
     function measure() {
       dpr = Math.min(window.devicePixelRatio || 1, 2)
       W = window.innerWidth
-      H = window.innerHeight
+      H = Math.max(window.innerHeight, probe.offsetHeight)
       const phone = W < 640
       const cell = phone ? 16 : 18
       root.style.setProperty('--cell', `${cell}px`)
@@ -258,6 +278,11 @@ export function Scenery() {
         drops: ptr.drops,
       })
       bctx.putImageData(img!, 0, 0)
+      edgeT += dt
+      if (edgeT > 0.2) {
+        edgeT = 0
+        paintEdges(mix(skyFrom.c[0], skyTo.c[0], ease(skyK)))
+      }
       ctx.setTransform(1, 0, 0, 1, 0, 0)
       ctx.clearRect(0, 0, canvas.width, canvas.height)
       ctx.imageSmoothingEnabled = false
@@ -268,6 +293,7 @@ export function Scenery() {
       stop()
       ptr.stop()
       window.removeEventListener('resize', measure)
+      probe.remove()
     }
   }, [])
 
