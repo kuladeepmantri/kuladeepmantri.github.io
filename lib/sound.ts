@@ -21,7 +21,9 @@ const SCALE = [
 // Drone roots, an octave and a fifth each: D, B, G, A.
 const ROOTS = [73.42, 61.74, 49, 55]
 
-const KEY = 'km-sound'
+// A new key drops choices saved by older versions of the site, so everyone starts with
+// sound on at their first interaction; turning it off from here on is remembered.
+const KEY = 'km-sound-v2'
 let ctx: AudioContext | null = null
 let master: GainNode | null = null
 let room: ConvolverNode | null = null
