@@ -64,9 +64,14 @@
   --accent: #ff9fcf;
 }
 
+/* The page is exactly one large viewport and never scrolls. The layers are
+   absolutely positioned, not fixed: iOS Safari fills its status bar and toolbar
+   areas with a flat colour whenever a fixed layer touches the edge, but lets the
+   page show through behind them otherwise. */
 html,
 body {
   height: 100%;
+  height: 100lvh;
   background: var(--bg);
   overflow: hidden;
 }
@@ -119,14 +124,14 @@ button {
 /* ── Field ── */
 
 .field {
-  position: fixed;
+  position: absolute;
   inset: 0;
   z-index: 0;
   display: block;
 }
 
 .sky {
-  position: fixed;
+  position: absolute;
   top: 0;
   left: 0;
   z-index: 0;
@@ -136,7 +141,7 @@ button {
 /* ── Deck ── */
 
 .stage {
-  position: fixed;
+  position: absolute;
   inset: 0;
   z-index: 1;
   overflow-x: auto;
