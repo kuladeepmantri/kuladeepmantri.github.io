@@ -868,15 +868,19 @@ a.who:hover .muted {
     --gap: 10px;
   }
 
-  /* Panes sit low, like a sheet, so the top third of the screen shows the scene. */
+  /* Full-height cards; the scene shows through the glass. The insets keep a
+     card clear of the notch and the home indicator. */
   .deck {
-    padding-top: 32svh;
+    padding-top: max(var(--cell), env(safe-area-inset-top));
   }
 
   .pane,
   .pane-home,
   .pane-page {
-    height: calc(100dvh - 32svh - var(--cell));
+    height: calc(
+      100dvh - max(var(--cell), env(safe-area-inset-top)) -
+        max(var(--cell), env(safe-area-inset-bottom))
+    );
     width: calc(100vw - 3 * var(--cell));
     padding: 26px 22px 20px;
     /* A smaller radius keeps the blur cheap on phones and still hides the line art. */
