@@ -45,7 +45,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en" className={sans.variable} suppressHydrationWarning>
       <head>
-        <meta name="theme-color" content="#050609" />
+        <meta name="theme-color" content="#3b7fd6" />
         <noscript>
           <style>{'.s2{opacity:1}.pane{background:var(--pane)}'}</style>
         </noscript>

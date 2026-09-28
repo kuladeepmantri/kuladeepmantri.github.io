@@ -2,6 +2,7 @@
 
 import { usePathname } from 'next/navigation'
 import { useEffect, useRef } from 'react'
+import { IN_MS, OUT_MS, snap } from '@/lib/motion'
 import { normalizePath, placeFor } from '@/lib/panes'
 import {
   colourTween,
@@ -17,29 +18,64 @@ import {
 } from './scenes/common'
 import { SKY_FRAG } from './scenes/sky'
 
-// wade: stands in the shallows. swim: sits in the water. land: on a small shore.
-type Kind = 'wade' | 'swim' | 'land'
-type Spec = { glyph: string; kind: Kind; group?: boolean }
+// wade: stands in the shallows. swim: floats. land: on a low shore. sky: in the air.
+type Kind = 'wade' | 'swim' | 'land' | 'sky'
+type Motion = 'rock' | 'sail' | 'leap' | 'drift' | 'idle'
 
-/** One animal per page, printed as a line screen from the system's emoji art. */
-const ANIMALS: Record<string, Spec> = {
-  home: { glyph: '🦩', kind: 'wade' },
-  about: { glyph: '🦢', kind: 'swim' },
-  github: { glyph: '🐈', kind: 'land' },
-  x: { glyph: '🦚', kind: 'land' },
-  contact: { glyph: '🦌', kind: 'land' },
-  kubereach: { glyph: '🦭', kind: 'land' },
-  rune: { glyph: '🐎', kind: 'land' },
-  shipcrew: { glyph: '🦆', kind: 'swim', group: true },
-  kintsugi: { glyph: '🦦', kind: 'swim' },
-  auris: { glyph: '🦜', kind: 'land' },
-  untilithappens: { glyph: '🦮', kind: 'land' },
-  deid: { glyph: '🦔', kind: 'land' },
+type Prop = {
+  glyph: string
+  kind: Kind
+  size: number // height, as a fraction of the screen height
+  x?: number // offset from the scene's centre, as a fraction of the screen height
+  depth?: number // how far in front of the horizon it stands, as a fraction of the screen height
+  sink?: number // how much of it is under the waterline
+  mirror?: boolean
+  motion?: Motion
+  seams?: boolean // gold seams through its cracks
+  phase?: number
+}
+
+type Scene = { props: Prop[]; uplink?: [number, number] }
+
+const FLAMINGO = '🦩'
+
+/** What stands in the water on each page, printed as a line screen from emoji art. */
+const SCENES: Record<string, Scene> = {
+  home: {
+    props: [
+      { glyph: FLAMINGO, kind: 'wade', size: 0.19, x: -0.36, depth: 0.012, mirror: true, phase: 1 },
+      { glyph: FLAMINGO, kind: 'wade', size: 0.2, x: 0.37, depth: 0.018, phase: 5 },
+      { glyph: FLAMINGO, kind: 'wade', size: 0.24, x: -0.18, depth: 0.034, phase: 2 },
+      { glyph: FLAMINGO, kind: 'wade', size: 0.25, x: 0.2, depth: 0.042, mirror: true, phase: 4 },
+      { glyph: FLAMINGO, kind: 'wade', size: 0.29, x: 0.01, depth: 0.07, phase: 3 },
+    ],
+  },
+  about: { props: [{ glyph: '🐬', kind: 'swim', size: 0.16, depth: 0.04, motion: 'leap' }] },
+  github: { props: [{ glyph: '🐈', kind: 'land', size: 0.2 }] },
+  x: { props: [{ glyph: '🦚', kind: 'land', size: 0.22 }] },
+  contact: { props: [{ glyph: '🦌', kind: 'land', size: 0.22 }] },
+  kubereach: {
+    props: [
+      { glyph: '📡', kind: 'land', size: 0.16, x: -0.08 },
+      { glyph: '🛰️', kind: 'sky', size: 0.1, x: 0.16, motion: 'drift' },
+    ],
+    uplink: [0, 1],
+  },
+  rune: { props: [{ glyph: '🚗', kind: 'land', size: 0.13, motion: 'idle' }] },
+  shipcrew: {
+    props: [{ glyph: '⛵', kind: 'swim', size: 0.24, depth: 0.03, sink: 0.07, motion: 'sail' }],
+  },
+  kintsugi: { props: [{ glyph: '🏺', kind: 'land', size: 0.2, seams: true }] },
+  auris: { props: [{ glyph: '🦜', kind: 'land', size: 0.2 }] },
+  untilithappens: {
+    props: [{ glyph: '🛟', kind: 'swim', size: 0.12, depth: 0.05, sink: 0.3, motion: 'rock' }],
+  },
+  deid: { props: [{ glyph: '🦝', kind: 'land', size: 0.14 }] },
 }
 
 // Sky top, sky bottom, clouds, water at the horizon, deep water, lines near,
 // lines deep, shore.
-const SCENES: Record<string, string[]> = {
+const COLOURS: Record<string, string[]> = {
   home: ['#3b7fd6', '#a9d4f5', '#fdfaf3', '#43b08c', '#0f6a50', '#c4f3dc', '#6fd8a8', '#8fae4c'],
   about: ['#6b8fd8', '#f6cfae', '#fff8f0', '#4aad8a', '#136a53', '#d0f5df', '#7bd9ad', '#9aae4e'],
   github: ['#2f8fc0', '#b4e9dc', '#fbfcf8', '#3aae83', '#0e684b', '#c0f4d8', '#66d9a0', '#86ad48'],
@@ -91,30 +127,25 @@ const SCENES: Record<string, string[]> = {
 }
 
 const EMOJI_FONT = '"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif'
+const GOLD: RGB = [1, 0.86, 0.42]
+const WHITE: RGB = [1, 1, 1]
 
-const colours = (k: string) => (SCENES[k] ?? SCENES.home).map(hex)
+const coloursFor = (k: string) => (COLOURS[k] ?? COLOURS.home).map(hex)
 
-type Sprite = { w: number; h: number; px: Uint8ClampedArray }
+type Sprite = { w: number; h: number; px: Uint8ClampedArray; gold: Uint8Array | null }
 
-/** Draws the animal (or a mother and two young), crops it, and brightens its colours. */
-function makeSprite(spec: Spec, size: number): Sprite {
-  const W = Math.round(size * (spec.group ? 2.6 : 1.4))
-  const H = Math.round(size * 1.4)
+/** Draws a glyph, crops it to what it covers, brightens its colours, and adds seams if asked. */
+function makeSprite(glyph: string, size: number, seams: boolean): Sprite {
+  const W = Math.round(size * 1.5)
+  const H = Math.round(size * 1.5)
   const c = document.createElement('canvas')
   c.width = W
   c.height = H
   const x = c.getContext('2d', { willReadFrequently: true })!
   x.textAlign = 'center'
-  x.textBaseline = 'alphabetic'
-  const put = (s: number, cx: number) => {
-    x.font = `${Math.round(size * s)}px ${EMOJI_FONT}`
-    x.fillText(spec.glyph, cx, H * 0.86)
-  }
-  if (spec.group) {
-    put(1, W * 0.3)
-    put(0.6, W * 0.64)
-    put(0.6, W * 0.86)
-  } else put(1, W / 2)
+  x.textBaseline = 'middle'
+  x.font = `${Math.round(size)}px ${EMOJI_FONT}`
+  x.fillText(glyph, W / 2, H / 2)
   const d = x.getImageData(0, 0, W, H).data
   let x0 = W
   let y0 = H
@@ -145,17 +176,55 @@ function makeSprite(spec: Spec, size: number): Sprite {
       px[o + 2] = Math.min(255, (l + (b - l) * 1.4) * 1.08 * 255)
       px[o + 3] = d[s + 3]
     }
-  return { w, h, px }
+  let gold: Uint8Array | null = null
+  if (seams) {
+    // Two cracks that wander from the rim toward the foot, one with a branch.
+    const g = new Uint8Array(w * h)
+    const r = Math.max(3, Math.round(w * 0.03))
+    const stamp = (cx: number, cy: number) => {
+      for (let j = -r; j <= r; j++)
+        for (let i = -r; i <= r; i++) {
+          const X = Math.round(cx + i)
+          const Y = Math.round(cy + j)
+          if (X < 0 || Y < 0 || X >= w || Y >= h || i * i + j * j > r * r) continue
+          if (px[(Y * w + X) * 4 + 3] > 120) g[Y * w + X] = 1
+        }
+    }
+    const crack = (sx: number, sy: number, ey: number, lean: number) => {
+      let cx = sx
+      for (let cy = sy; cy < ey; cy += 1.5) {
+        cx += (Math.random() - 0.5) * 3.2 + lean
+        stamp(cx, cy)
+      }
+      return cx
+    }
+    const a = crack(w * 0.42, h * 0.12, h * 0.9, 0.12)
+    crack(w * 0.62, h * 0.25, h * 0.6, -0.35)
+    crack(a - w * 0.05, h * 0.55, h * 0.8, 0.6)
+    gold = g
+  }
+  return { w, h, px, gold }
 }
 
-type Actor = { spec: Spec; sprite: Sprite; tall: number; age: number; leaving: number }
+type Actor = { prop: Prop; sprite: Sprite; tall: number; age: number; leaving: number }
+type Blob = {
+  x: number
+  y: number
+  r: number
+  grow: number
+  t: number
+  life: number
+  vx: number
+  vy: number
+  fall: number
+}
 
 /**
  * The background on every page: a cloud sky over green water, printed as
- * vertical lines whose width follows the brightness underneath. Each page has
- * its own small animal, with its reflection in the water; changing page fades
- * one out and lets the next one grow in from the top, and the sky and water
- * blend to the new page's colours.
+ * vertical lines whose width follows the colour underneath. Each page stands
+ * something of its own in the water, with its reflection. Changing page sinks
+ * the old scene into its waterline and raises the next one out of it, on the
+ * same timing and curve as the panes.
  */
 export function Scenery() {
   const place = placeFor(normalizePath(usePathname()))
@@ -182,6 +251,7 @@ export function Scenery() {
 
     let W = 0
     let H = 0
+    let dpr = 1
     let horizon = 0
     let P = 5 // column pitch
     const R = 2 // cell height
@@ -191,32 +261,39 @@ export function Scenery() {
     let shift = new Int8Array(0)
     let tint = new Uint32Array(0)
     let grain = new Float32Array(0)
-    let rowBase = new Uint32Array(0)
 
     let key = want.current
-    const tween = colourTween(colours(key))
+    const tween = colourTween(coloursFor(key))
     let actors: Actor[] = []
-    let mound = 0 // shore height, eased toward the current animal's need
+    let uplink: [Prop, Prop] | null = null
+    let blobs: Blob[] = []
+    let mound = 0
+    let moundC = 0
+    let moundW = 150
     let t = 0
+    let puffAt = 0
 
-    const tallFor = (k: Kind) => (k === 'wade' ? 0.27 : k === 'land' ? 0.2 : 0.14) * H
-
-    function arrive(k: string) {
-      const spec = ANIMALS[k] ?? ANIMALS.home
-      for (const a of actors) if (!a.leaving) a.leaving = 0.0001
-      const tall = tallFor(spec.kind)
-      actors.push({
-        spec,
-        sprite: makeSprite(spec, Math.round(tall * 1.25)),
+    const build = (prop: Prop): Actor => {
+      const tall = prop.size * H
+      return {
+        prop,
         tall,
+        sprite: makeSprite(prop.glyph, Math.round(tall * 1.2), !!prop.seams),
         age: reduce ? 9 : 0,
         leaving: 0,
-      })
-      if (reduce) actors = actors.slice(-1)
+      }
+    }
+
+    function arrive(k: string) {
+      const scene = SCENES[k] ?? SCENES.home
+      for (const a of actors) if (!a.leaving) a.leaving = 0.0001
+      const fresh = scene.props.map(build)
+      actors = reduce ? fresh : [...actors, ...fresh]
+      uplink = scene.uplink ? [scene.props[scene.uplink[0]], scene.props[scene.uplink[1]]] : null
     }
 
     function measure() {
-      const dpr = Math.min(window.devicePixelRatio || 1, 2)
+      dpr = Math.min(window.devicePixelRatio || 1, 2)
       W = window.innerWidth
       H = window.innerHeight
       const cell = W < 640 ? 16 : 18
@@ -236,41 +313,51 @@ export function Scenery() {
       tint = new Uint32Array(cols * rows)
       grain = new Float32Array(cols * rows)
       for (let i = 0; i < grain.length; i++) grain[i] = Math.random()
-      rowBase = new Uint32Array(H)
       buf.width = W
       buf.height = H
       img = bctx.createImageData(W, H)
       out = new Uint32Array(img.data.buffer)
-      actors = actors.map((a) => {
-        const tall = tallFor(a.spec.kind)
-        return { ...a, tall, sprite: makeSprite(a.spec, Math.round(tall * 1.25)) }
-      })
+      actors = actors.map((a) => ({ ...build(a.prop), age: a.age, leaving: a.leaving }))
     }
 
     measure()
     arrive(key)
     window.addEventListener('resize', measure)
 
+    const moundAt = (x: number) =>
+      mound > 0.5 ? mound * Math.max(0, 1 - ((x - moundC) / moundW) ** 2) ** 0.6 : 0
+
+    function splash(x: number, y: number) {
+      for (let k = 0; k < 8; k++)
+        blobs.push({
+          x: x + (Math.random() - 0.5) * 24,
+          y,
+          r: 2 + Math.random() * 2.5,
+          grow: 2,
+          t: 0,
+          life: 0.55 + Math.random() * 0.35,
+          vx: (Math.random() - 0.5) * 80,
+          vy: -70 - Math.random() * 70,
+          fall: 260,
+        })
+    }
+
     const stop = loop((dt) => {
       if (want.current !== key) {
         key = want.current
-        tween.set(colours(key))
+        tween.set(coloursFor(key))
         arrive(key)
       }
-      tween.step(dt, 1.4)
+      tween.step(dt, IN_MS / 1000)
       if (!reduce) t += dt
       ptr.ease(dt, 8)
       for (const a of actors) {
         a.age += dt
         if (a.leaving) a.leaving += dt
       }
-      actors = actors.filter((a) => a.leaving < 0.7)
-      const lead = actors[actors.length - 1]
-      const wantMound = lead?.spec.kind === 'land' ? H * 0.045 : 0
-      mound += (wantMound - mound) * Math.min(1, dt * 2.5)
+      actors = actors.filter((a) => a.leaving < OUT_MS / 1000)
 
       const [skyTop, skyBottom, cloud, waterTop, waterDeep, lineNear, lineDeep, shore] = tween.now()
-
       if (sky) {
         sky.f1('u_time', 40 + t)
         sky.f1('u_count', 6)
@@ -281,29 +368,139 @@ export function Scenery() {
       }
 
       const x0 = openLeft(W)
-      const cx = W < 640 ? W * 0.62 : x0 + (W - x0) * 0.56
-      const moundW = Math.max(150, W < 640 ? W * 0.3 : (W - x0) * 0.2)
+      const phone = W < 640
+      const cx = phone ? W * 0.6 : x0 + (W - x0) * 0.55
+      const spread = Math.min(1, (phone ? W : W - x0) / (H * 1.05))
 
-      // Where each actor stands this frame.
-      const placed = actors.map((a) => {
+      // The shore follows the land props of the scene that is arriving.
+      const land = actors.filter((a) => !a.leaving && a.prop.kind === 'land')
+      mound += ((land.length ? H * 0.045 : 0) - mound) * Math.min(1, dt * 4)
+      if (land.length) {
+        const xs = land.map((a) => cx + (a.prop.x ?? 0) * H * spread)
+        moundC = xs.reduce((s, v) => s + v, 0) / xs.length
+        const half = (Math.max(...xs) - Math.min(...xs)) / 2
+        const wide = Math.max(...land.map((a) => (a.sprite.w / a.sprite.h) * a.tall))
+        moundW = Math.max(140, half + wide * 0.95)
+      }
+
+      // Where everything stands this frame.
+      const placed = []
+      for (const a of actors) {
+        const p = a.prop
         const s = a.sprite.h / a.tall
         const w = a.sprite.w / s
-        const glide = a.spec.kind === 'swim' && !reduce ? Math.sin(t * 0.15) * 40 : 0
-        const bob = a.spec.kind === 'swim' ? Math.sin(t * 1.1) * 1.5 : Math.sin(t * 0.8) * 1
-        const sink = a.spec.kind === 'swim' ? 0.2 : a.spec.kind === 'wade' ? 0.035 : 0
-        const base = horizon - (a.spec.kind === 'land' ? mound : 0) + a.tall * sink + bob
-        const grow = Math.min(1, Math.max(0, (a.age - 0.2) / 1.0))
-        return {
+        const ph = p.phase ?? 0
+        const x = cx + (p.x ?? 0) * H * spread
+        let dx = 0
+        let dy = Math.sin(t * 0.8 + ph)
+        let angle = 0
+        let lift = 0
+        if (p.motion === 'rock') {
+          angle = Math.sin(t * 1.3 + ph) * 0.1
+          dy = Math.sin(t * 1.3 + ph) * 3
+        } else if (p.motion === 'sail') {
+          dx = Math.sin(t * 0.09) * 0.06 * H
+          angle = Math.sin(t * 0.9) * 0.05
+          dy = Math.sin(t * 0.9) * 2
+        } else if (p.motion === 'drift') {
+          dx = Math.sin(t * 0.07) * 0.05 * H
+          dy = Math.sin(t * 0.5) * 4
+          angle = Math.sin(t * 0.3) * 0.06
+        }
+        const base =
+          p.kind === 'land'
+            ? horizon - moundAt(x + dx)
+            : p.kind === 'sky'
+              ? horizon - 0.36 * H
+              : horizon + (p.depth ?? 0) * H
+        let sink = p.sink ?? (p.kind === 'swim' ? 0.18 : p.kind === 'wade' ? 0.03 : 0)
+        if (p.motion === 'leap') {
+          // A leap every 6.5 s, starting just after arrival: out on the right, back in on the left.
+          const air = 1.9
+          const u = ((a.age - 0.35) % 6.5) / air
+          if (reduce || a.age < 0.35 || u > 1) continue
+          const span = 0.5 * H * spread
+          const height = 0.2 * H
+          dx = (0.5 - u) * span
+          lift = 4 * u * (1 - u) * height
+          sink = 0.8
+          // The dolphin faces left: turn its nose along the direction of travel.
+          angle = Math.atan2(-(4 - 8 * u) * height, -span) - Math.PI
+          const was = u - dt / air
+          for (const edge of [0.08, 0.92]) if (u >= edge && was < edge) splash(x + dx, base)
+        }
+        if (p.motion === 'idle' && !reduce && !a.leaving && a.age > 0.8 && t > puffAt) {
+          // Exhaust from the back of the car (it faces left).
+          puffAt = t + 0.75
+          blobs.push({
+            x: x + w * 0.47,
+            y: base - a.tall * 0.18,
+            r: 2.5,
+            grow: 7,
+            t: 0,
+            life: 1.8,
+            vx: 24,
+            vy: -10,
+            fall: 0,
+          })
+        }
+        const bottom = base + a.tall * sink - lift
+        placed.push({
           a,
           s,
-          left: cx - w / 2 + glide,
-          top: base - a.tall,
-          base,
           w,
-          grow: grow * grow * (3 - 2 * grow),
-          fade: a.leaving ? Math.max(0, 1 - a.leaving / 0.6) : 1,
+          h: a.tall,
+          mirror: !!p.mirror,
+          cxp: x + dx,
+          cyp: bottom - a.tall / 2 + dy,
+          cos: Math.cos(angle),
+          sin: Math.sin(angle),
+          reach: angle ? Math.hypot(w, a.tall) / 2 : 0,
+          base,
+          reflect: p.kind !== 'sky',
+          mirrorLine: p.kind === 'land' ? horizon : base,
+          grow: a.leaving ? 1 : snap(Math.min(1, Math.max(0, (a.age - 0.1) / (IN_MS / 1000)))),
+          gone: a.leaving ? snap(Math.min(1, a.leaving / (OUT_MS / 1000))) : 0,
+        })
+      }
+      placed.sort((a, b) => a.base - b.base)
+
+      for (const b of blobs) {
+        b.t += dt
+        b.x += b.vx * dt
+        b.y += b.vy * dt
+        b.vy += b.fall * dt
+        b.r += b.grow * dt
+      }
+      blobs = blobs.filter((b) => b.t < b.life)
+
+      type Placed = (typeof placed)[number]
+      /** Samples a placed sprite at a screen point: colour, coverage, gold. */
+      const sample = (q: Placed, x: number, y: number) => {
+        let lx = x - q.cxp
+        let ly = y - q.cyp
+        if (q.reach) {
+          const rx = lx * q.cos + ly * q.sin
+          ly = -lx * q.sin + ly * q.cos
+          lx = rx
         }
-      })
+        let u = ((lx + q.w / 2) * q.s) | 0
+        const v = ((ly + q.h / 2) * q.s) | 0
+        const sp = q.a.sprite
+        if (u < 0 || v < 0 || u >= sp.w || v >= sp.h) return null
+        // Rising in from the waterline; sinking out from the top.
+        if (v < sp.h * (1 - q.grow) || v < sp.h * q.gone) return null
+        if (q.mirror) u = sp.w - 1 - u
+        const o = (v * sp.w + u) * 4
+        const al = sp.px[o + 3] / 255
+        if (al < 0.3) return null
+        return {
+          c: [sp.px[o] / 255, sp.px[o + 1] / 255, sp.px[o + 2] / 255] as RGB,
+          al,
+          gold: !!sp.gold && sp.gold[v * sp.w + u] === 1,
+          v: v / sp.h,
+        }
+      }
 
       const pOn = ptr.p.on
       for (let r = 0; r < rows; r++) {
@@ -321,15 +518,12 @@ export function Scenery() {
           const i = r * cols + c
           let b = 0
           let col: RGB | null = null
-          let rgba = 0
 
-          // Shore: a low mound around the animal, and its reflection.
-          const m = mound > 0.5 ? mound * Math.max(0, 1 - ((x - cx) / moundW) ** 2) ** 0.6 : 0
+          const m = moundAt(x)
           if (!below && m > 0 && y > horizon - m) {
             b = 0.5 + 0.35 * grain[i]
             col = mix(shore, [0.2, 0.3, 0.1], ((y - (horizon - m)) / Math.max(1, m)) * 0.35)
           }
-
           if (below) {
             const wave =
               0.5 +
@@ -343,45 +537,42 @@ export function Scenery() {
             }
           }
 
-          // The animal, and its reflection in the water.
-          for (const p of placed) {
-            if (below) {
-              const my = 2 * horizon - y // mirrored about the waterline
+          for (const q of placed) {
+            const halfW = (q.reach || q.w / 2) + 2
+            if (x < q.cxp - halfW || x > q.cxp + halfW) continue
+            if (y <= q.base) {
+              const halfH = (q.reach || q.h / 2) + 2
+              if (y < q.cyp - halfH || y > q.cyp + halfH) continue
+              const hit = sample(q, x, y)
+              if (!hit) continue
+              if (hit.gold) {
+                col = mix(GOLD, WHITE, 0.35 + 0.3 * Math.sin(t * 2.2 - hit.v * 9))
+                b = 1
+              } else {
+                const l = 0.3 * hit.c[0] + 0.59 * hit.c[1] + 0.11 * hit.c[2]
+                col = hit.c
+                b = hit.al * (0.62 + 0.38 * l)
+              }
+            } else if (below && q.reflect) {
+              const my = 2 * q.mirrorLine - y
+              if (my > q.base) continue
+              const fall = 1 - (y - q.mirrorLine) / (q.h * 0.9)
+              if (fall <= 0) continue
               const wob = Math.sin(y * 0.09 + t * 2.2) * (2 + 6 * d)
-              const u = ((x + wob - p.left) * p.s) | 0
-              const v = ((my - p.top) * p.s) | 0
-              if (u < 0 || v < 0 || u >= p.a.sprite.w || v >= p.a.sprite.h) continue
-              if (my > p.base) continue
-              if (v / p.a.sprite.h > p.grow) continue
-              const o = (v * p.a.sprite.w + u) * 4
-              const al = p.a.sprite.px[o + 3] / 255
-              if (al < 0.3) continue
-              const fall = Math.max(0, 1 - (y - horizon) / (p.a.tall * 0.9))
-              const ac: RGB = [
-                p.a.sprite.px[o] / 255,
-                p.a.sprite.px[o + 1] / 255,
-                p.a.sprite.px[o + 2] / 255,
-              ]
-              col = mix(waterLine, ac, 0.55 * fall * p.fade)
-              b = Math.max(b, (0.35 + 0.35 * fall) * p.fade)
-            } else {
-              if (y > p.base) continue
-              const u = ((x - p.left) * p.s) | 0
-              const v = ((y - p.top) * p.s) | 0
-              if (u < 0 || v < 0 || u >= p.a.sprite.w || v >= p.a.sprite.h) continue
-              if (v / p.a.sprite.h > p.grow) continue
-              const o = (v * p.a.sprite.w + u) * 4
-              const al = p.a.sprite.px[o + 3] / 255
-              if (al < 0.3) continue
-              const ac: RGB = [
-                p.a.sprite.px[o] / 255,
-                p.a.sprite.px[o + 1] / 255,
-                p.a.sprite.px[o + 2] / 255,
-              ]
-              const l = 0.3 * ac[0] + 0.59 * ac[1] + 0.11 * ac[2]
-              col = ac
-              b = al * (0.62 + 0.38 * l) * p.fade
+              const hit = sample(q, x + wob, my)
+              if (!hit) continue
+              col = mix(waterLine, hit.gold ? GOLD : hit.c, 0.55 * fall)
+              b = Math.max(b, 0.35 + 0.35 * fall)
             }
+          }
+
+          for (const bl of blobs) {
+            const dd = (x - bl.x) ** 2 + (y - bl.y) ** 2
+            if (dd > bl.r * bl.r * 4) continue
+            const k = (1 - bl.t / bl.life) * 0.85 * Math.exp(-dd / (bl.r * bl.r))
+            if (k < 0.05) continue
+            col = mix(col ?? WHITE, WHITE, Math.min(1, k * 1.4))
+            b = Math.max(b, k)
           }
 
           // The pointer parts the lines around it.
@@ -396,32 +587,27 @@ export function Scenery() {
               b *= 1 - 0.45 * Math.exp(-d2 / (2 * 36 * 36))
             }
           }
-          if (col) rgba = pack(col)
-          widths[i] = b > 0 ? Math.max(0, Math.min(P - 1, Math.round(b * P))) : 0
+          widths[i] = col && b > 0 ? Math.max(0, Math.min(P - 1, Math.round(b * P))) : 0
           shift[i] = s
-          tint[i] = rgba
+          tint[i] = col ? pack(col) : 0
         }
       }
-
-      // Water fill under the lines, lighter at the horizon.
-      for (let y = 0; y < H; y++)
-        rowBase[y] =
-          y < horizon ? 0 : pack(mix(waterTop, waterDeep, Math.sqrt((y - horizon) / (H - horizon))))
 
       const px = out!
       for (let y = 0; y < H; y++) {
         const r = (y / R) | 0
         const row = y * W
-        px.fill(rowBase[y], row, row + W)
+        const fill =
+          y < horizon ? 0 : pack(mix(waterTop, waterDeep, Math.sqrt((y - horizon) / (H - horizon))))
+        px.fill(fill, row, row + W)
         for (let c = 0; c < cols; c++) {
           const i = r * cols + c
           const w = widths[i]
           if (!w) continue
           const start = c * P + ((P - w) >> 1) + shift[i]
           const ink = tint[i]
-          const a = Math.max(0, start)
           const e = Math.min(W, start + w)
-          for (let k = a; k < e; k++) px[row + k] = ink
+          for (let k = Math.max(0, start); k < e; k++) px[row + k] = ink
         }
       }
       bctx.putImageData(img!, 0, 0)
@@ -429,6 +615,34 @@ export function Scenery() {
       ctx.clearRect(0, 0, canvas.width, canvas.height)
       ctx.imageSmoothingEnabled = false
       ctx.drawImage(buf, 0, 0, canvas.width, canvas.height)
+
+      // The uplink: a dotted line from the dish's feed to the satellite, with packets on it.
+      const link = uplink
+      const qa = link && placed.find((q) => q.a.prop === link[0] && !q.a.leaving)
+      const qb = link && placed.find((q) => q.a.prop === link[1] && !q.a.leaving)
+      if (qa && qb && qa.grow > 0.98 && qb.grow > 0.98) {
+        const ax = qa.cxp + qa.w * 0.3
+        const ay = qa.cyp - qa.h * 0.36
+        const bx = qb.cxp - qb.w * 0.05
+        const by = qb.cyp + qb.h * 0.1
+        const n = Math.floor(Math.hypot(bx - ax, by - ay) / 8)
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+        ctx.fillStyle = 'rgba(255,255,255,0.55)'
+        for (let k = 1; k < n; k++) {
+          const f = k / n
+          ctx.fillRect(Math.round(ax + (bx - ax) * f) - 1, Math.round(ay + (by - ay) * f) - 1, 2, 2)
+        }
+        ctx.fillStyle = 'rgba(255,255,255,0.95)'
+        for (const [speed, off, up] of [
+          [0.42, 0, true],
+          [0.42, 0.5, true],
+          [0.3, 0.2, false],
+        ] as const) {
+          const f = (t * speed + off) % 1
+          const g = up ? f : 1 - f
+          ctx.fillRect(Math.round(ax + (bx - ax) * g) - 2, Math.round(ay + (by - ay) * g) - 2, 4, 4)
+        }
+      }
     })
 
     return () => {
