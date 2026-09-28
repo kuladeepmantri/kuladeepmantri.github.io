@@ -26,8 +26,8 @@ Contents:
   pane beside the home pane; closing it returns to home. The background is a
   place, and the panes float over it like glass.
 - **Real data only.** Every number, date, post, and commit on the site comes from
-  GitHub or X at build time (and refreshes in the browser). Never add sample,
-  placeholder, or invented data.
+  GitHub or X at build time; new public pushes also show up in the browser
+  between builds. Never add sample, placeholder, or invented data.
 - **Plain, professional voice.** Short sentences, first person, no marketing, no
   em dashes. See [Content and voice](#8-content-and-voice).
 - **The background is art, not decoration.** Each page has its own scene. Scenes
@@ -36,7 +36,8 @@ Contents:
 - **Everything moves on one clock.** Panes, scenery, and sound share one set of
   durations and curves ([Motion](#5-motion)), so a click feels like one gesture.
 - **Quiet by default.** Nothing flashes, nothing loops loudly, sound is off until
-  the visitor turns it on, and reduced-motion settings are respected everywhere.
+  the visitor turns it on, and the scenery holds still under reduced motion or
+  when the visitor turns Motion off.
 
 ## 2. Layout
 
@@ -45,7 +46,7 @@ panes, starting at the top left, one `--cell` in from the edges.
 
 | Element | Size | Notes |
 | --- | --- | --- |
-| `--cell` | 18px (16px on phones) | The grid step. Set in `components/site/scenery/index.tsx`. |
+| `--cell` | 18px (16px on phones) | The grid step. Set in `app/globals.css`. |
 | Gap between panes | 12px (10px on phones) | `--gap` |
 | Home pane | 380px wide | `.pane-home` |
 | Page pane | 470px wide | `.pane-page` |
@@ -67,14 +68,24 @@ the fill turns nearly solid. Keep that bar if you change any of them.
 location arrow (in the page's accent) and the local time; the live sentence
 (last commit, last post, local time); the page links (About, GitHub, X,
 Contact); the Projects list, each name over its one-line `line`; the latest post
-from X as a card; a footer with the email address and the sound switch. The
-order answers who, where to go, and what I build before anything else.
+from X as a card; a footer with the email address, the sound switch, and the
+Motion switch. The order answers who, where to go, and what I build before
+anything else.
+
+**Times wait for the browser.** The HTML is built ahead of time, so any clock
+or relative time in it is the build's. Those spans carry `.live-t` and stay
+transparent until the browser clock takes over (`.is-ready`, set in a layout
+effect in `lib/live-store.tsx`); the rest of the text shows at first paint.
+Without JavaScript, relative times show and wall-clock times (`.live-clock`)
+stay hidden. Use `liveClass()` from `components/site/rel-time.tsx` for any new
+time on the page.
 
 **Phones (under 640px).** Panes become full-width, full-height cards,
 `100vw - 3 * --cell`, clear of the notch and home indicator, in a sideways
-scroll-snap deck. The scene shows through the glass. Opening a pane scrolls it into view; closing scrolls back to
-home. Swipes that start on a card move the deck (panes only contain vertical
-overscroll). The scenery keeps running behind them.
+scroll-snap deck. The scene shows through the glass. Opening a pane scrolls it
+into view; closing scrolls back to home, and swiping back to the home card
+closes the pane. Swipes that start on a card move the deck (panes only contain
+vertical overscroll). The scenery keeps running behind them.
 
 **Narrow windows (640 to 899px).** Both panes don't fit, so the deck scrolls
 sideways and snaps there too; the home pane is always one swipe away.
@@ -82,20 +93,25 @@ sideways and snaps there too; the home pane is always one swipe away.
 **Where the scenery puts things.** Scenes draw their subject in the open part of
 the screen, to the right of the panes. That area is the *stage* passed to every
 scene (`left`, `span`, `cx`, `unit`). When the gap right of the panes is narrower
-than 260px, the stage becomes the right half of the window and the scene shows
-through the glass instead. On phones the stage is the whole width.
+than 260px, the stage sits against the right edge, 300px wide (never more than
+the right 55% of the window). When the panes cover the window, the stage is the
+right 55% and the scene shows through the glass. On phones the stage is the
+whole width.
 
 ## 3. Type
 
 One typeface: **Geist**, loaded with `next/font/google` as `--font-sans`.
 
+Sizes are in `rem`, so they follow the visitor's browser text size. The px
+values below are at the default 16px.
+
 | Use | Size | Weight | Other |
 | --- | --- | --- | --- |
-| Body | 14.5px | 400 | line-height 1.65, letter-spacing -0.006em |
-| Name, pane titles | 15.5px | 600 | letter-spacing -0.015em |
-| Lead and intro paragraphs | 15.5px | 400 | line-height 1.7 on About |
-| Post text | 14px | 400 | line-height 1.55 |
-| Small labels (Projects, Stack, dates) | 12.5 to 13px | 400 | colour `--faint` or `--muted` |
+| Body | 0.90625rem (14.5px) | 400 | line-height 1.65, letter-spacing -0.006em |
+| Name, pane titles | 0.96875rem (15.5px) | 600 | letter-spacing -0.015em |
+| Lead and intro paragraphs | 0.96875rem (15.5px) | 400 | line-height 1.7 on About |
+| Post text | 0.875rem (14px) | 400 | line-height 1.55 |
+| Small labels (Projects, Stack, dates) | 0.78125 to 0.8125rem (12.5 to 13px) | 400 | colour `--faint` or `--muted` |
 
 No second font, no monospace, no all-caps labels. Hierarchy comes from colour
 (`--text`, `--muted`, `--faint`) and a little weight, not from size jumps.
@@ -145,8 +161,7 @@ the same numbers. Change them together.
 | --- | --- | --- |
 | `IN_MS` | 720ms | A pane sliding out; the next scene growing in; sky colours blending. |
 | `OUT_MS` | 440ms | A pane sliding back and fading away. |
-| `SWAP_MS` | 180ms | Switching pages: the open pane's text fades out... |
-| `REOPEN_MS` | 560ms | ...and the new text drifts in. |
+| `REOPEN_MS` | 560ms | Switching pages: the new text drifts in. |
 | `--glide` / `glide()` | `cubic-bezier(0.16, 1, 0.3, 1)` | Things arriving: quick to start, a long soft landing. |
 | `--glide-in` | `cubic-bezier(0.5, 0, 0.75, 0)` | Things leaving. |
 | `--ease` / `ease()` | `cubic-bezier(0.22, 1, 0.36, 1)` | Text and colour settling. |
@@ -156,8 +171,8 @@ under it (`trace`). The pane slides out to the right from behind the home pane:
 it starts 32px to the left, clipped to nothing, and reveals left to right while
 fading in (`slide-out`). Its text follows, drifting in from the left
 (`content-in`). Closing slides it back and fades it (`slide-back`). Switching
-between two open pages keeps the pane where it is: the old text fades out
-toward the right, the new text drifts in after it. At the same time the scenery
+between two open pages keeps the pane where it is, and the new text drifts
+straight in without the old text fading out first. At the same time the scenery
 grows the next scene out from the horizon line and the sky blends to its
 colours.
 
@@ -167,7 +182,10 @@ after the path, or live data refreshing it), the pane updates in place with no
 animation. Breaking this rule causes flicker and panes stuck with hidden text.
 
 Hover states change colour only, in 0.15s. Nothing bounces. With
-`prefers-reduced-motion`, every animation is off and scenes stop their clock.
+`prefers-reduced-motion`, or with the Motion switch in the home pane's footer
+turned off, every animation is off and scenes stop their clock. The switch
+(`role="switch"`, `lib/still.ts`) remembers the choice and sets `data-still` on
+`<html>`, which the CSS handles the same way as reduced motion.
 
 ## 6. Scenery
 
@@ -195,8 +213,9 @@ Three layers, back to front:
      Below the horizon paper is always 0.72;
    - **water** (below the horizon): line widths swell and thin in two slow
      crossing waves, so every lake moves;
-   - **pointer**: lines near the cursor part sideways and thin, like reeds
-     brushed aside.
+   - **wake**: a mouse crossing the water, or a tap on it, leaves rings that
+     spread out; lines swell on each crest and lighten toward white. Nothing
+     happens over the panes or in the sky (`runtime.ts`).
 
 Every scene has a lake at the same horizon (64% of the window height, 62% on
 phones). That shared waterline is what makes twelve different places feel like
@@ -221,8 +240,8 @@ export default scene<State>({
     return state
   },
   paint(g, frame, state, kit) {
-    // Draw in CSS px with Canvas 2D. frame has the stage plus t, dt,
-    // pointer, reduce, and year (GitHub contributions per day).
+    // Draw in CSS px with Canvas 2D. frame has the stage plus t (seconds,
+    // frozen when motion is off), dt, drops (the wake rings), and reduce.
   },
 })
 ```
@@ -252,7 +271,8 @@ paint(g, f, st, kit) {
 | `kit.sprite(glyph, px)` | An emoji as a cropped, colour-boosted image. Use only for animals that pass the quality bar below. |
 | `reflectImage(...)` | Reflect one image about its own waterline (for things standing at different depths). |
 | `glow(g, x, y, r, colour, alpha)` | A soft radial light: lamps, the sun, fog banks, highlights. |
-| `ridge(...)`, `ridgeNoise(x)`, `ridged(x)`, `noise1(x)` | Hills (smooth) and mountains (sharp peaks). |
+| `ridge(...)`, `ridgeNoise(x)`, `noise1(x)` | Hills and ridgelines. |
+| `pines(...)` | A band of pine silhouettes. |
 | `stars(g, f, count, seed, bottom)` | Twinkling stars. |
 | `vgrad(g, y0, y1, stops)`, `rgba(c, a)`, `hash(n)` | Gradients, colours, and repeatable randomness. |
 
@@ -343,6 +363,8 @@ subject carry colour.
 
 `lib/sound.ts`, all synthesized with Web Audio (no audio files). Off until the
 visitor clicks the switch in the home pane's footer; the choice is remembered.
+Browsers only start audio after a gesture, so a saved preset resumes on the
+visitor's first click, tap, or keypress. Sound pauses while the tab is hidden.
 
 | Preset | What it is |
 | --- | --- |
@@ -361,11 +383,23 @@ the impulse response) sits under the bells and pads.
   tagline, description, dates, state, and GitHub repos. Pages read from it; do not
   hard-code project facts in components.
 - **Live data** comes from `scripts/fetch-live.ts`, which runs before `dev` and
-  `build`. It writes `lib/generated/live.ts` (typed, for the build) and
-  `public/live.json` (for the browser to refresh). GitHub needs `GH_PAT` or
-  `GITHUB_TOKEN`; X needs `X_BEARER_TOKEN`. Tokens live only in `.env.local`
-  (never committed) and in GitHub Actions secrets. Private repositories are
-  counted but never named in anything public.
+  `build` (in CI, as its own step). It writes `lib/generated/live.ts` (imported
+  by the build) and `public/live.json`, the published snapshot, which the next
+  build reads back from the live site as its cache. GitHub needs `GH_PAT` or
+  `GITHUB_TOKEN` (tried in that order); X needs `X_BEARER_TOKEN`. When a fetch
+  fails, it keeps the cached data instead of writing empty data.
+- **Browser refresh.** `lib/live-client.ts` asks GitHub's public events API
+  (unauthenticated) for pushes made after the build, only to repos the build
+  already knows, so a push shows up within minutes. It caches answers and
+  failures in `localStorage` for 10 minutes, shared across tabs. The site's own
+  repo and the profile README repo never count (`SKIP_REPOS` in `lib/live.ts`).
+- **X posts.** Hourly runs fetch only posts newer than the last one. Once a day
+  a run refetches the profile and the latest posts from scratch, so a deleted post
+  drops out within a day (sooner with the workflow's `x_full_refresh` input).
+- **Tokens** live only in `.env.local` (never committed) and in GitHub Actions
+  secrets, and only the fetch step in CI sees them. Private repositories are
+  counted but never named in anything public: a project whose repo is private
+  lists `repos: []` in `SIGNALS` (fetch-live warns in CI otherwise).
 - **Voice:** first person, plain words, short sentences. Say what a thing does
   and why I built it. No marketing (no "powerful", "seamless", "cutting-edge"),
   no em dashes, no emojis in copy, no exclamation marks.
@@ -377,7 +411,8 @@ the impulse response) sits under the bells and pads.
 ## 9. Adding a project
 
 1. **Content.** Add an entry to `SIGNALS` in `app/signals.ts` with a new `slug`.
-   Its page (`/apps/<slug>`) and its row in Projects appear automatically.
+   Its page (`/apps/<slug>`) and its row in Projects appear automatically. List
+   only public repos in `repos`; for a private repo use `repos: []`.
 2. **Accent.** Add `:root[data-palette='<slug>'] { --accent: … }` in
    `app/globals.css`: a light colour from the scene's palette.
 3. **Scene.** Decide the place, the time of day, and the one meaningful motion
@@ -391,6 +426,8 @@ the impulse response) sits under the bells and pads.
 ## 10. Checking your work
 
 - `npm run lint` and `npm run build` must pass (the site is a static export).
+  `npm run build` also adds the Content-Security-Policy to every page
+  (`scripts/csp.ts`); an inline script without a matching hash will not run.
 - Look at the new page at 1440 by 900, 1024 by 700, and a phone size, with the
   pane open and closed. The subject must be visible and not crowded.
 - Click from home to the page, between two project pages, and back. The change
@@ -406,13 +443,19 @@ the impulse response) sits under the bells and pads.
 | `app/layout.tsx` | Fonts, metadata, theme colour. |
 | `app/globals.css` | Tokens, accents, layout, panes, keyframes. |
 | `app/signals.ts` | Projects and site constants. |
+| `app/feed.xml/`, `app/api/signals.json/`, `app/sitemap.ts` | RSS feed, JSON Feed, and sitemap, all from `SIGNALS`. |
 | `app/<route>/page.tsx` | Each pane's content. |
 | `components/site/shell.tsx` | Scenery, deck, and live data provider. |
 | `components/site/deck.tsx` | Opening, closing, and switching panes. |
-| `components/site/home-pane.tsx` | The home pane and the sound switch. |
+| `components/site/home-pane.tsx` | The home pane, the sound switch, and the Motion switch. |
+| `components/site/live-sentence.tsx`, `rel-time.tsx`, `last-push.tsx`, `building-now.tsx`, `project-activity.tsx` | Everything that shows live data or a time. |
 | `components/site/scenery/` | The background: `index.tsx` (loop), `printer.ts`, `sky.ts`, `kit.ts`, `runtime.ts`, `scenes/`. |
 | `lib/motion.ts` | Shared durations and curves. |
+| `lib/still.ts` | The Motion switch: holds the scenery still. |
 | `lib/sound.ts` | Sound presets and interaction notes. |
+| `lib/live.ts`, `lib/live-store.tsx`, `lib/live-client.ts` | Live data types and wording, the React store, and the browser refresh. |
 | `lib/panes.ts` | Route to pane key and palette key. |
 | `scripts/fetch-live.ts` | Build-time GitHub and X data. |
+| `scripts/csp.ts` | Adds a per-page Content-Security-Policy to the export. |
+| `.github/workflows/nextjs.yml` | Hourly build and deploy to GitHub Pages. |
 | `.claude/skills/site-design/` | The skill that points agents here. |

@@ -24,13 +24,19 @@ export default function Contact() {
       </p>
       <ul className="list">
         <li>
-          <a href={`https://x.com/${X_HANDLE}`}>X ↗</a>
+          <a href={`https://x.com/${X_HANDLE}`} rel="me">
+            X <span aria-hidden="true">↗</span>
+          </a>
         </li>
         <li>
-          <a href={`https://github.com/${GITHUB_USER}`}>GitHub ↗</a>
+          <a href={`https://github.com/${GITHUB_USER}`} rel="me">
+            GitHub <span aria-hidden="true">↗</span>
+          </a>
         </li>
         <li>
-          <a href={INSTAGRAM.href}>Instagram ↗</a>
+          <a href={INSTAGRAM.href} rel="me">
+            Instagram <span aria-hidden="true">↗</span>
+          </a>
         </li>
       </ul>
       <p className="muted">

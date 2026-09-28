@@ -6,8 +6,9 @@ import { useEffect, useRef, useState } from 'react'
 import { EMAIL, type ProjectRef } from '@/app/signals'
 import { orderProjects } from '@/lib/live'
 import { useLive } from '@/lib/live-store'
-import { normalizePath } from '@/lib/panes'
-import { LABELS, current, cycle, saved, setPreset, subscribe, tick, type Preset } from '@/lib/sound'
+import { normalizePath, placeFor } from '@/lib/panes'
+import { LABELS, current, cycle, restore, subscribe, tick, type Preset } from '@/lib/sound'
+import { isStill, onStill, setStill } from '@/lib/still'
 import { LiveSentence } from './live-sentence'
 import { CloseIcon } from './pane-head'
 import { LocationIcon } from './icons'
@@ -19,6 +20,10 @@ const PAGES = [
   { href: '/x', label: 'X' },
   { href: '/contact', label: 'Contact' },
 ]
+
+// When a row last opened its pane. The second click of a double click or
+// double tap lands after the re-render, on the now active row that closes it.
+let openedAt = -Infinity
 
 function Item({
   href,
@@ -41,7 +46,12 @@ function Item({
         scroll={false}
         aria-current={active ? 'page' : undefined}
         onPointerEnter={() => tick('hover')}
-        onClick={() => {
+        onClick={(e) => {
+          if (e.detail > 1 || (active && performance.now() - openedAt < 500)) {
+            e.preventDefault()
+            return
+          }
+          if (!active) openedAt = performance.now()
           // A hairline draws under the row as its pane slides out.
           const el = ref.current
           if (el) {
@@ -51,6 +61,7 @@ function Item({
         }}
       >
         <span className="item-label">
+          {active && <span className="sr-only">Close </span>}
           {label}
           {active && <CloseIcon />}
         </span>
@@ -63,15 +74,18 @@ function Item({
 /** The first pane: who I am, what I did last, and everything that opens a pane. */
 export function HomePane({ projects, tweet }: { projects: ProjectRef[]; tweet: React.ReactNode }) {
   const path = normalizePath(usePathname())
-  const { repos } = useLive()
+  // The build's data, so the order never jumps after load.
+  const { buildRepos } = useLive()
+  // One h1 per page: while a pane is open, its title is the page's heading.
+  const Name = placeFor(path).key ? 'div' : 'h1'
   return (
     <div className="home">
       <header className="id">
-        <h1 className="name">
+        <Name className="name">
           <Link href="/" scroll={false}>
             Kuladeep Mantri
           </Link>
-        </h1>
+        </Name>
         <p className="role">Security Engineer</p>
         <p className="loc">
           <LocationIcon />
@@ -85,7 +99,7 @@ export function HomePane({ projects, tweet }: { projects: ProjectRef[]; tweet: R
 
       <LiveSentence projects={projects} />
 
-      <nav aria-label="Pages" className="block">
+      <nav aria-label="Pages">
         <ul className="tabs">
           {PAGES.map((p) => (
             <Item key={p.href} {...p} path={path} />
@@ -93,10 +107,10 @@ export function HomePane({ projects, tweet }: { projects: ProjectRef[]; tweet: R
         </ul>
       </nav>
 
-      <nav aria-label="Projects" className="block">
+      <nav aria-label="Projects">
         <h2 className="lab">Projects</h2>
         <ul className="rows">
-          {orderProjects(projects, repos).map((p) => (
+          {orderProjects(projects, buildRepos).map((p) => (
             <Item
               key={p.slug}
               href={`/apps/${p.slug}`}
@@ -112,34 +126,64 @@ export function HomePane({ projects, tweet }: { projects: ProjectRef[]; tweet: R
 
       <footer className="home-foot">
         <a href={`mailto:${EMAIL}`}>{EMAIL}</a>
-        <SoundToggle />
+        <span className="switches">
+          <SoundToggle />
+          <MotionToggle />
+        </span>
       </footer>
     </div>
   )
 }
 
+/** Lets the scenery move or holds it still. Follows the system setting until used. */
+function MotionToggle() {
+  const [still, setS] = useState(false)
+  useEffect(() => {
+    const apply = (s: boolean) => {
+      setS(s)
+      document.documentElement.toggleAttribute('data-still', s)
+    }
+    apply(isStill())
+    return onStill(apply)
+  }, [])
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={!still}
+      className="motion"
+      onClick={() => setStill(!still)}
+    >
+      <span>Motion</span>
+      <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+        <path
+          d={still ? 'M1.5 8h12.6' : 'M1.5 8q2.1-4 4.2 0t4.2 0t4.2 0'}
+          stroke="currentColor"
+          strokeWidth="1.3"
+          fill="none"
+          strokeLinecap="round"
+        />
+      </svg>
+    </button>
+  )
+}
+
 function SoundToggle() {
   const [preset, setP] = useState<Preset>('off')
+  const ref = useRef<HTMLButtonElement>(null)
   useEffect(() => {
-    setP(current())
     const off = subscribe(setP)
-    // Browsers only allow audio after a gesture: resume a saved choice at the first one.
-    const want = saved()
-    if (want !== 'off' && current() === 'off') {
-      const arm = () => setPreset(want)
-      window.addEventListener('pointerdown', arm, { once: true })
-      return () => {
-        off()
-        window.removeEventListener('pointerdown', arm)
-      }
-    }
+    const stop = restore(ref.current)
+    setP(current())
     return () => {
       off()
+      stop()
     }
   }, [])
   const on = preset !== 'off'
   return (
     <button
+      ref={ref}
       type="button"
       className="sound"
       aria-pressed={on}

@@ -1,18 +1,21 @@
 import { sortedByStart } from '@/app/signals'
+import { LIVE } from '@/lib/generated/live'
 import { WEBSITE_URL } from '@/lib/constants'
 
 export const dynamic = 'force-static'
 
 export function GET(): Response {
   const signals = sortedByStart()
+  // Only repos the build confirmed public are named.
+  const repos = LIVE.github?.repos
+  const publicRepos = (list: string[]) => list.filter((r) => repos?.[r] && !repos[r].isPrivate)
 
   const body = {
     version: 'https://jsonfeed.org/version/1.1',
-    title: 'Kuladeep Mantri: Log',
+    title: 'Kuladeep Mantri: projects',
     home_page_url: WEBSITE_URL,
     feed_url: `${WEBSITE_URL}/api/signals.json`,
-    description:
-      "Dated, versioned entries from Kuladeep Mantri's public lab.",
+    description: 'Projects I have built and am building.',
     authors: [{ name: 'Kuladeep Mantri', url: WEBSITE_URL }],
     language: 'en',
     items: signals.map((s) => ({
@@ -20,14 +23,10 @@ export function GET(): Response {
       url: `${WEBSITE_URL}/apps/${s.slug}`,
       title: `${s.name}: ${s.tagline}`,
       content_text: s.description,
-      date_published: `${s.dateFirst}T00:00:00Z`,
-      date_modified: `${s.dateLast}T00:00:00Z`,
+      date_published: `${s.dateFirst}T12:00:00Z`,
+      date_modified: `${s.dateLast}T12:00:00Z`,
       tags: [s.type, s.state, ...s.tags],
-      _km: {
-        id: s.id,
-        state: s.state,
-        repos: s.repos,
-      },
+      _km: { id: s.id, state: s.state, repos: publicRepos(s.repos) },
     })),
   }
 

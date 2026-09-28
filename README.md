@@ -1,16 +1,18 @@
-# Kuladeep Mantri Portfolio
+# kuladeepmantri.com
 
-Personal portfolio for Kuladeep Mantri, cybersecurity engineer. A minimal, mono-first site where every project has its own immersive read page, built as a static export.
+My personal site: one page of glass panes over a line-art scene that changes
+with each page. Projects, GitHub activity, and my latest post on X come from
+GitHub and X, fetched when the site is built.
 
 ## Stack
 
-- **Framework**: Next.js 15 (App Router, React 19), static export (`output: 'export'`)
-- **Styling**: Tailwind CSS v4
-- **Animation**: Motion (formerly Framer Motion)
-- **3D**: react-three-fiber + drei
-- **Hosting**: GitHub Pages
+- Next.js 15 (App Router, React 19), exported as static files
+- Plain CSS in `app/globals.css`, one font (Geist)
+- Canvas 2D and one WebGL shader for the scenery, Web Audio for the optional sound
+- GitHub Pages, deployed by GitHub Actions
 
-Project content is defined in one place, `app/signals.ts`, and the pages fan out from it. See `INSTALLATION.md` for setup and where to edit content.
+Projects live in `app/signals.ts`. `DESIGN.md` describes how the site looks,
+moves, and is built, and how to add a project. `INSTALLATION.md` covers setup.
 
 ## Getting started
 
@@ -19,4 +21,4 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:3000 to view the site.
+Then open http://localhost:3000.

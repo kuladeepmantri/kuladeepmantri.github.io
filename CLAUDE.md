@@ -19,7 +19,7 @@ over a line-art scene that changes per page.
 
 ```bash
 npm run dev      # predev fetches live data (scripts/fetch-live.ts), then next dev on :3000
-npm run build    # prebuild fetches live data, then the static export to out/
+npm run build    # prebuild fetches live data, static export to out/, postbuild adds the CSP
 npm run lint     # eslint
 ```
 
@@ -40,7 +40,8 @@ section 10).
   `kit.ts` (painting helpers and types), `scenes/` (one file per scene,
   registered in `scenes/index.ts`).
 - `lib/motion.ts` holds the durations and curves shared by panes, CSS, and
-  scenery. `lib/sound.ts` synthesizes the optional ambient sound.
+  scenery. `lib/still.ts` is the Motion switch. `lib/sound.ts` synthesizes the
+  optional ambient sound.
 - `app/signals.ts` is the single source of truth for projects (`SIGNALS`) and
   site constants (`EMAIL`, handles). Add or change project content there.
 
@@ -48,25 +49,34 @@ section 10).
 
 `scripts/fetch-live.ts` runs before `dev` and `build`. It writes
 `lib/generated/live.ts` (gitignored, never edit or commit) and
-`public/live.json`, which the browser uses to refresh. It never throws: without
-tokens or network it keeps or stubs data so the build always succeeds.
+`public/live.json` (gitignored), the published snapshot that the next build
+reads back from the live site as its cache. It never throws: without tokens or
+network it keeps the cached data, so the build always succeeds.
 
-- GitHub: `GH_PAT` or `GITHUB_TOKEN`. X: `X_BEARER_TOKEN`.
+- GitHub: `GH_PAT`, then `GITHUB_TOKEN` (a rejected token falls through to the
+  next). X: `X_BEARER_TOKEN`; `X_FULL_REFRESH=1` refetches posts from scratch.
+- The browser refresh (`lib/live-client.ts`) calls GitHub's public events API
+  directly, unauthenticated, and caches for 10 minutes. It never reads
+  `live.json`.
 - Tokens live only in `.env.local` (gitignored) and GitHub Actions secrets.
   Never print, echo, or commit them.
-- Private repositories are counted but never named in anything public.
+- Private repositories are counted but never named in anything public. Only
+  public repos go in a project's `repos` in `SIGNALS`.
 
 ## Conventions
 
 - Import alias `@/*` maps to the repo root.
-- One font: Geist (`--font-sans`). Styling is plain CSS in `app/globals.css`;
-  Tailwind is imported for its reset only.
+- One font: Geist (`--font-sans`). Styling is plain CSS in `app/globals.css`,
+  including its own reset. No Tailwind, no PostCSS config.
 - Prettier style: no semicolons, single quotes, width 100.
 - Site URL is `WEBSITE_URL` in `lib/constants.ts`; do not hard-code the domain.
 - Visitor-facing writing: first person, plain, no marketing words, no em dashes.
 
 ## Deployment
 
-Pushing to `main` runs `.github/workflows/nextjs.yml`, which builds the static
-export and deploys `out/` to GitHub Pages. A daily scheduled run rebuilds so the
-live data stays fresh. Do not push to `main` without the owner's go-ahead.
+Pushing to `main` runs `.github/workflows/nextjs.yml` on Node 22: fetch live
+data (the only step with secrets), `next build`, add the CSP, fail on any GPS
+metadata in `out/`, then deploy `out/` to GitHub Pages. An hourly scheduled run
+(`7 * * * *`) rebuilds so the live data stays fresh, and skips the deploy when
+the commit and the data (ignoring `builtAt`) match the live `live.json`. The
+build ID is the commit SHA. Do not push to `main` without the owner's go-ahead.

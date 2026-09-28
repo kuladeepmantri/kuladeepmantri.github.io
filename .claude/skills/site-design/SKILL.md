@@ -31,4 +31,10 @@ project.
 - Sizes come from the stage (`unit`, `span`, `H`), never fixed pixels.
 - Durations and curves come from `lib/motion.ts` and match the CSS keyframes.
 - Only route changes animate panes; content refreshes update in place.
+- Anything motion-driven stops under reduced motion or when the Motion switch
+  is off (`data-still` on `<html>`, `lib/still.ts`).
+- Any clock or relative time on the page uses `liveClass()` from
+  `components/site/rel-time.tsx`, so build-time values never show.
+- No new inline `<script>` without checking it still runs: `scripts/csp.ts`
+  hashes inline scripts into each page's Content-Security-Policy at build.
 - Tokens (X, GitHub) stay in `.env.local`; never print or commit them.

@@ -35,20 +35,6 @@ export function noise1(x: number, seed = 0) {
   return hash(i + seed * 57.3) * (1 - u) + hash(i + 1 + seed * 57.3) * u
 }
 
-/** Sharp-peaked 1D noise for mountains, 0 to 1. */
-export function ridged(x: number, seed = 0) {
-  let s = 0
-  let a = 0.55
-  let f = 1
-  for (let o = 0; o < 4; o++) {
-    const n = 1 - Math.abs(2 * noise1(x * f, seed + o * 11) - 1)
-    s += a * n * n
-    a *= 0.5
-    f *= 2.1
-  }
-  return s / 1.03
-}
-
 /** Layered 1D noise for ridgelines, 0 to 1. */
 export function ridgeNoise(x: number, seed = 0) {
   return 0.55 * noise1(x, seed) + 0.3 * noise1(x * 2.3, seed + 3) + 0.15 * noise1(x * 5.1, seed + 7)
@@ -114,8 +100,11 @@ export type Kit = {
     deep: string,
     alpha?: number,
   ) => void
-  /** An emoji glyph as a cropped, colour-boosted image, cached. */
-  sprite: (glyph: string, px: number) => HTMLCanvasElement
+  /**
+   * An emoji glyph as a cropped, colour-boosted image, cached. Null when the
+   * system has no colour glyph for it (older Android, minimal Linux).
+   */
+  sprite: (glyph: string, px: number) => HTMLCanvasElement | null
 }
 
 /** A scene with its state type checked. */
@@ -279,22 +268,82 @@ export function reflectImage(
 
 const EMOJI_FONT = '"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif'
 
+// The scenes paint on the CPU (the printer reads every picture back), so their
+// scratch canvases stay in CPU memory too: no GPU readback per layer per frame.
+export function scratch(w: number, h: number) {
+  const c = document.createElement('canvas')
+  c.width = w
+  c.height = h
+  const g = c.getContext('2d', { willReadFrequently: true })
+  if (!g) throw new Error('scenery: no 2D canvas')
+  return g
+}
+
+// Kept across resizes. Scenes ask for few sizes, but bound it anyway.
+const sprites = new Map<string, HTMLCanvasElement | null>()
+
+function makeSprite(glyph: string, px: number) {
+  const S = Math.round(px * 1.5)
+  const x = scratch(S, S)
+  x.textAlign = 'center'
+  x.textBaseline = 'middle'
+  x.font = `${px}px ${EMOJI_FONT}`
+  x.fillText(glyph, S / 2, S / 2)
+  const d = x.getImageData(0, 0, S, S)
+  let x0 = S
+  let y0 = S
+  let x1 = 0
+  let y1 = 0
+  let colour = 0
+  for (let j = 0; j < S; j++)
+    for (let i = 0; i < S; i++) {
+      const o = (j * S + i) * 4
+      if (d.data[o + 3] > 40) {
+        x0 = Math.min(x0, i)
+        x1 = Math.max(x1, i)
+        y0 = Math.min(y0, j)
+        y1 = Math.max(y1, j)
+        const hi = Math.max(d.data[o], d.data[o + 1], d.data[o + 2])
+        const lo = Math.min(d.data[o], d.data[o + 1], d.data[o + 2])
+        if (hi - lo > 40) colour++
+      }
+      // More saturated and a little brighter, so the lines read as colour.
+      const r = d.data[o] / 255
+      const gg = d.data[o + 1] / 255
+      const b = d.data[o + 2] / 255
+      const l = 0.3 * r + 0.59 * gg + 0.11 * b
+      d.data[o] = Math.min(255, (l + (r - l) * 1.4) * 1.08 * 255)
+      d.data[o + 1] = Math.min(255, (l + (gg - l) * 1.4) * 1.08 * 255)
+      d.data[o + 2] = Math.min(255, (l + (b - l) * 1.4) * 1.08 * 255)
+    }
+  // A missing glyph prints as an empty or grey box (.notdef): no colour at all.
+  if (colour < S) return null
+  x.putImageData(d, 0, 0)
+  const out = scratch(Math.max(1, x1 - x0 + 1), Math.max(1, y1 - y0 + 1))
+  out.drawImage(x.canvas, -x0, -y0)
+  return out.canvas
+}
+
 export function makeKit(cols: number, rows: number, P: number, R: number) {
   const pool: CanvasRenderingContext2D[] = []
   let used = 0
-  const sprites = new Map<string, HTMLCanvasElement>()
 
-  const kit: Kit & { reset: () => void } = {
+  const kit: Kit & { reset: () => void; resize: (c: number, r: number, p: number) => void } = {
     reset() {
       used = 0
     },
-    layer() {
-      if (!pool[used]) {
-        const c = document.createElement('canvas')
-        c.width = cols
-        c.height = rows
-        pool[used] = c.getContext('2d')!
+    /** Reuses the layer canvases at a new picture size. */
+    resize(c, r, p) {
+      cols = c
+      rows = r
+      P = p
+      for (const g of pool) {
+        g.canvas.width = cols
+        g.canvas.height = rows
       }
+    },
+    layer() {
+      if (!pool[used]) pool[used] = scratch(cols, rows)
       const g = pool[used++]
       g.setTransform(1, 0, 0, 1, 0, 0)
       g.clearRect(0, 0, cols, rows)
@@ -345,46 +394,16 @@ export function makeKit(cols: number, rows: number, P: number, R: number) {
     },
     sprite(glyph, px) {
       const key = `${glyph}|${px}`
-      const hit = sprites.get(key)
-      if (hit) return hit
-      const S = Math.round(px * 1.5)
-      const c = document.createElement('canvas')
-      c.width = c.height = S
-      const x = c.getContext('2d', { willReadFrequently: true })!
-      x.textAlign = 'center'
-      x.textBaseline = 'middle'
-      x.font = `${px}px ${EMOJI_FONT}`
-      x.fillText(glyph, S / 2, S / 2)
-      const d = x.getImageData(0, 0, S, S)
-      let x0 = S
-      let y0 = S
-      let x1 = 0
-      let y1 = 0
-      for (let j = 0; j < S; j++)
-        for (let i = 0; i < S; i++) {
-          const o = (j * S + i) * 4
-          if (d.data[o + 3] > 40) {
-            x0 = Math.min(x0, i)
-            x1 = Math.max(x1, i)
-            y0 = Math.min(y0, j)
-            y1 = Math.max(y1, j)
-          }
-          // More saturated and a little brighter, so the lines read as colour.
-          const r = d.data[o] / 255
-          const gg = d.data[o + 1] / 255
-          const b = d.data[o + 2] / 255
-          const l = 0.3 * r + 0.59 * gg + 0.11 * b
-          d.data[o] = Math.min(255, (l + (r - l) * 1.4) * 1.08 * 255)
-          d.data[o + 1] = Math.min(255, (l + (gg - l) * 1.4) * 1.08 * 255)
-          d.data[o + 2] = Math.min(255, (l + (b - l) * 1.4) * 1.08 * 255)
-        }
-      x.putImageData(d, 0, 0)
-      const out = document.createElement('canvas')
-      out.width = Math.max(1, x1 - x0 + 1)
-      out.height = Math.max(1, y1 - y0 + 1)
-      out.getContext('2d')!.drawImage(c, -x0, -y0)
-      sprites.set(key, out)
-      return out
+      if (sprites.has(key)) return sprites.get(key) ?? null
+      if (sprites.size >= 16) sprites.clear()
+      let img: HTMLCanvasElement | null = null
+      try {
+        img = makeSprite(glyph, px)
+      } catch {
+        // no canvas memory left: the scene goes without this sprite
+      }
+      sprites.set(key, img)
+      return img
     },
   }
   return kit

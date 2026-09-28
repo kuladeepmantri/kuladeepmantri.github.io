@@ -27,6 +27,13 @@ let master: GainNode | null = null
 let room: ConvolverNode | null = null
 let running: { stop: () => void } | null = null
 let preset: Preset = 'off'
+// A chosen preset the browser has not let start yet (no gesture, or iOS interrupted it).
+let waiting = false
+// Bumped on every change, so a slow resume() from an older request knows it is stale.
+let req = 0
+// Gestures inside this element (the switch) are left to its own click handler.
+let guard: Element | null = null
+let pointer = 'mouse'
 const listeners = new Set<(p: Preset) => void>()
 
 export function current(): Preset {
@@ -38,6 +45,10 @@ export function subscribe(fn: (p: Preset) => void) {
   return () => listeners.delete(fn)
 }
 
+function emit() {
+  listeners.forEach((fn) => fn(preset))
+}
+
 export function saved(): Preset {
   try {
     const v = localStorage.getItem(KEY) as Preset | null
@@ -47,9 +58,34 @@ export function saved(): Preset {
   }
 }
 
+function remember(p: Preset) {
+  try {
+    localStorage.setItem(KEY, p)
+  } catch {
+    // remembered for this visit only
+  }
+}
+
+// iOS gives a plain AudioContext the 'ambient' audio session, which the ring/silent switch
+// mutes. 'playback' plays through the switch (Safari 16.4+) and pauses other apps' audio, so
+// it is released back to 'auto' when sound goes off. Browsers without the API ignore this.
+function session(type: 'playback' | 'auto') {
+  const s = (navigator as Navigator & { audioSession?: { type: string } }).audioSession
+  try {
+    if (s) s.type = type
+  } catch {
+    // unsupported type: keep the default
+  }
+}
+
 function ensure() {
   if (ctx) return ctx
-  ctx = new AudioContext()
+  if (typeof AudioContext === 'undefined') return null
+  try {
+    ctx = new AudioContext()
+  } catch {
+    return null
+  }
   master = ctx.createGain()
   master.gain.value = 0
   master.connect(ctx.destination)
@@ -65,7 +101,64 @@ function ensure() {
   const wet = ctx.createGain()
   wet.gain.value = 0.5
   room.connect(wet).connect(master)
+  document.addEventListener('visibilitychange', onVisibility)
+  // pointerover runs before pointerenter, so tick('hover') can tell a mouse from a tap.
+  window.addEventListener('pointerover', (e) => (pointer = e.pointerType), {
+    capture: true,
+    passive: true,
+  })
   return ctx
+}
+
+// Hidden tabs go quiet. The preset is stopped, not just suspended: its timers keep running
+// while the clock is frozen and would pile chords up at the same instant on return.
+function onVisibility() {
+  if (!ctx || !master || preset === 'off') return
+  if (document.hidden) {
+    req++
+    running?.stop()
+    running = null
+    master.gain.cancelScheduledValues(ctx.currentTime)
+    master.gain.setValueAtTime(0, ctx.currentTime)
+    ctx.suspend().catch(() => {})
+  } else void setPreset(preset)
+}
+
+const GESTURES = ['pointerup', 'keydown', 'click'] as const
+
+function onGesture(e: Event) {
+  if (guard && e.target instanceof Node && guard.contains(e.target)) return
+  if (e instanceof KeyboardEvent && e.key === 'Escape') return
+  void setPreset(preset)
+}
+
+function arm() {
+  GESTURES.forEach((t) => window.addEventListener(t, onGesture, true))
+}
+
+function disarm() {
+  GESTURES.forEach((t) => window.removeEventListener(t, onGesture, true))
+}
+
+/**
+ * Bring back the remembered preset. Browsers only start audio after a gesture, so it starts
+ * at the first click, tap, or key press, and the switch shows it meanwhile.
+ */
+export function restore(ignore: Element | null) {
+  guard = ignore
+  if (req === 0 && preset === 'off') {
+    const want = saved()
+    if (want !== 'off') {
+      preset = want
+      waiting = true
+      emit()
+    }
+  }
+  if (waiting) arm()
+  return () => {
+    guard = null
+    disarm()
+  }
 }
 
 /** A few seconds of looping noise: brown (deep) or pink-ish (lighter). */
@@ -213,6 +306,7 @@ function chord(ac: AudioContext, out: AudioNode, notes: number[], hold: number) 
   swell.connect(depth).connect(lp.frequency)
   swell.start(at)
   swell.stop(at + hold + 5)
+  const oscs: OscillatorNode[] = [swell]
   lp.connect(env)
   env.connect(out)
   if (room) env.connect(room)
@@ -232,8 +326,23 @@ function chord(ac: AudioContext, out: AudioNode, notes: number[], hold: number) 
       o.connect(v).connect(pan).connect(lp)
       o.start(at)
       o.stop(at + hold + 5)
+      oscs.push(o)
     }
   })
+  return {
+    /** Fade out now instead of at the end of the hold. */
+    release(t: number) {
+      const g = env.gain
+      // Firefox has no cancelAndHoldAtTime.
+      if (typeof g.cancelAndHoldAtTime === 'function') g.cancelAndHoldAtTime(t)
+      else {
+        g.cancelScheduledValues(t)
+        g.setValueAtTime(g.value, t)
+      }
+      g.setTargetAtTime(0, t, 0.3)
+      oscs.forEach((o) => o.stop(t + 1.5))
+    },
+  }
 }
 
 function ambient(ac: AudioContext, out: AudioNode) {
@@ -243,10 +352,12 @@ function ambient(ac: AudioContext, out: AudioNode) {
   const water = lake(ac, waterLevel)
   let alive = true
   let step = 0
+  // A chord lasts about 14s and a new one starts every 10s, so at most two sound at once.
+  let chords: ReturnType<typeof chord>[] = []
   const timers: ReturnType<typeof setTimeout>[] = []
   const nextChord = () => {
     if (!alive) return
-    chord(ac, out, CHORDS[step++ % CHORDS.length], 9)
+    chords = [...chords.slice(-1), chord(ac, out, CHORDS[step++ % CHORDS.length], 9)]
     timers.push(setTimeout(nextChord, 10000))
   }
   const nextBell = () => {
@@ -262,6 +373,7 @@ function ambient(ac: AudioContext, out: AudioNode) {
     stop() {
       alive = false
       timers.forEach(clearTimeout)
+      chords.forEach((c) => c.release(ac.currentTime))
       water.stop()
       waterLevel.disconnect()
     },
@@ -271,22 +383,48 @@ function ambient(ac: AudioContext, out: AudioNode) {
 const BUILD = { ambient, lake }
 
 export async function setPreset(next: Preset) {
+  const id = ++req
   preset = next
-  try {
-    localStorage.setItem(KEY, next)
-  } catch {
-    // remembered for this visit only
-  }
-  listeners.forEach((fn) => fn(next))
+  waiting = false
+  disarm()
+  remember(next)
+  emit()
   if (next === 'off') {
-    if (ctx && master) master.gain.setTargetAtTime(0, ctx.currentTime, 0.25)
+    if (!ctx || !master) return
+    const ac = ctx
+    master.gain.setTargetAtTime(0, ac.currentTime, 0.25)
     const old = running
     running = null
-    setTimeout(() => old?.stop(), 1200)
+    setTimeout(() => {
+      old?.stop()
+      if (id !== req) return
+      session('auto')
+      ac.suspend().catch(() => {})
+    }, 1300)
     return
   }
+  // Called within the gesture, before any await, so iOS counts it as user-initiated.
+  session('playback')
   const ac = ensure()
-  await ac.resume()
+  if (!ac) {
+    preset = 'off'
+    remember('off')
+    emit()
+    return
+  }
+  if (ac.state !== 'running') {
+    // If this call had no gesture behind it, resume() waits; the next gesture retries.
+    waiting = true
+    arm()
+    try {
+      await ac.resume()
+    } catch {
+      return
+    }
+    if (id !== req || (ac.state as AudioContextState) !== 'running') return
+    waiting = false
+    disarm()
+  }
   const old = running
   running = BUILD[next](ac, master!)
   setTimeout(() => old?.stop(), 50)
@@ -294,16 +432,19 @@ export async function setPreset(next: Preset) {
   master!.gain.setTargetAtTime(1, ac.currentTime, 0.6)
 }
 
-/** Move to the next preset, wrapping back to off. */
+/** Start a preset that is waiting for the browser, or move to the next, wrapping to off. */
 export function cycle() {
+  if (waiting) return setPreset(preset)
   return setPreset(PRESETS[(PRESETS.indexOf(preset) + 1) % PRESETS.length])
 }
 
 /** Notes from the same scale for interaction: up when opening, down when closing. */
 export function tick(kind: 'open' | 'close' | 'hover' = 'open') {
-  if (preset === 'off' || !ctx) return
-  if (kind === 'hover') note(SCALE[6 + Math.floor(Math.random() * 4)], 0.008)
-  else if (kind === 'open') {
+  if (preset === 'off' || !ctx || ctx.state !== 'running') return
+  if (kind === 'hover') {
+    // Hover is a mouse affordance; a tap also fires pointerenter.
+    if (pointer === 'mouse') note(SCALE[6 + Math.floor(Math.random() * 4)], 0.008)
+  } else if (kind === 'open') {
     note(SCALE[5], 0.03)
     note(SCALE[8], 0.024, 0.09)
   } else {

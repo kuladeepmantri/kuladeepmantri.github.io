@@ -34,5 +34,6 @@ export const SCENES: Record<string, Scene> = {
   evalcore: regatta,
 }
 
-export const sceneFor = (key: string) => SCENES[key] ?? SCENES.home
+// Own keys only: a path like /apps/constructor must not reach Object.prototype.
+export const sceneFor = (key: string) => (Object.hasOwn(SCENES, key) ? SCENES[key] : SCENES.home)
 

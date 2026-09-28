@@ -4,7 +4,8 @@ import Link from 'next/link'
 import { PaneHead } from '@/components/site/pane-head'
 import { BuildingNow } from '@/components/site/building-now'
 import { LocationIcon } from '@/components/site/icons'
-import { EMAIL, GITHUB_USER, X_HANDLE, projectRefs } from '../signals'
+import { LIVE } from '@/lib/generated/live'
+import { EMAIL, GITHUB_USER, INSTAGRAM, X_HANDLE, projectRefs } from '../signals'
 
 export const metadata: Metadata = pageMeta({
   title: 'About',
@@ -58,7 +59,7 @@ export default function About() {
         <div>
           <dt>Building now</dt>
           <dd>
-            <BuildingNow projects={projectRefs()} />
+            <BuildingNow projects={projectRefs(LIVE.github?.repos)} />
           </dd>
         </div>
         <div>
@@ -79,13 +80,22 @@ export default function About() {
         <h2 className="lab">Elsewhere</h2>
         <ul className="tabs">
           <li>
-            <a href={`https://x.com/${X_HANDLE}`}>X ↗</a>
+            <a href={`https://x.com/${X_HANDLE}`} rel="me">
+              X&nbsp;<span aria-hidden="true">↗</span>
+            </a>
           </li>
           <li>
-            <a href={`https://github.com/${GITHUB_USER}`}>GitHub ↗</a>
+            <a href={`https://github.com/${GITHUB_USER}`} rel="me">
+              GitHub&nbsp;<span aria-hidden="true">↗</span>
+            </a>
           </li>
           <li>
-            <a href={`mailto:${EMAIL}`}>Email ↗</a>
+            <a href={INSTAGRAM.href} rel="me">
+              Instagram&nbsp;<span aria-hidden="true">↗</span>
+            </a>
+          </li>
+          <li>
+            <a href={`mailto:${EMAIL}`}>Email</a>
           </li>
         </ul>
       </section>

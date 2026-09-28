@@ -2,6 +2,7 @@
 // No React and no I/O here, so the build script, server components, and the
 // browser can all share it.
 
+import { GITHUB_USER } from '../app/signals'
 import { TIMEZONE } from './constants'
 
 export type Commit = { sha: string; message: string; date: string; url: string }
@@ -10,11 +11,7 @@ export type RepoLive = {
   isPrivate: boolean
   url: string
   pushedAt: string | null
-  commits30d: number
   recent: Commit[] // newest first, up to 3
-  language?: string | null
-  commitsYear?: number // my commits in the last 365 days
-  days?: [string, number][] // my commits per local day, oldest first
 }
 
 /** A recently pushed repo. Private repos keep only the time, never the name. */
@@ -31,23 +28,47 @@ export type LiveSnapshot = {
   builtAt: string
   sha: string
   github: null | {
-    user: { name: string; avatarUrl: string; bio: string | null }
+    user: { name: string; bio: string | null }
     totalContributions: number
-    weeks: { date: string; count: number; level: 0 | 1 | 2 | 3 | 4 }[][]
     languages: { name: string; bytes: number }[]
     repos: Record<string, RepoLive>
-    pushes: Push[] // newest first, this site's repo and forks excluded
+    pushes: Push[] // newest first, SKIP_REPOS and forks excluded
   }
   x: null | {
     userId: string
     profileFetchedAt: string
     bio: string
     name: string
-    avatarUrl: string
     verified?: boolean
     posts: { id: string; text: string; createdAt: string; url: string }[]
     sinceId: string | null
   }
+}
+
+/** How many recent pushes the snapshot keeps, and the browser refresh keeps too. */
+export const PUSHES_MAX = 12
+
+/** Repos that never count as "what I am building": this site and the profile README. */
+export const SKIP_REPOS = [
+  `${GITHUB_USER}/${GITHUB_USER}.github.io`,
+  `${GITHUB_USER}/${GITHUB_USER}`,
+].map((r) => r.toLowerCase())
+
+export function isSkippedRepo(repo: string): boolean {
+  return SKIP_REPOS.includes(repo.toLowerCase())
+}
+
+/**
+ * What the snapshot says about a repo's visibility. 'unknown' means the build
+ * has no data for it: say nothing about it rather than guess.
+ */
+export function repoVisibility(
+  repo: string,
+  repos: Record<string, RepoLive> | undefined,
+): 'public' | 'private' | 'unknown' {
+  const live = repos?.[repo]
+  if (!live) return 'unknown'
+  return live.isPrivate ? 'private' : 'public'
 }
 
 const MIN = 60_000
@@ -71,25 +92,43 @@ function toTime(iso: string): number {
   return new Date(iso.length === 10 ? `${iso}T12:00:00Z` : iso).getTime()
 }
 
+// Clock skew allowance: a timestamp up to this far ahead still reads as "now".
+const SKEW = 5 * MIN
+
+const LOCAL_DATE = new Intl.DateTimeFormat('en-CA', { timeZone: TIMEZONE })
+
+/** Whole calendar days between two instants, counted in TIMEZONE. */
+function calendarDays(t: number, now: number): number {
+  return Math.round((Date.parse(LOCAL_DATE.format(now)) - Date.parse(LOCAL_DATE.format(t))) / DAY)
+}
+
+function absolute(t: number, now: number): string {
+  if (YEAR.format(t) === YEAR.format(now)) return `on ${MONTH_DAY.format(t)}`
+  return `in ${MONTH_YEAR.format(t)}`
+}
+
 /** Long form for the sentence: "2 hours ago", "yesterday", "on Aug 3". */
 export function ago(iso: string, now: number): string {
   const t = toTime(iso)
+  if (t > now + SKEW) return absolute(t, now)
   const diff = Math.max(0, now - t)
   const m = Math.floor(diff / MIN)
   if (m < 1) return 'just now'
   if (m < 60) return m === 1 ? 'a minute ago' : `${m} minutes ago`
   const h = Math.floor(diff / HOUR)
   if (h < 24) return h === 1 ? 'an hour ago' : `${h} hours ago`
-  const d = Math.floor(diff / DAY)
+  // Past a day, count local calendar days: "yesterday" is the previous date here.
+  const d = calendarDays(t, now)
+  if (d < 1) return `${h} hours ago` // the 25-hour day when clocks fall back
   if (d === 1) return 'yesterday'
   if (d < 30) return `${d} days ago`
-  if (YEAR.format(t) === YEAR.format(now)) return `on ${MONTH_DAY.format(t)}`
-  return `in ${MONTH_YEAR.format(t)}`
+  return absolute(t, now)
 }
 
 /** Short form for rows: "now", "12m ago", "3h ago", "6d ago", "Nov 2025". */
 export function shortAgo(iso: string, now: number): string {
   const t = toTime(iso)
+  if (t > now + SKEW) return MONTH_YEAR.format(t)
   const diff = Math.max(0, now - t)
   if (diff < MIN) return 'now'
   if (diff < HOUR) return `${Math.floor(diff / MIN)}m ago`

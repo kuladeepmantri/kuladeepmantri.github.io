@@ -19,14 +19,16 @@ export default function XPane() {
   return (
     <article>
       <PaneHead title="X" />
-      <a className="who" href={`https://x.com/${X_HANDLE}`}>
+      <a className="who" href={`https://x.com/${X_HANDLE}`} rel="me">
         <Avatar size={48} />
         <div>
           <p className="who-name">
             {x?.name || 'Kuladeep Mantri'}
             {x?.verified && <Verified size={15} />}
           </p>
-          <p className="muted">@{X_HANDLE} ↗</p>
+          <p className="muted">
+            @{X_HANDLE} <span aria-hidden="true">↗</span>
+          </p>
         </div>
       </a>
       {x?.bio && <p>{x.bio}</p>}

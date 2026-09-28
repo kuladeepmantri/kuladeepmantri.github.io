@@ -2,6 +2,7 @@
 
 import { isFresh, lastCommit, monthYear, olderThan, shortAgo } from '@/lib/live'
 import { useLive } from '@/lib/live-store'
+import { liveClass } from './rel-time'
 
 /** Stack, dates, and recent commits for one project; updates with the browser refresh. */
 export function ProjectActivity({
@@ -17,7 +18,7 @@ export function ProjectActivity({
   dateLast: string
   quietNote?: string
 }) {
-  const { repos, now } = useLive()
+  const { repos, now, ready } = useLive()
   const hidden = !projectRepos.length || projectRepos.every((r) => repos?.[r]?.isPrivate)
   const commit = lastCommit({ repos: projectRepos }, repos)
   const commits = projectRepos
@@ -27,7 +28,7 @@ export function ProjectActivity({
     .slice(0, 3)
   const quiet =
     hidden || !commits.length || (!!quietNote && !!commit && olderThan(commit.date, now, 60))
-  const last = commit ? shortAgo(commit.date, now) : hidden ? 'Private repo' : monthYear(dateLast)
+  const last = commit ? shortAgo(commit.date, now) : monthYear(dateLast)
 
   return (
     <>
@@ -42,7 +43,9 @@ export function ProjectActivity({
         </div>
         <div>
           <dt>Last push</dt>
-          <dd suppressHydrationWarning>{last}</dd>
+          <dd suppressHydrationWarning>
+            {commit ? <span className={liveClass(ready)}>{last}</span> : last}
+          </dd>
         </div>
       </dl>
       {quiet ? (
@@ -54,9 +57,11 @@ export function ProjectActivity({
             {commits.map((c, i) => (
               <li key={c.sha}>
                 <a href={c.url}>
-                  <span className="commit-msg">{c.message}</span>
+                  <span className="commit-msg" title={c.message}>
+                    {c.message}
+                  </span>
                   <span
-                    className={i === 0 && isFresh(c.date, now) ? 'when fresh' : 'when'}
+                    className={`${i === 0 && isFresh(c.date, now) ? 'when fresh' : 'when'} ${liveClass(ready)}`}
                     suppressHydrationWarning
                   >
                     {shortAgo(c.date, now)}
