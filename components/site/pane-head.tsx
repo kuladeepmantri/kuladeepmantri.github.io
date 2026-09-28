@@ -16,7 +16,12 @@ export function CloseIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
       <circle cx="7" cy="7" r="6" fill="currentColor" />
-      <path d="M4.8 4.8l4.4 4.4M9.2 4.8l-4.4 4.4" stroke="var(--pane)" strokeWidth="1.4" strokeLinecap="round" />
+      <path
+        d="M4.8 4.8l4.4 4.4M9.2 4.8l-4.4 4.4"
+        stroke="var(--pane)"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+      />
     </svg>
   )
 }

@@ -27,7 +27,10 @@ function lastPushTarget(
     const repo = push.repo.toLowerCase()
     const project = projects.find((p) => p.repos.some((r) => r.toLowerCase() === repo))
     if (project)
-      return { at: push.pushedAt, node: <Token href={`/apps/${project.slug}`}>{project.name}</Token> }
+      return {
+        at: push.pushedAt,
+        node: <Token href={`/apps/${project.slug}`}>{project.name}</Token>,
+      }
     return {
       at: push.pushedAt,
       node: (
@@ -84,9 +87,7 @@ export function LiveSentence({ projects }: { projects: ProjectRef[] }) {
   return (
     <p className={ready ? 'sentence s2 is-ready' : 'sentence s2'} suppressHydrationWarning>
       {parts.map((p, i) => (
-        <span key={i}>
-          {p},{' '}
-        </span>
+        <span key={i}>{p}, </span>
       ))}
       {clockPart}
     </p>

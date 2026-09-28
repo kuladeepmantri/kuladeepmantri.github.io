@@ -51,7 +51,9 @@ yarn-error.log*
 
 # superpowers brainstorming / agents
 .superpowers/
-.claude/
+# Claude Code: local settings and worktrees stay local; project skills are shared.
+.claude/*
+!.claude/skills/
 
 # generated at build time — do not commit
 /lib/generated/

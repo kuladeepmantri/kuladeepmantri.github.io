@@ -1,14 +1,15 @@
 import type { Metadata } from 'next'
+import { pageMeta } from '@/lib/meta'
 import { CopyEmail } from '@/components/site/copy-email'
 import { PaneHead } from '@/components/site/pane-head'
 import { Clock } from '@/components/site/rel-time'
 import { EMAIL, GITHUB_USER, INSTAGRAM, X_HANDLE } from '../signals'
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMeta({
   title: 'Contact',
   description: 'How to reach Kuladeep Mantri.',
-  alternates: { canonical: '/contact' },
-}
+  path: '/contact',
+})
 
 export default function Contact() {
   return (

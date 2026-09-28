@@ -1,25 +1,28 @@
 @import 'tailwindcss';
 
 /*
- * A living background (the field: a slow dithered print, with a network
- * that shows only where the pointer is) fills the window. Panes float on it as dark rounded cards: the home
- * pane, and one pane per opened page to its right. One typeface, Geist.
+ * The scenery (components/site/scenery) fills the window: a cloud sky over a
+ * lake, printed as vertical lines, one place per page. Panes float on it as
+ * frosted glass: the home pane, and one pane per opened page to its right.
+ * One typeface, Geist. DESIGN.md describes the whole system.
  */
 
 :root {
   --bg: #5d97df;
-  --pane: rgb(14 17 24 / 0.66);
+  --pane: rgb(14 17 24 / 0.8);
   --card: rgb(255 255 255 / 0.055);
   --line: rgb(255 255 255 / 0.1);
   --text: #e9ebf0;
-  --muted: #b1b7c3;
-  --faint: #868c99;
+  --muted: #c0c5cf;
+  --faint: #adb3bf;
   --accent: #b3b9ff;
   --cell: 18px;
   --cols: 20;
   --gap: 12px;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
   --snap: cubic-bezier(0.7, 0, 0.2, 1);
+  --glide: cubic-bezier(0.16, 1, 0.3, 1);
+  --glide-in: cubic-bezier(0.5, 0, 0.75, 0);
   color-scheme: dark;
 }
 
@@ -56,6 +59,9 @@
 }
 :root[data-palette='deid'] {
   --accent: #cfcfcf;
+}
+:root[data-palette='evalcore'] {
+  --accent: #ff9fcf;
 }
 
 html,
@@ -158,14 +164,15 @@ button {
   box-sizing: border-box;
   height: calc(100dvh - 2 * var(--cell));
   overflow-y: auto;
-  overscroll-behavior: contain;
+  /* Vertical scrolling stays in the pane; sideways swipes pass to the deck. */
+  overscroll-behavior: auto contain;
   scrollbar-width: none;
   padding: 30px 28px 24px;
   border-radius: 18px;
   background: var(--pane);
   /* Frosted glass: the scenery shows through, blurred, behind the text. */
-  -webkit-backdrop-filter: blur(22px) saturate(1.5);
-  backdrop-filter: blur(22px) saturate(1.5);
+  -webkit-backdrop-filter: blur(24px) saturate(1.8);
+  backdrop-filter: blur(24px) saturate(1.8);
   box-shadow:
     0 30px 80px -34px rgb(0 0 0 / 0.55),
     inset 0 0 0 1px var(--line),
@@ -175,6 +182,20 @@ button {
 
 .pane::-webkit-scrollbar {
   display: none;
+}
+
+/* Without a blur, or when the visitor asks for less transparency, the glass
+   turns nearly solid so the scene can never compete with the text. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  :root {
+    --pane: rgb(14 17 24 / 0.92);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    --pane: rgb(14 17 24 / 0.94);
+  }
 }
 
 .pane-home {
@@ -189,29 +210,32 @@ button {
   flex: 0 0 var(--cell);
 }
 
-/* A pane opens out of the row that was clicked: a line at that height runs
-   across, then unfolds up and down. Closing folds it back into the line. */
-@keyframes unfold {
-  0% {
-    clip-path: inset(var(--ft, 50%) 100% var(--fb, 50%) 0 round 18px);
+/* A pane slides out to the right from behind the one before it, fading in as
+   it goes; closing slides it back. Switching pages keeps the pane and swaps
+   its contents: the old text fades out to the right, the new text drifts in
+   after it. Everything moves left to right.
+   Durations match lib/motion.ts. */
+@keyframes slide-out {
+  from {
+    opacity: 0;
+    transform: translateX(-32px);
+    clip-path: inset(0 100% 0 0 round 18px);
   }
-  38% {
-    clip-path: inset(var(--ft, 50%) 0 var(--fb, 50%) 0 round 18px);
-  }
-  100% {
+  to {
+    opacity: 1;
+    transform: none;
     clip-path: inset(0 0 0 0 round 18px);
   }
 }
 
-@keyframes fold {
-  0% {
-    clip-path: inset(0 0 0 0 round 18px);
+@keyframes slide-back {
+  from {
+    opacity: 1;
+    transform: none;
   }
-  60% {
-    clip-path: inset(var(--ft, 50%) 0 var(--fb, 50%) 0 round 18px);
-  }
-  100% {
-    clip-path: inset(var(--ft, 50%) 0 var(--fb, 50%) 100% round 18px);
+  to {
+    opacity: 0;
+    transform: translateX(-32px);
   }
 }
 
@@ -222,37 +246,19 @@ button {
   }
 }
 
+@keyframes content-in {
+  from {
+    opacity: 0;
+    transform: translateX(-14px);
+  }
+}
+
 .pane-page[data-phase='in'] {
-  animation: unfold 0.62s var(--snap) both;
+  animation: slide-out 0.72s var(--glide) both;
 }
 
 .pane-page[data-phase='out'] {
-  animation: fold 0.42s var(--snap) both;
-}
-
-/* Switching pages: the pane pinches into the new row's line, then opens from it. */
-@keyframes pinch {
-  to {
-    clip-path: inset(var(--ft, 50%) 0 var(--fb, 50%) 0 round 18px);
-  }
-}
-
-@keyframes spread {
-  from {
-    clip-path: inset(var(--ft, 50%) 0 var(--fb, 50%) 0 round 18px);
-  }
-  to {
-    clip-path: inset(0 0 0 0 round 18px);
-  }
-}
-
-.pane-page[data-phase='swap'] {
-  clip-path: inset(0 0 0 0 round 18px);
-  animation: pinch 0.21s cubic-bezier(0.6, 0, 0.9, 0.4) both;
-}
-
-.pane-page[data-phase='reopen'] {
-  animation: spread 0.5s var(--snap) both;
+  animation: slide-back 0.44s var(--glide-in) both;
 }
 
 .home {
@@ -260,21 +266,26 @@ button {
 }
 
 .pane-content {
-  animation: text-in 0.45s var(--ease) both;
+  animation: content-in 0.56s var(--glide) both;
 }
 
 .pane[data-phase='in'] .pane-content {
-  animation-delay: 0.36s;
+  animation-delay: 0.16s;
 }
 
-.pane[data-phase='reopen'] .pane-content {
-  animation-delay: 0.16s;
+/* Once a pane is open its text is visible, whether or not the entrance
+   animation ever got a frame to start (a busy phone, a background tab). */
+.pane[data-phase='open'] .pane-content {
+  animation: none;
 }
 
 .pane[data-phase='out'] .pane-content,
 .pane[data-phase='swap'] .pane-content {
   opacity: 0;
-  transition: opacity 0.1s;
+  transform: translateX(10px);
+  transition:
+    opacity 0.18s,
+    transform 0.18s;
 }
 
 /* ── Type ── */
@@ -335,9 +346,9 @@ button {
 .close {
   display: grid;
   place-items: center;
-  width: 26px;
-  height: 26px;
-  margin: -6px;
+  width: 44px;
+  height: 44px;
+  margin: -15px;
   color: var(--muted);
   transition: color 0.2s;
 }
@@ -468,8 +479,16 @@ button {
 .rows a {
   position: relative;
   display: flex;
-  padding: 5px 0;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 6px 0;
   overflow: hidden;
+}
+
+.item-line {
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--muted);
 }
 
 .item-label {
@@ -480,8 +499,7 @@ button {
   transition: color 0.6s;
 }
 
-.rows a:hover .item-label,
-.rows a[data-lit] .item-label {
+.rows a:hover .item-label {
   color: var(--text);
   transition: color 0.15s;
 }
@@ -548,6 +566,15 @@ button {
   padding-top: 36px;
   font-size: 13px;
   color: var(--faint);
+}
+
+.home-foot a {
+  color: var(--muted);
+  transition: color 0.15s;
+}
+
+.home-foot a:hover {
+  color: var(--accent);
 }
 
 .sound {
@@ -753,6 +780,12 @@ a.who:hover .muted {
   color: var(--text);
 }
 
+/* The location arrow takes the page's accent. */
+.loc-ico {
+  color: var(--accent);
+  transition: color 0.6s;
+}
+
 /* ── About ── */
 
 .about-hero {
@@ -764,20 +797,21 @@ a.who:hover .muted {
 
 .portrait {
   flex-shrink: 0;
-  width: 72px;
-  height: 72px;
-  margin: 0;
-  border-radius: 14px;
+  display: block;
+  width: 88px;
+  height: 88px;
+  border-radius: 16px;
   overflow: hidden;
-  background: #16121c;
-  box-shadow: inset 0 0 0 1px var(--line);
+  box-shadow:
+    0 10px 24px -12px rgb(0 0 0 / 0.6),
+    inset 0 0 0 1px var(--line);
 }
 
-.portrait canvas {
+.portrait img {
   display: block;
   width: 100%;
   height: 100%;
-  image-rendering: pixelated;
+  object-fit: cover;
 }
 
 .about-lede {
@@ -787,7 +821,7 @@ a.who:hover .muted {
 
 .pane .about-block p {
   margin-top: 0;
-  color: var(--muted);
+  color: var(--text);
 }
 
 .cells {
@@ -813,6 +847,20 @@ a.who:hover .muted {
   color: var(--text);
 }
 
+/* ── Narrow windows: both panes don't fit, so the deck scrolls sideways ── */
+
+@media (max-width: 899px) {
+  .stage {
+    scroll-snap-type: x mandatory;
+    pointer-events: auto;
+  }
+
+  .pane {
+    scroll-snap-align: start;
+    scroll-margin-left: var(--cell);
+  }
+}
+
 /* ── Phones: the panes become a sideways deck ── */
 
 @media (max-width: 639px) {
@@ -820,26 +868,26 @@ a.who:hover .muted {
     --gap: 10px;
   }
 
-  .stage {
-    scroll-snap-type: x mandatory;
-    pointer-events: auto;
+  /* Panes sit low, like a sheet, so the top third of the screen shows the scene. */
+  .deck {
+    padding-top: 32svh;
   }
 
   .pane,
   .pane-home,
   .pane-page {
+    height: calc(100dvh - 32svh - var(--cell));
     width: calc(100vw - 3 * var(--cell));
     padding: 26px 22px 20px;
+    /* A smaller radius keeps the blur cheap on phones and still hides the line art. */
+    -webkit-backdrop-filter: blur(16px) saturate(1.8);
+    backdrop-filter: blur(16px) saturate(1.8);
     scroll-snap-align: start;
     scroll-margin-left: var(--cell);
   }
 
   .deck-end {
     flex-basis: calc(var(--cell) * 2);
-  }
-
-  .field-tip {
-    display: none;
   }
 }
 
