@@ -4,15 +4,12 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { emit, takeOrigin } from '@/lib/bus'
 import { normalizePath, placeFor } from '@/lib/panes'
+import { IN_MS, OUT_MS, REOPEN_MS, SWAP_MS } from '@/lib/motion'
 import { tick } from '@/lib/sound'
 
 type Phase = 'in' | 'open' | 'out' | 'swap' | 'reopen'
 type Open = { key: string; node: React.ReactNode; phase: Phase; y: number | null }
 
-const IN_MS = 650
-const OUT_MS = 440
-const SWAP_MS = 210
-const REOPEN_MS = 520
 
 /**
  * The home pane plus at most one pane to its right, for the current route.

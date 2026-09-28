@@ -7,13 +7,13 @@
  */
 
 :root {
-  --bg: #050609;
-  --pane: rgb(11 12 16 / 0.96);
-  --card: #111318;
-  --line: rgb(255 255 255 / 0.07);
+  --bg: #5d97df;
+  --pane: rgb(14 17 24 / 0.66);
+  --card: rgb(255 255 255 / 0.055);
+  --line: rgb(255 255 255 / 0.1);
   --text: #e9ebf0;
-  --muted: #868c98;
-  --faint: #5a606c;
+  --muted: #b1b7c3;
+  --faint: #868c99;
   --accent: #b3b9ff;
   --cell: 18px;
   --cols: 20;
@@ -161,11 +161,15 @@ button {
   overscroll-behavior: contain;
   scrollbar-width: none;
   padding: 30px 28px 24px;
-  border-radius: 16px;
+  border-radius: 18px;
   background: var(--pane);
+  /* Frosted glass: the scenery shows through, blurred, behind the text. */
+  -webkit-backdrop-filter: blur(22px) saturate(1.5);
+  backdrop-filter: blur(22px) saturate(1.5);
   box-shadow:
-    0 30px 70px -30px rgb(0 0 0 / 0.85),
-    inset 0 0 0 1px var(--line);
+    0 30px 80px -34px rgb(0 0 0 / 0.55),
+    inset 0 0 0 1px var(--line),
+    inset 0 1px 0 rgb(255 255 255 / 0.07);
   pointer-events: auto;
 }
 
@@ -174,11 +178,11 @@ button {
 }
 
 .pane-home {
-  width: 360px;
+  width: 380px;
 }
 
 .pane-page {
-  width: 440px;
+  width: 470px;
 }
 
 .deck-end {
@@ -189,25 +193,25 @@ button {
    across, then unfolds up and down. Closing folds it back into the line. */
 @keyframes unfold {
   0% {
-    clip-path: inset(var(--ft, 50%) 100% var(--fb, 50%) 0 round 16px);
+    clip-path: inset(var(--ft, 50%) 100% var(--fb, 50%) 0 round 18px);
   }
   38% {
-    clip-path: inset(var(--ft, 50%) 0 var(--fb, 50%) 0 round 16px);
+    clip-path: inset(var(--ft, 50%) 0 var(--fb, 50%) 0 round 18px);
   }
   100% {
-    clip-path: inset(0 0 0 0 round 16px);
+    clip-path: inset(0 0 0 0 round 18px);
   }
 }
 
 @keyframes fold {
   0% {
-    clip-path: inset(0 0 0 0 round 16px);
+    clip-path: inset(0 0 0 0 round 18px);
   }
   60% {
-    clip-path: inset(var(--ft, 50%) 0 var(--fb, 50%) 0 round 16px);
+    clip-path: inset(var(--ft, 50%) 0 var(--fb, 50%) 0 round 18px);
   }
   100% {
-    clip-path: inset(var(--ft, 50%) 0 var(--fb, 50%) 100% round 16px);
+    clip-path: inset(var(--ft, 50%) 0 var(--fb, 50%) 100% round 18px);
   }
 }
 
@@ -229,21 +233,21 @@ button {
 /* Switching pages: the pane pinches into the new row's line, then opens from it. */
 @keyframes pinch {
   to {
-    clip-path: inset(var(--ft, 50%) 0 var(--fb, 50%) 0 round 16px);
+    clip-path: inset(var(--ft, 50%) 0 var(--fb, 50%) 0 round 18px);
   }
 }
 
 @keyframes spread {
   from {
-    clip-path: inset(var(--ft, 50%) 0 var(--fb, 50%) 0 round 16px);
+    clip-path: inset(var(--ft, 50%) 0 var(--fb, 50%) 0 round 18px);
   }
   to {
-    clip-path: inset(0 0 0 0 round 16px);
+    clip-path: inset(0 0 0 0 round 18px);
   }
 }
 
 .pane-page[data-phase='swap'] {
-  clip-path: inset(0 0 0 0 round 16px);
+  clip-path: inset(0 0 0 0 round 18px);
   animation: pinch 0.21s cubic-bezier(0.6, 0, 0.9, 0.4) both;
 }
 
