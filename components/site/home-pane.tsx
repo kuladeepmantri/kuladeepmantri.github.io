@@ -3,15 +3,14 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
-import type { ProjectRef } from '@/app/signals'
+import { EMAIL, type ProjectRef } from '@/app/signals'
 import { orderProjects } from '@/lib/live'
 import { useLive } from '@/lib/live-store'
 import { normalizePath } from '@/lib/panes'
-import { emit, on, setOrigin } from '@/lib/bus'
 import { LABELS, current, cycle, saved, setPreset, subscribe, tick, type Preset } from '@/lib/sound'
 import { LiveSentence } from './live-sentence'
 import { CloseIcon } from './pane-head'
-import { PinIcon } from './icons'
+import { LocationIcon } from './icons'
 import { Clock } from './rel-time'
 
 const PAGES = [
@@ -24,15 +23,13 @@ const PAGES = [
 function Item({
   href,
   label,
+  line,
   path,
-  slug,
-  lit,
 }: {
   href: string
   label: string
+  line?: string
   path: string
-  slug?: string
-  lit?: boolean
 }) {
   const active = path === href
   const ref = useRef<HTMLAnchorElement>(null)
@@ -43,17 +40,9 @@ function Item({
         href={active ? '/' : href}
         scroll={false}
         aria-current={active ? 'page' : undefined}
-        data-lit={lit || undefined}
-        onPointerEnter={() => {
-          tick('hover')
-          if (slug) emit('focus', { slug })
-        }}
-        onPointerLeave={() => slug && emit('focus', { slug: null })}
+        onPointerEnter={() => tick('hover')}
         onClick={() => {
-          // A hairline draws under this row; the pane unfolds from it and the
-          // background re-inks outward from the same line.
-          const r = ref.current?.getBoundingClientRect()
-          if (r) setOrigin({ x: r.right, y: r.bottom - 3 })
+          // A hairline draws under the row as its pane slides out.
           const el = ref.current
           if (el) {
             el.dataset.fire = ''
@@ -65,6 +54,7 @@ function Item({
           {label}
           {active && <CloseIcon />}
         </span>
+        {line && <span className="item-line">{line}</span>}
       </Link>
     </li>
   )
@@ -74,9 +64,6 @@ function Item({
 export function HomePane({ projects, tweet }: { projects: ProjectRef[]; tweet: React.ReactNode }) {
   const path = normalizePath(usePathname())
   const { repos } = useLive()
-  // Hosts hovered on the background light up their projects here.
-  const [lit, setLit] = useState<string[]>([])
-  useEffect(() => on<{ slugs: string[] }>('node', (d) => setLit(d.slugs)), [])
   return (
     <div className="home">
       <header className="id">
@@ -87,7 +74,7 @@ export function HomePane({ projects, tweet }: { projects: ProjectRef[]; tweet: R
         </h1>
         <p className="role">Security Engineer</p>
         <p className="loc">
-          <PinIcon />
+          <LocationIcon />
           Michigan
           <span className="dot" aria-hidden="true">
             ·
@@ -98,7 +85,13 @@ export function HomePane({ projects, tweet }: { projects: ProjectRef[]; tweet: R
 
       <LiveSentence projects={projects} />
 
-      {tweet}
+      <nav aria-label="Pages" className="block">
+        <ul className="tabs">
+          {PAGES.map((p) => (
+            <Item key={p.href} {...p} path={path} />
+          ))}
+        </ul>
+      </nav>
 
       <nav aria-label="Projects" className="block">
         <h2 className="lab">Projects</h2>
@@ -108,24 +101,17 @@ export function HomePane({ projects, tweet }: { projects: ProjectRef[]; tweet: R
               key={p.slug}
               href={`/apps/${p.slug}`}
               label={p.name}
+              line={p.line}
               path={path}
-              slug={p.slug}
-              lit={lit.includes(p.slug)}
             />
           ))}
         </ul>
       </nav>
 
-      <nav aria-label="More" className="block">
-        <ul className="tabs">
-          {PAGES.map((p) => (
-            <Item key={p.href} {...p} path={path} />
-          ))}
-        </ul>
-      </nav>
+      {tweet}
 
       <footer className="home-foot">
-        <span>© {new Date().getFullYear()}</span>
+        <a href={`mailto:${EMAIL}`}>{EMAIL}</a>
         <SoundToggle />
       </footer>
     </div>
@@ -157,7 +143,7 @@ function SoundToggle() {
       type="button"
       className="sound"
       aria-pressed={on}
-      aria-label={`Sound: ${LABELS[preset]}. Change sound`}
+      aria-label={`${LABELS[preset]}. Change sound`}
       onClick={() => cycle()}
     >
       <span>{LABELS[preset]}</span>

@@ -1,16 +1,13 @@
-/** Small line icons, drawn on a 16px grid at 1.5px strokes. */
+/** Small icons, drawn on a 16px grid. */
 
-export function PinIcon() {
+/** The "current location" arrow, filled, in the page's accent colour. */
+export function LocationIcon() {
   return (
-    <svg className="ico" width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
+    <svg className="ico loc-ico" width="13" height="13" viewBox="0 0 16 16" aria-hidden="true">
       <path
-        d="M8 14.5c-.2 0-4.75-4.1-4.75-7.75a4.75 4.75 0 0 1 9.5 0C12.75 10.4 8.2 14.5 8 14.5Z"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinejoin="round"
+        d="M13.3 2.05a.55.55 0 0 1 .7.7L9.55 14.1a.55.55 0 0 1-1.04-.06L7.3 8.75 2 7.52a.55.55 0 0 1-.07-1.05Z"
+        fill="currentColor"
       />
-      <circle cx="8" cy="6.75" r="1.75" fill="none" stroke="currentColor" strokeWidth="1.5" />
     </svg>
   )
 }

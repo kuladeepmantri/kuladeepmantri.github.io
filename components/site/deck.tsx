@@ -1,71 +1,106 @@
 'use client'
 
 import { usePathname, useRouter } from 'next/navigation'
-import { useEffect, useRef, useState } from 'react'
-import { emit, takeOrigin } from '@/lib/bus'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { normalizePath, placeFor } from '@/lib/panes'
 import { IN_MS, OUT_MS, REOPEN_MS, SWAP_MS } from '@/lib/motion'
 import { tick } from '@/lib/sound'
 
 type Phase = 'in' | 'open' | 'out' | 'swap' | 'reopen'
-type Open = { key: string; node: React.ReactNode; phase: Phase; y: number | null }
-
+type Open = { key: string; node: React.ReactNode; phase: Phase }
 
 /**
  * The home pane plus at most one pane to its right, for the current route.
- * A pane opens out of the row that was clicked: a line at that row's height
- * runs across, then unfolds up and down into the pane. Closing folds it back
- * into the same line. Picking another row while a pane is open pinches the
- * pane into that row's line and unfolds the new page from it.
+ * A pane slides out to the right from behind the home pane and slides back to
+ * close. Picking another page while one is open keeps the pane and swaps its
+ * contents: the old text fades out and the new text drifts in.
  */
 export function Deck({ home, children }: { home: React.ReactNode; children: React.ReactNode }) {
   const path = normalizePath(usePathname())
   const router = useRouter()
   const key = placeFor(path).key
   const [open, setOpen] = useState<Open | null>(() =>
-    key ? { key, node: children, phase: 'in', y: null } : null,
+    key ? { key, node: children, phase: 'in' } : null,
   )
   const openRef = useRef(open)
   openRef.current = open
+  // The newest content for the current route. Next can deliver a route's
+  // content after its path changes, and live data can refresh it later.
+  const latest = useRef(children)
+  latest.current = children
   const stageRef = useRef<HTMLDivElement>(null)
   const paneRef = useRef<HTMLElement>(null)
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined)
   const first = useRef(true)
 
+  // Route changes are the only thing that animates the pane.
   useEffect(() => {
-    clearTimeout(timer.current)
     const cur = openRef.current
+    // Replace the pending timer only when setting a new one. A re-run of this
+    // effect for the same page (Strict Mode, Fast Refresh) must not cancel the
+    // timer that brings the pane's text back.
+    const next = (t: ReturnType<typeof setTimeout>) => {
+      clearTimeout(timer.current)
+      timer.current = t
+    }
     const settle = (k: string, ms = IN_MS) =>
       setTimeout(() => setOpen((o) => (o && o.key === k ? { ...o, phase: 'open' } : o)), ms)
 
     if (first.current) {
       first.current = false
-      if (cur) timer.current = settle(cur.key)
+      if (cur) next(settle(cur.key))
       return
     }
-    const from = takeOrigin()
-    if (from) emit('open', from)
     if (key) {
-      if (cur && cur.phase !== 'out') {
-        tick('open')
-        const y = from?.y ?? cur.y
-        const node = children
-        setOpen({ ...cur, phase: 'swap', y })
-        timer.current = setTimeout(() => {
-          setOpen({ key, node, phase: 'reopen', y })
-          timer.current = settle(key, REOPEN_MS)
-        }, SWAP_MS)
+      const showing = cur && cur.phase !== 'out'
+      if (showing && cur.key === key) {
+        // Back to the page whose text was fading out: bring it straight back in.
+        if (cur.phase === 'swap') {
+          setOpen({ key, node: latest.current, phase: 'reopen' })
+          next(settle(key, REOPEN_MS))
+        }
         return
       }
       tick('open')
-      setOpen({ key, node: children, phase: 'in', y: from?.y ?? null })
-      timer.current = settle(key)
+      if (showing) {
+        // Another page is open: fade its text out, then bring the new text in.
+        setOpen({ ...cur, phase: 'swap' })
+        next(
+          setTimeout(() => {
+            setOpen({ key, node: latest.current, phase: 'reopen' })
+            next(settle(key, REOPEN_MS))
+          }, SWAP_MS),
+        )
+        return
+      }
+      setOpen({ key, node: latest.current, phase: 'in' })
+      next(settle(key))
     } else if (cur && cur.phase !== 'out') {
       tick('close')
+      const lost = !document.activeElement || document.activeElement === document.body
+      if (lost || paneRef.current?.contains(document.activeElement)) {
+        const row = document.querySelector<HTMLElement>(`.pane-home a[href="${cur.key}"]`)
+        ;(row ?? document.querySelector<HTMLElement>('.pane-home .name a'))?.focus({
+          preventScroll: true,
+        })
+      }
       setOpen({ ...cur, phase: 'out' })
-      timer.current = setTimeout(() => setOpen((o) => (o?.phase === 'out' ? null : o)), OUT_MS)
+      next(setTimeout(() => setOpen((o) => (o?.phase === 'out' ? null : o)), OUT_MS))
     }
-  }, [key, children])
+  }, [key])
+
+  // New content for the page already open replaces it in place, without animating.
+  useEffect(() => {
+    setOpen((o) => (o && o.key === key && o.node !== children ? { ...o, node: children } : o))
+  }, [children, key])
+
+  // Each page starts at its top. The pane element stays when pages switch, so
+  // without this a long page's scroll position would carry over to a short one
+  // and show empty space.
+  const shownKey = open?.key
+  useLayoutEffect(() => {
+    if (paneRef.current) paneRef.current.scrollTop = 0
+  }, [shownKey])
 
   // On phones the deck scrolls sideways: bring the open pane into view once
   // it exists, or go back to the home pane when it closes.
@@ -73,9 +108,12 @@ export function Deck({ home, children }: { home: React.ReactNode; children: Reac
   useEffect(() => {
     const stage = stageRef.current
     if (!stage || stage.scrollWidth <= stage.clientWidth) return
-    if (openKey && paneRef.current)
-      paneRef.current.scrollIntoView({ inline: 'start', block: 'nearest', behavior: 'smooth' })
-    else if (!openKey) stage.scrollTo({ left: 0, behavior: 'smooth' })
+    const pane = paneRef.current
+    if (openKey && pane) {
+      // offsetLeft ignores the slide-in transform, so this is where the pane settles.
+      const margin = parseFloat(getComputedStyle(pane).scrollMarginLeft) || 0
+      stage.scrollTo({ left: pane.offsetLeft - margin, behavior: 'smooth' })
+    } else if (!openKey) stage.scrollTo({ left: 0, behavior: 'smooth' })
   }, [openKey])
 
   useEffect(() => {
@@ -86,17 +124,6 @@ export function Deck({ home, children }: { home: React.ReactNode; children: Reac
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [key, router])
-
-  // Where the pane unfolds from, relative to its own box.
-  const fold = (() => {
-    if (!open || open.y === null || typeof window === 'undefined') return undefined
-    const cell =
-      parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--cell')) || 18
-    const top = cell
-    const bottom = window.innerHeight - cell
-    const y = Math.min(bottom - 2, Math.max(top + 2, open.y))
-    return { '--ft': `${y - top}px`, '--fb': `${bottom - y}px` } as React.CSSProperties
-  })()
 
   return (
     <div className="stage" ref={stageRef}>
@@ -115,7 +142,6 @@ export function Deck({ home, children }: { home: React.ReactNode; children: Reac
             className="pane pane-page"
             data-pane
             data-phase={open.phase}
-            style={fold}
             aria-live="polite"
           >
             <div className="pane-content" key={open.key}>

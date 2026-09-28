@@ -1,5 +1,6 @@
 // The sky: the cloud shader from Aceternity UI (CloudShader), adapted to run
-// in the scenery's own WebGL runner and to take the page's sky colours.
+// in the scenery's own WebGL runner and to take each scene's sky colours, cloud
+// count, and sun (or moon) strength.
 //
 // Each cloud is an asymmetric envelope (dome top, flat base) filled with
 // domain-warped billow noise. A second density sample above the pixel
@@ -12,6 +13,7 @@ uniform float u_count;
 uniform vec3 u_cloud;
 uniform vec3 u_skyTop;
 uniform vec3 u_skyBottom;
+uniform float u_sun;
 
 const mat2 R = mat2(0.80, 0.60, -0.60, 0.80);
 
@@ -98,7 +100,7 @@ void main() {
 
   vec2 sunPos = vec2(aspect * 0.78, 0.92);
   float sunDist = length(p - sunPos);
-  color += vec3(1.0, 0.95, 0.82) * exp(-sunDist * sunDist * 5.0) * 0.28;
+  color += vec3(1.0, 0.95, 0.82) * exp(-sunDist * sunDist * 5.0) * u_sun;
 
   float cirrusBand = smoothstep(0.55, 0.8, v_uv.y) * (1.0 - smoothstep(0.9, 1.0, v_uv.y));
   if (cirrusBand > 0.01) {

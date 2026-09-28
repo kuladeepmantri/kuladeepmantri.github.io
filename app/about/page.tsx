@@ -1,17 +1,17 @@
 import type { Metadata } from 'next'
+import { pageMeta } from '@/lib/meta'
 import Link from 'next/link'
 import { PaneHead } from '@/components/site/pane-head'
 import { BuildingNow } from '@/components/site/building-now'
-import { DitherPhoto } from '@/components/site/dither-photo'
-import { PinIcon } from '@/components/site/icons'
+import { LocationIcon } from '@/components/site/icons'
 import { EMAIL, GITHUB_USER, X_HANDLE, projectRefs } from '../signals'
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMeta({
   title: 'About',
   description:
     'Kuladeep Mantri is a security engineer in Michigan. He works as an IT Security Analyst 3 on State of Michigan systems that handle criminal justice, student, and health data.',
-  alternates: { canonical: '/about' },
-}
+  path: '/about',
+})
 
 export default function About() {
   return (
@@ -19,12 +19,15 @@ export default function About() {
       <PaneHead title="About" />
 
       <header className="about-hero">
-        <DitherPhoto src="/images/avatar.jpg" alt="Kuladeep Mantri" />
+        <picture className="portrait">
+          <source srcSet="/images/portrait.webp" type="image/webp" />
+          <img src="/images/portrait.jpg" width={88} height={88} alt="Kuladeep Mantri" />
+        </picture>
         <div>
           <p className="who-name">Kuladeep Mantri</p>
           <p className="muted">Security Engineer</p>
           <p className="loc">
-            <PinIcon />
+            <LocationIcon />
             Michigan
           </p>
         </div>
@@ -32,9 +35,10 @@ export default function About() {
 
       <p className="about-lede">
         I’m curious by default and usually building something. Most of my own time goes into apps,
-        AI, security ideas, and whatever I’m learning next. The engineering side of that lives{' '}
+        AI, security ideas, and whatever I’m learning next. The engineering side of that is in
+        the{' '}
         <Link href="/" scroll={false}>
-          here
+          Projects list
         </Link>
         .
       </p>

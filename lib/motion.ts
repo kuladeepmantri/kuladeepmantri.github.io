@@ -2,14 +2,14 @@
 // the panes (deck.tsx and the keyframes in globals.css) and the scenery. Keep
 // the CSS durations in step with these.
 
-/** A pane unfolding, and the scenery rising in with it. */
-export const IN_MS = 650
-/** A pane folding away, and the scenery sinking out. */
+/** A pane sliding out to the right, and the next scene growing in with it. */
+export const IN_MS = 720
+/** A pane sliding back and fading away. */
 export const OUT_MS = 440
-/** Switching pages: the open pane pinches into the clicked row's line... */
-export const SWAP_MS = 210
-/** ...and spreads open again from it. */
-export const REOPEN_MS = 520
+/** Switching pages: the open pane's text fades out... */
+export const SWAP_MS = 180
+/** ...and the new text drifts in from the right. */
+export const REOPEN_MS = 560
 
 /** A CSS cubic-bezier as a function of progress (0 to 1). */
 function bezier(x1: number, y1: number, x2: number, y2: number) {
@@ -38,5 +38,7 @@ function bezier(x1: number, y1: number, x2: number, y2: number) {
 
 /** --snap in the CSS: a firm start and a soft landing, for things opening and closing. */
 export const snap = bezier(0.7, 0, 0.2, 1)
+/** --glide in the CSS: quick to start, a long soft landing, for panes and scenes arriving. */
+export const glide = bezier(0.16, 1, 0.3, 1)
 /** --ease in the CSS: fast out, long settle, for text and colour. */
 export const ease = bezier(0.22, 1, 0.36, 1)

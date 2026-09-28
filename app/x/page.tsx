@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { pageMeta } from '@/lib/meta'
 import { Avatar } from '@/components/site/avatar'
 import { PaneHead } from '@/components/site/pane-head'
 import { RelTime } from '@/components/site/rel-time'
@@ -7,11 +8,11 @@ import { LIVE } from '@/lib/generated/live'
 import { postText } from '@/lib/x-text'
 import { X_HANDLE } from '../signals'
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMeta({
   title: 'X',
   description: 'Kuladeep Mantri on X: latest posts.',
-  alternates: { canonical: '/x' },
-}
+  path: '/x',
+})
 
 export default function XPane() {
   const x = LIVE.x
@@ -29,6 +30,9 @@ export default function XPane() {
         </div>
       </a>
       {x?.bio && <p>{x.bio}</p>}
+      {!x?.posts.length && (
+        <p className="muted">My posts didn’t load for this build. They’re all on X.</p>
+      )}
       {x && x.posts.length > 0 && (
         <section>
           <h2 className="list-lab">Latest posts</h2>

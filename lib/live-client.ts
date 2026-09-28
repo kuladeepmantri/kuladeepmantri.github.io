@@ -56,10 +56,7 @@ export type Refreshed = {
 }
 
 /** Newer data than the build snapshot, or nulls when there is nothing new. */
-export async function refresh(
-  repos: Record<string, RepoLive>,
-  pushes: Push[],
-): Promise<Refreshed> {
+export async function refresh(repos: Record<string, RepoLive>, pushes: Push[]): Promise<Refreshed> {
   const none = { repos: null, pushes: null }
   if (Date.now() - lastRun < TTL) return none
   lastRun = Date.now()

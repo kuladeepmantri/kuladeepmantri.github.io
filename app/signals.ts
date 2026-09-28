@@ -30,17 +30,43 @@ export type Signal = {
 
 export const SIGNALS: Signal[] = [
   {
+    id: 'KM-2026-0007',
+    slug: 'evalcore',
+    type: 'project',
+    name: 'EvalCore',
+    line: 'Snapshot testing for LLM apps and agents',
+    tagline: 'Regression tests for LLM apps',
+    body: 'An AI app can keep running after a prompt edit, model swap, or dependency update while its answers quietly get worse. EvalCore catches those changes in CI with repeatable evals and offline replay. It ships as one binary and works from YAML configs and JSONL cases, with baselines, trials, model comparisons, and agent traces. I built it with Abhishek Manyam, and it is open source under Apache-2.0.',
+    description:
+      'Snapshot testing for LLM apps and agents, built to run locally and block regressions in CI. Built with Abhishek Manyam.',
+    state: 'active',
+    stateLabel: 'Open source',
+    stack: 'Rust',
+    dateFirst: '2026-07-17',
+    dateLast: '2026-07-26',
+    repos: ['Eval-core/evalcore'],
+    links: [
+      { label: 'Open site', href: 'https://evalcore.cc/' },
+      { label: 'Source', href: 'https://github.com/Eval-core/evalcore' },
+    ],
+    collaborator: {
+      name: 'Abhishek Manyam',
+      href: 'https://github.com/abhishekmanyam',
+    },
+    tags: ['Rust', 'LLM', 'evals', 'CI'],
+  },
+  {
     id: 'KM-2026-0006',
     slug: 'kubereach',
     type: 'project',
     name: 'kubereach',
     line: 'What a stolen Kubernetes pod can really reach',
     tagline: 'Kubernetes foothold to cloud recon',
-    body: 'If someone gets a shell inside one pod, what can they actually get to from there? kubereach works that out. It checks what the pod’s identity is really allowed to do, then follows it into the AWS account behind the cluster. Before writing the tool I tested the two ideas it rests on against a real EKS cluster. The permission summary most tools rely on misses access on managed clusters, and an IRSA token taken off a pod still works from a laptop outside the cluster, with the pod’s full AWS role.',
+    body: 'If someone gets a shell inside one pod, what can they actually get to from there? kubereach was my design for answering that: check what the pod’s identity is really allowed to do, then follow it into the AWS account behind the cluster. Before building it I tested the two ideas it rests on against a real EKS cluster, and both held. The permission summary most tools rely on misses access on managed clusters, and an IRSA token taken off a pod still works from a laptop outside the cluster, with the pod’s full AWS role. I shelved it before writing the engine, because a similar tool already covers the ground and EKS defaults are changing under the main demo.',
     description:
-      'Post-foothold Kubernetes recon: map what one compromised pod’s identity can reach, then follow it into the AWS account behind the cluster.',
-    state: 'active',
-    stateLabel: 'Active',
+      'A design for post-foothold Kubernetes recon, with its two riskiest ideas proven on a real EKS cluster. Shelved before the engine was built.',
+    state: 'paused',
+    stateLabel: 'Shelved',
     stack: 'Go · Kubernetes · AWS',
     dateFirst: '2026-06-27',
     dateLast: '2026-07-03',
@@ -48,6 +74,7 @@ export const SIGNALS: Signal[] = [
     links: [
       { label: 'Open repository', href: 'https://github.com/getnullpkg/kubereach' },
     ],
+    quietNote: 'Shelved in July 2026 after the research and two spikes. The repo records why, and what would bring it back.',
     tags: ['Go', 'Kubernetes', 'AWS', 'EKS', 'IRSA', 'RBAC'],
   },
   {
@@ -181,10 +208,9 @@ export const SIGNALS: Signal[] = [
   },
 ]
 
-// Sentence one, as plain text for meta descriptions. The page renders it with
-// "Kuladeep" as a link, in components/site/intro.tsx; keep the two in sync.
+// Plain text for the site's meta description and link cards.
 export const SENTENCE_ONE =
-  'I’m Kuladeep. Security Engineer, Michigan.'
+  'I’m Kuladeep, a security engineer in Michigan. Most of my own time goes into apps, AI, and security tools.'
 
 export const EMAIL = 'kuladeepbmantri@gmail.com'
 export const GITHUB_USER = 'kuladeepmantri'

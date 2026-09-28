@@ -22,6 +22,7 @@ export function ProjectActivity({
   const commit = lastCommit({ repos: projectRepos }, repos)
   const commits = projectRepos
     .flatMap((r) => (repos?.[r]?.isPrivate ? [] : (repos?.[r]?.recent ?? [])))
+    .filter((c) => !/^Merge (pull request|branch)/.test(c.message))
     .sort((a, b) => Date.parse(b.date) - Date.parse(a.date))
     .slice(0, 3)
   const quiet =

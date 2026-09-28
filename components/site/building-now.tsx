@@ -4,9 +4,6 @@ import Link from 'next/link'
 import type { ProjectRef } from '@/app/signals'
 import { useLive } from '@/lib/live-store'
 
-// How repo names should read on the page when they differ from the slug.
-const DISPLAY: Record<string, string> = { evalcore: 'EvalCore' }
-
 /** The public repo I last pushed to, linked to its project page when it has one. */
 export function BuildingNow({ projects }: { projects: ProjectRef[] }) {
   const { pushes } = useLive()
@@ -14,8 +11,7 @@ export function BuildingNow({ projects }: { projects: ProjectRef[] }) {
   if (!push?.repo) return <>Planning the next one</>
   const repo = push.repo.toLowerCase()
   const project = projects.find((p) => p.repos.some((r) => r.toLowerCase() === repo))
-  const slug = push.repo.split('/')[1]
-  const name = project?.name ?? DISPLAY[slug.toLowerCase()] ?? slug
+  const name = project?.name ?? push.repo.split('/')[1]
   return (
     <>
       {project ? (

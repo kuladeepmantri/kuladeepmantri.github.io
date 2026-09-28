@@ -1,15 +1,16 @@
 import type { Metadata } from 'next'
+import { pageMeta } from '@/lib/meta'
 import { Avatar } from '@/components/site/avatar'
 import { RecentPushes } from '@/components/site/last-push'
 import { PaneHead } from '@/components/site/pane-head'
 import { LIVE } from '@/lib/generated/live'
 import { GITHUB_USER, projectRefs } from '../signals'
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMeta({
   title: 'GitHub',
   description: 'Kuladeep Mantri on GitHub: recent contributions and languages.',
-  alternates: { canonical: '/github' },
-}
+  path: '/github',
+})
 
 export default function GitHub() {
   const gh = LIVE.github

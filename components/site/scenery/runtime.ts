@@ -1,27 +1,9 @@
-// Shared by the scenery: colour helpers, where the open part of the screen
-// starts (right of the panes), a small WebGL runner for full-screen shaders,
-// a frame loop, and the pointer.
+import type { Drop } from './kit'
+// The scenery's plumbing: where the open part of the screen starts (right of
+// the panes), a small WebGL runner for the sky shader, a frame loop that
+// pauses in background tabs, and the pointer.
 
-export type RGB = [number, number, number]
-
-export function hex(c: string): RGB {
-  const n = parseInt(c.slice(1), 16)
-  return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255]
-}
-
-export const mix = (a: RGB, b: RGB, t: number): RGB => [
-  a[0] + (b[0] - a[0]) * t,
-  a[1] + (b[1] - a[1]) * t,
-  a[2] + (b[2] - a[2]) * t,
-]
-
-/** RGB (0 to 1) packed as one little-endian RGBA pixel for a Uint32Array. */
-export const pack = (c: RGB, a = 255) =>
-  ((a << 24) |
-    (Math.round(Math.min(1, Math.max(0, c[2])) * 255) << 16) |
-    (Math.round(Math.min(1, Math.max(0, c[1])) * 255) << 8) |
-    Math.round(Math.min(1, Math.max(0, c[0])) * 255)) >>>
-  0
+import type { RGB } from './kit'
 
 /** Left edge of the open part of the screen: right of the last visible pane. */
 export function openLeft(W: number) {
@@ -33,28 +15,6 @@ export function openLeft(W: number) {
 }
 
 export const reduceMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches
-
-/** Eases a set of colours toward a target, so page changes blend instead of cut. */
-export function colourTween(start: RGB[]) {
-  let from = start
-  let to = start
-  let k = 1
-  const now = (): RGB[] => {
-    const e = k * k * (3 - 2 * k)
-    return from.map((c, i) => mix(c, to[i], e))
-  }
-  return {
-    set(next: RGB[]) {
-      from = now()
-      to = next
-      k = 0
-    },
-    step(dt: number, seconds = 1.2) {
-      k = Math.min(1, k + dt / seconds)
-    },
-    now,
-  }
-}
 
 const VERT = `attribute vec2 p; void main(){ gl_Position = vec4(p, 0.0, 1.0); }`
 
@@ -108,11 +68,28 @@ export function shaderCanvas(canvas: HTMLCanvasElement, frag: string, scale = 0.
 export function loop(frame: (dt: number) => void) {
   let raf = 0
   let last = performance.now()
+  let failed = false
+  // The scenery gets at most about half the main thread: after a frame that took
+  // `cost` ms, it waits at least that long again before drawing. On a fast machine
+  // this never skips a frame; on a slow phone the scene drops frames instead of
+  // starving the panes, their timers, and taps.
+  let cost = 0
+  let end = 0
   const tick = (now: number) => {
+    // Schedule first: one bad frame must not stop the scenery for the rest of the visit.
+    raf = requestAnimationFrame(tick)
+    const t0 = performance.now()
+    if (t0 - end < cost) return
     const dt = Math.min((now - last) / 1000, 0.05)
     last = now
-    frame(dt)
-    raf = requestAnimationFrame(tick)
+    try {
+      frame(dt)
+    } catch (e) {
+      if (!failed) console.error(e)
+      failed = true
+    }
+    end = performance.now()
+    cost = end - t0
   }
   const onVis = () => {
     cancelAnimationFrame(raf)
@@ -129,31 +106,58 @@ export function loop(frame: (dt: number) => void) {
   }
 }
 
-/** The pointer, eased, in CSS px. `on` is false over panes and on touch. */
+/**
+ * The pointer on the scenery, and the ripples it leaves on the lake. A mouse
+ * crossing the water drops a ring every few dozen pixels; a tap on the water
+ * drops one. Nothing happens over the panes or in the sky.
+ */
 export function trackPointer() {
-  const p = { x: -1e4, y: -1e4, sx: -1e4, sy: -1e4, on: false }
+  const p = { x: -1e4, y: -1e4, on: false }
+  const drops: Drop[] = []
+  let lx = -1e4
+  let ly = -1e4
+  let pending: { x: number; y: number; a: number }[] = []
+  const onScene = (e: PointerEvent) => !(e.target as HTMLElement | null)?.closest('[data-pane]')
   const move = (e: PointerEvent) => {
     if (e.pointerType !== 'mouse') return
-    p.on = !(e.target as HTMLElement | null)?.closest('[data-pane]')
+    p.on = onScene(e)
     p.x = e.clientX
     p.y = e.clientY
-    if (p.sx < -1e3) {
-      p.sx = p.x
-      p.sy = p.y
-    }
+  }
+  const down = (e: PointerEvent) => {
+    if (e.pointerType !== 'mouse' && onScene(e)) pending.push({ x: e.clientX, y: e.clientY, a: 1.2 })
   }
   const leave = () => (p.on = false)
   window.addEventListener('pointermove', move, { passive: true })
+  window.addEventListener('pointerdown', down, { passive: true })
   document.addEventListener('pointerleave', leave)
   return {
     p,
-    ease(dt: number, rate = 6) {
-      const k = Math.min(1, dt * rate)
-      p.sx += (p.x - p.sx) * k
-      p.sy += (p.y - p.sy) * k
+    drops,
+    /** Age the rings, and add new ones where the pointer crossed the water. */
+    wake(dt: number, horizon: number, still: boolean) {
+      for (const d of drops) {
+        d.age += dt
+        d.r = 6 + d.age * 70
+        d.a = Math.exp(-d.age * 1.6) * Math.min(1, d.age * 6) * (d.a0 ?? 1)
+      }
+      while (drops.length && drops[0].age > 2.6) drops.shift()
+      if (still) {
+        pending = []
+        return
+      }
+      for (const q of pending) if (q.y > horizon + 4) drops.push({ x: q.x, y: q.y, age: 0, r: 6, a: 0, a0: q.a })
+      pending = []
+      if (p.on && p.y > horizon + 4 && Math.hypot(p.x - lx, p.y - ly) > 36) {
+        drops.push({ x: p.x, y: p.y, age: 0, r: 6, a: 0, a0: 0.8 })
+        lx = p.x
+        ly = p.y
+      }
+      if (drops.length > 12) drops.splice(0, drops.length - 12)
     },
     stop() {
       window.removeEventListener('pointermove', move)
+      window.removeEventListener('pointerdown', down)
       document.removeEventListener('pointerleave', leave)
     },
   }

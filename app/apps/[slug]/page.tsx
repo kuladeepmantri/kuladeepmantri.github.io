@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { pageMeta } from '@/lib/meta'
 import { notFound } from 'next/navigation'
 import { PaneHead } from '@/components/site/pane-head'
 import { ProjectActivity } from '@/components/site/project-activity'
@@ -15,11 +16,7 @@ type Props = { params: Promise<{ slug: string }> }
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const s = findSignalBySlug((await params).slug)
   if (!s) return {}
-  return {
-    title: s.name,
-    description: s.description,
-    alternates: { canonical: `/apps/${s.slug}` },
-  }
+  return pageMeta({ title: s.name, description: s.description, path: `/apps/${s.slug}` })
 }
 
 function isPublic(repo: string) {
@@ -60,13 +57,6 @@ export default async function Project({ params }: Props) {
       <p>
         <Body s={s} />
       </p>
-      <ProjectActivity
-        repos={s.repos}
-        stack={s.stack}
-        started={monthYear(s.dateFirst)}
-        dateLast={s.dateLast}
-        quietNote={s.quietNote}
-      />
       {links.length > 0 && (
         <ul className="list">
           {links.map((l) => (
@@ -76,6 +66,13 @@ export default async function Project({ params }: Props) {
           ))}
         </ul>
       )}
+      <ProjectActivity
+        repos={s.repos}
+        stack={s.stack}
+        started={monthYear(s.dateFirst)}
+        dateLast={s.dateLast}
+        quietNote={s.quietNote}
+      />
     </article>
   )
 }
