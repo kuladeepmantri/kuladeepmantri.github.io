@@ -1,6 +1,13 @@
-// The content source for the whole site. Every project page, the Work list,
-// the feeds, and the sitemap read from SIGNALS. Live data (pushes, commits)
-// comes from lib/generated/live.ts and is matched to projects by `repos`.
+// The content source for the whole site. Every project page, the Projects
+// list in the home pane (components/site/home-pane.tsx), the feeds, and the
+// sitemap read from SIGNALS. Live data (pushes, commits) comes from
+// lib/generated/live.ts and is matched to projects by `repos`.
+//
+// Only public repos go in `repos`: the names reach every page's payload and
+// the JSON feed. A project with a private repo uses `repos: []` (like
+// Kintsugi); scripts/fetch-live.ts warns in CI if a listed repo is private.
+
+import type { RepoLive } from '@/lib/live'
 
 export type SignalState = 'active' | 'shipped' | 'paused' | 'archived'
 
@@ -9,7 +16,7 @@ export type Signal = {
   slug: string
   type: 'project'
   name: string
-  line: string // row subtitle in the Work list and the project lead
+  line: string // row subtitle in the Projects list and the project lead
   tagline: string // feeds
   body: string // the project pane paragraph
   description: string // feeds and meta description
@@ -23,7 +30,6 @@ export type Signal = {
   // Add a Source link to the repo, but only if the build confirms it is public.
   sourceIfPublic?: boolean
   quietNote?: string
-  repoNote?: string
   collaborator?: { name: string; href: string }
   tags: string[]
 }
@@ -72,7 +78,7 @@ export const SIGNALS: Signal[] = [
     dateLast: '2026-07-03',
     repos: ['getnullpkg/kubereach'],
     links: [
-      { label: 'Open repository', href: 'https://github.com/getnullpkg/kubereach' },
+      { label: 'Source', href: 'https://github.com/getnullpkg/kubereach' },
     ],
     quietNote: 'Shelved in July 2026 after the research and two spikes. The repo records why, and what would bring it back.',
     tags: ['Go', 'Kubernetes', 'AWS', 'EKS', 'IRSA', 'RBAC'],
@@ -93,6 +99,7 @@ export const SIGNALS: Signal[] = [
     dateFirst: '2026-01-15',
     dateLast: '2026-04-10',
     repos: ['meetrune/rune'],
+    sourceIfPublic: true,
     links: [{ label: 'Open site', href: 'https://rune.kuladeepmantri.com/' }],
     tags: ['Python', 'Raspberry Pi', 'OBD-II', 'React', 'FastAPI'],
   },
@@ -179,6 +186,7 @@ export const SIGNALS: Signal[] = [
     dateFirst: '2024-03-01',
     dateLast: '2024-10-15',
     repos: ['kuladeepmantri/untilithappens.org'],
+    sourceIfPublic: true,
     links: [
       { label: 'Open site', href: 'https://untilithappens.kuladeepmantri.com/' },
     ],
@@ -234,13 +242,25 @@ export function sortedByStart(): Signal[] {
 /** The slim shape client components need (keeps bodies out of the JS bundle). */
 export type ProjectRef = Pick<Signal, 'slug' | 'name' | 'line' | 'repos' | 'dateLast' | 'stack'>
 
-export function projectRefs(): ProjectRef[] {
+/**
+ * Project refs for client components. Pass the build's repo data to keep only
+ * repos it confirmed public, so a private repo is never serialized by name.
+ */
+export function projectRefs(live?: Record<string, RepoLive>): ProjectRef[] {
   return SIGNALS.map(({ slug, name, line, repos, dateLast, stack }) => ({
     slug,
     name,
     line,
-    repos,
+    repos: live ? repos.filter((r) => live[r] && !live[r].isPrivate) : repos,
     dateLast,
     stack,
   }))
+}
+
+/** The body split around the collaborator's name (its first mention), for linking it. */
+export function splitBody(s: Signal): { before: string; after: string } | null {
+  const c = s.collaborator
+  const i = c ? s.body.indexOf(c.name) : -1
+  if (!c || i < 0) return null
+  return { before: s.body.slice(0, i), after: s.body.slice(i + c.name.length) }
 }

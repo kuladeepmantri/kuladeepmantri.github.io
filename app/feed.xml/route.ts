@@ -1,4 +1,4 @@
-import { sortedByStart } from '@/app/signals'
+import { sortedByStart, type Signal } from '@/app/signals'
 import { WEBSITE_URL } from '@/lib/constants'
 
 export const dynamic = 'force-static'
@@ -13,16 +13,20 @@ function escapeXml(s: string): string {
 }
 
 export function GET(): Response {
+  // Items are newest first by start date, and every date here is that same
+  // start date at noon UTC, matching date_published in the JSON Feed.
   const signals = sortedByStart()
-  const latest = signals[0]
-  const lastBuild = latest
-    ? new Date(latest.dateLast).toUTCString()
-    : new Date().toUTCString()
+  const itemDate = (s: Signal) => new Date(`${s.dateFirst}T12:00:00Z`)
+  const newest = signals.reduce<Date | null>(
+    (max, s) => (!max || itemDate(s) > max ? itemDate(s) : max),
+    null,
+  )
+  const lastBuild = (newest ?? new Date(0)).toUTCString()
 
   const items = signals
     .map((s) => {
       const url = `${WEBSITE_URL}/apps/${s.slug}`
-      const pubDate = new Date(`${s.dateLast}T12:00:00Z`).toUTCString()
+      const pubDate = itemDate(s).toUTCString()
       return `    <item>
       <guid isPermaLink="false">${escapeXml(s.id)}</guid>
       <title>${escapeXml(s.name)}: ${escapeXml(s.tagline)}</title>
@@ -37,10 +41,10 @@ export function GET(): Response {
   const body = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Kuladeep Mantri: Log</title>
+    <title>Kuladeep Mantri: projects</title>
     <link>${WEBSITE_URL}</link>
     <atom:link href="${WEBSITE_URL}/feed.xml" rel="self" type="application/rss+xml"/>
-    <description>Dated, versioned entries from Kuladeep Mantri&apos;s public lab.</description>
+    <description>Projects I have built and am building.</description>
     <language>en-us</language>
     <lastBuildDate>${lastBuild}</lastBuildDate>
 ${items}

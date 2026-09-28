@@ -15,14 +15,13 @@ export function Shell({ children }: { children: React.ReactNode }) {
     <LiveProvider
       value={{
         builtAt: LIVE.builtAt,
-        sha: LIVE.sha,
         repos: LIVE.github?.repos,
         pushes: LIVE.github?.pushes,
         lastPostAt: LIVE.x?.posts[0]?.createdAt ?? null,
       }}
     >
       <Scenery />
-      <Deck home={<HomePane projects={projectRefs()} tweet={<TweetCard />} />}>{children}</Deck>
+      <Deck home={<HomePane projects={projectRefs(LIVE.github?.repos)} tweet={<TweetCard />} />}>{children}</Deck>
     </LiveProvider>
   )
 }

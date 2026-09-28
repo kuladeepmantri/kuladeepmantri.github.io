@@ -10,6 +10,18 @@ export const OG_IMAGE = {
 
 const SITE = 'Kuladeep Mantri'
 
+// The project feeds, linked from every page. A page's alternates replace the
+// layout's, so each page repeats them.
+export const FEEDS = {
+  'application/rss+xml': [{ url: '/feed.xml', title: `${SITE}: projects (RSS)` }],
+  'application/feed+json': [{ url: '/api/signals.json', title: `${SITE}: projects (JSON Feed)` }],
+}
+
+/** Metadata for an old URL that now shows home (/now, /apps, /verify). */
+export const ALIAS_OF_HOME: Metadata = {
+  alternates: { canonical: '/', types: FEEDS },
+}
+
 /**
  * Title, description, canonical URL, and link-card tags for one page. Next
  * replaces openGraph and twitter wholesale per page, so each page sets all of it.
@@ -27,7 +39,7 @@ export function pageMeta({
   return {
     ...(title ? { title } : {}),
     description,
-    alternates: { canonical: path },
+    alternates: { canonical: path, types: FEEDS },
     openGraph: {
       type: 'website',
       siteName: SITE,

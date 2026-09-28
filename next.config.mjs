@@ -7,6 +7,9 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  // One build ID per commit. Scheduled rebuilds that only refresh live data
+  // keep it, so a tab left open across a deploy keeps navigating in place.
+  generateBuildId: async () => process.env.GITHUB_SHA ?? null,
 }
 
 export default nextConfig

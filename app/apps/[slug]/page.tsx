@@ -4,8 +4,8 @@ import { notFound } from 'next/navigation'
 import { PaneHead } from '@/components/site/pane-head'
 import { ProjectActivity } from '@/components/site/project-activity'
 import { LIVE } from '@/lib/generated/live'
-import { monthYear } from '@/lib/live'
-import { SIGNALS, findSignalBySlug, type Signal } from '../../signals'
+import { monthYear, repoVisibility } from '@/lib/live'
+import { SIGNALS, findSignalBySlug, splitBody, type Signal } from '../../signals'
 
 export function generateStaticParams() {
   return SIGNALS.map((s) => ({ slug: s.slug }))
@@ -16,24 +16,22 @@ type Props = { params: Promise<{ slug: string }> }
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const s = findSignalBySlug((await params).slug)
   if (!s) return {}
-  return pageMeta({ title: s.name, description: s.description, path: `/apps/${s.slug}` })
-}
-
-function isPublic(repo: string) {
-  const r = LIVE.github?.repos[repo]
-  return !!r && !r.isPrivate
+  return pageMeta({
+    title: `${s.name}: ${s.tagline}`,
+    description: s.description,
+    path: `/apps/${s.slug}`,
+  })
 }
 
 /** The body text, with the collaborator's name linked. */
 function Body({ s }: { s: Signal }) {
-  const c = s.collaborator
-  if (!c || !s.body.includes(c.name)) return <>{s.body}</>
-  const [before, after] = s.body.split(c.name)
+  const parts = splitBody(s)
+  if (!parts || !s.collaborator) return <>{s.body}</>
   return (
     <>
-      {before}
-      <a href={c.href}>{c.name}</a>
-      {after}
+      {parts.before}
+      <a href={s.collaborator.href}>{s.collaborator.name}</a>
+      {parts.after}
     </>
   )
 }
@@ -43,16 +41,19 @@ export default async function Project({ params }: Props) {
   if (!s) notFound()
 
   const repo = s.repos[0]
-  const shown = repo && isPublic(repo)
+  // Without GitHub data the repo is neither named nor called private.
+  const seen = repo ? repoVisibility(repo, LIVE.github?.repos) : 'unknown'
   const links = [...s.links]
-  if (s.sourceIfPublic && shown) links.push({ label: 'Source', href: `https://github.com/${repo}` })
+  if (s.sourceIfPublic && seen === 'public')
+    links.push({ label: 'Source', href: `https://github.com/${repo}` })
+  const where = seen === 'public' ? repo : seen === 'private' ? 'Private repo' : null
 
   return (
     <article>
       <PaneHead title={s.name} />
       <p className="lead">{s.line}</p>
       <p className="muted">
-        {shown ? repo : 'Private repo'} · {s.stateLabel}
+        {where ? `${where} · ${s.stateLabel}` : s.stateLabel}
       </p>
       <p>
         <Body s={s} />
@@ -61,7 +62,9 @@ export default async function Project({ params }: Props) {
         <ul className="list">
           {links.map((l) => (
             <li key={l.href}>
-              <a href={l.href}>{l.label} ↗</a>
+              <a href={l.href}>
+                {l.label} <span aria-hidden="true">↗</span>
+              </a>
             </li>
           ))}
         </ul>

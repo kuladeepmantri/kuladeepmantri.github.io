@@ -5,70 +5,145 @@ import type { Drop } from './kit'
 
 import type { RGB } from './kit'
 
-/** Left edge of the open part of the screen: right of the last visible pane. */
-export function openLeft(W: number) {
+/** Right edge of the last visible pane, or 0 when none is on screen. */
+export function paneEdge() {
   let x0 = 0
   document.querySelectorAll<HTMLElement>('[data-pane]').forEach((el) => {
     if (el.dataset.phase !== 'out') x0 = Math.max(x0, el.getBoundingClientRect().right)
   })
-  return W - x0 < 260 ? 0 : x0
+  return x0
 }
-
-export const reduceMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches
 
 const VERT = `attribute vec2 p; void main(){ gl_Position = vec4(p, 0.0, 1.0); }`
 
+export type Shader = {
+  resize: (w: number, h: number) => void
+  f1: (n: string, v: number) => void
+  f3: (n: string, c: RGB) => void
+  draw: () => void
+  dispose: () => void
+}
+
 /**
  * A full-screen fragment shader on its own canvas, drawn at a fraction of the
- * device resolution. Returns null when WebGL is unavailable.
+ * device resolution. Returns null when WebGL is unavailable or the shader does
+ * not build. Survives a lost context: `onRestore` runs once it is rebuilt.
  */
-export function shaderCanvas(canvas: HTMLCanvasElement, frag: string, scale = 0.5) {
+export function shaderCanvas(
+  canvas: HTMLCanvasElement,
+  frag: string,
+  scale = 0.5,
+  onRestore?: () => void,
+): Shader | null {
   const gl = canvas.getContext('webgl', { antialias: false, alpha: false })
   if (!gl) return null
+  const locs = new Map<string, WebGLUniformLocation | null>()
+  let prog: WebGLProgram | null = null
+  let size: [number, number] | null = null
+  let shown = false
+
   const sh = (type: number, src: string) => {
-    const s = gl.createShader(type)!
+    const s = gl.createShader(type)
+    if (!s) return null
     gl.shaderSource(s, src)
     gl.compileShader(s)
-    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) console.error(gl.getShaderInfoLog(s))
-    return s
+    if (gl.getShaderParameter(s, gl.COMPILE_STATUS)) return s
+    if (!gl.isContextLost()) console.error(gl.getShaderInfoLog(s))
+    return null
   }
-  const prog = gl.createProgram()!
-  gl.attachShader(prog, sh(gl.VERTEX_SHADER, VERT))
-  gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, `precision highp float;\n${frag}`))
-  gl.linkProgram(prog)
-  gl.useProgram(prog)
-  gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer())
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW)
-  const loc = gl.getAttribLocation(prog, 'p')
-  gl.enableVertexAttribArray(loc)
-  gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0)
-  const locs = new Map<string, WebGLUniformLocation | null>()
+  const init = () => {
+    locs.clear()
+    const vs = sh(gl.VERTEX_SHADER, VERT)
+    const fs = sh(gl.FRAGMENT_SHADER, `precision highp float;\n${frag}`)
+    const p = gl.createProgram()
+    if (!vs || !fs || !p) return false
+    gl.attachShader(p, vs)
+    gl.attachShader(p, fs)
+    gl.linkProgram(p)
+    if (!gl.getProgramParameter(p, gl.LINK_STATUS)) {
+      if (!gl.isContextLost()) console.error(gl.getProgramInfoLog(p))
+      return false
+    }
+    prog = p
+    gl.useProgram(p)
+    gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer())
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW)
+    const loc = gl.getAttribLocation(p, 'p')
+    gl.enableVertexAttribArray(loc)
+    gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0)
+    return true
+  }
   const u = (name: string) => {
-    if (!locs.has(name)) locs.set(name, gl.getUniformLocation(prog, name))
+    if (!locs.has(name)) locs.set(name, prog && gl.getUniformLocation(prog, name))
     return locs.get(name) ?? null
   }
+  const ready = () => !!prog && !gl.isContextLost()
+  const applySize = () => {
+    if (!size || !ready()) return
+    gl.viewport(0, 0, canvas.width, canvas.height)
+    gl.uniform2f(u('u_res'), canvas.width, canvas.height)
+  }
+
+  if (!init()) return null
+  // Hidden until a frame has drawn cleanly; until then the page background shows.
+  canvas.style.visibility = 'hidden'
+
+  // Browsers drop WebGL contexts (backgrounded tabs on iOS, GPU resets). Asking
+  // to keep it lets the browser restore it, and then the program is rebuilt.
+  const lost = (e: Event) => {
+    e.preventDefault()
+    prog = null
+  }
+  const restored = () => {
+    if (!init()) return
+    applySize()
+    onRestore?.()
+  }
+  canvas.addEventListener('webglcontextlost', lost)
+  canvas.addEventListener('webglcontextrestored', restored)
+
   return {
     /** Size the canvas to `w` by `h` CSS px. */
-    resize(w: number, h: number) {
+    resize(w, h) {
       const dpr = Math.min(window.devicePixelRatio || 1, 2) * scale
+      size = [w, h]
       canvas.width = Math.max(1, Math.round(w * dpr))
       canvas.height = Math.max(1, Math.round(h * dpr))
       canvas.style.width = `${w}px`
       canvas.style.height = `${h}px`
-      gl.viewport(0, 0, canvas.width, canvas.height)
-      gl.uniform2f(u('u_res'), canvas.width, canvas.height)
+      applySize()
     },
-    f1: (n: string, v: number) => gl.uniform1f(u(n), v),
-    f3: (n: string, c: RGB) => gl.uniform3f(u(n), c[0], c[1], c[2]),
-    draw: () => gl.drawArrays(gl.TRIANGLES, 0, 3),
+    f1: (n, v) => {
+      if (ready()) gl.uniform1f(u(n), v)
+    },
+    f3: (n, c) => {
+      if (ready()) gl.uniform3f(u(n), c[0], c[1], c[2])
+    },
+    draw() {
+      if (!ready()) return
+      gl.drawArrays(gl.TRIANGLES, 0, 3)
+      if (!shown && gl.getError() === gl.NO_ERROR) {
+        shown = true
+        canvas.style.visibility = ''
+      }
+    },
+    dispose() {
+      canvas.removeEventListener('webglcontextlost', lost)
+      canvas.removeEventListener('webglcontextrestored', restored)
+      canvas.style.visibility = ''
+    },
   }
 }
 
-/** Runs a frame loop that pauses while the tab is hidden. */
-export function loop(frame: (dt: number) => void) {
+/**
+ * Runs a frame loop that pauses while the tab is hidden. When `frame` returns
+ * false the loop parks until `wake()` is called.
+ */
+export function loop(frame: (dt: number) => boolean | void) {
   let raf = 0
   let last = performance.now()
   let failed = false
+  let parked = false
   // The scenery gets at most about half the main thread: after a frame that took
   // `cost` ms, it waits at least that long again before drawing. On a fast machine
   // this never skips a frame; on a slow phone the scene drops frames instead of
@@ -83,7 +158,11 @@ export function loop(frame: (dt: number) => void) {
     const dt = Math.min((now - last) / 1000, 0.05)
     last = now
     try {
-      frame(dt)
+      if (frame(dt) === false) {
+        cancelAnimationFrame(raf)
+        raf = 0
+        parked = true
+      }
     } catch (e) {
       if (!failed) console.error(e)
       failed = true
@@ -91,25 +170,36 @@ export function loop(frame: (dt: number) => void) {
     end = performance.now()
     cost = end - t0
   }
+  const start = () => {
+    cancelAnimationFrame(raf)
+    last = performance.now()
+    raf = requestAnimationFrame(tick)
+  }
   const onVis = () => {
     cancelAnimationFrame(raf)
-    if (!document.hidden) {
-      last = performance.now()
-      raf = requestAnimationFrame(tick)
-    }
+    raf = 0
+    if (!document.hidden && !parked) start()
   }
   document.addEventListener('visibilitychange', onVis)
-  raf = requestAnimationFrame(tick)
-  return () => {
-    cancelAnimationFrame(raf)
-    document.removeEventListener('visibilitychange', onVis)
+  start()
+  return {
+    wake() {
+      parked = false
+      if (!raf && !document.hidden) start()
+    },
+    stop() {
+      cancelAnimationFrame(raf)
+      raf = 0
+      document.removeEventListener('visibilitychange', onVis)
+    },
   }
 }
 
 /**
  * The pointer on the scenery, and the ripples it leaves on the lake. A mouse
  * crossing the water drops a ring every few dozen pixels; a tap on the water
- * drops one. Nothing happens over the panes or in the sky.
+ * drops one. Nothing happens over the panes or in the sky. Positions are page
+ * coordinates, which is where the canvases sit (on iOS they start above the page).
  */
 export function trackPointer() {
   const p = { x: -1e4, y: -1e4, on: false }
@@ -122,10 +212,10 @@ export function trackPointer() {
     if (e.pointerType !== 'mouse') return
     p.on = onScene(e)
     p.x = e.clientX
-    p.y = e.clientY
+    p.y = e.pageY
   }
   const down = (e: PointerEvent) => {
-    if (e.pointerType !== 'mouse' && onScene(e)) pending.push({ x: e.clientX, y: e.clientY, a: 1.2 })
+    if (e.pointerType !== 'mouse' && onScene(e)) pending.push({ x: e.clientX, y: e.pageY, a: 1.2 })
   }
   const leave = () => (p.on = false)
   window.addEventListener('pointermove', move, { passive: true })

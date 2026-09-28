@@ -10,13 +10,20 @@ import { refresh } from './live-client'
 
 export type ClientLive = {
   builtAt: string
-  sha: string
   repos: Record<string, RepoLive> | undefined
   pushes: Push[] | undefined
   lastPostAt: string | null
 }
 
-type Store = ClientLive & { now: number }
+type Store = ClientLive & {
+  now: number
+  // False until the browser clock has replaced the build time. Anything that
+  // shows a clock or a relative time stays hidden (class live-t) until then.
+  ready: boolean
+  // The build snapshot's repos, never refreshed. Orders lists that must not
+  // reshuffle under a visitor's pointer.
+  buildRepos: Record<string, RepoLive> | undefined
+}
 
 const LiveContext = createContext<Store | null>(null)
 
@@ -31,14 +38,17 @@ export function LiveProvider({
   children: React.ReactNode
 }) {
   // First render uses the build time on both server and client so hydration
-  // matches; the layout effect below switches to the real clock before paint.
+  // matches; the layout effect below switches to the real clock before the
+  // hydrated page paints. The prerendered HTML still carries build-time
+  // values, which is why time tokens wait for `ready`.
   const [now, setNow] = useState(() => Date.parse(value.builtAt))
+  const [ready, setReady] = useState(false)
   const [repos, setRepos] = useState(value.repos)
   const [pushes, setPushes] = useState(value.pushes)
 
-  // Correct the clock before the first paint, so build-time values never show.
   useIsoLayoutEffect(() => {
     setNow(Date.now())
+    setReady(true)
     const id = setInterval(() => setNow(Date.now()), 30_000)
     return () => clearInterval(id)
   }, [])
@@ -46,19 +56,26 @@ export function LiveProvider({
   useEffect(() => {
     if (!value.repos) return
     const run = () =>
-      refresh(value.repos!, value.pushes ?? []).then((next) => {
-        if (next.repos) setRepos(next.repos)
-        if (next.pushes) setPushes(next.pushes)
-      })
+      refresh(value.builtAt, value.repos!, value.pushes ?? [])
+        .then((next) => {
+          if (next.repos) setRepos(next.repos)
+          if (next.pushes) setPushes(next.pushes)
+        })
+        .catch(() => {
+          // keep the build snapshot
+        })
     run()
     const onVisible = () => {
       if (document.visibilityState === 'visible') run()
     }
     document.addEventListener('visibilitychange', onVisible)
     return () => document.removeEventListener('visibilitychange', onVisible)
-  }, [value.repos, value.pushes])
+  }, [value.builtAt, value.repos, value.pushes])
 
-  const store = useMemo(() => ({ ...value, repos, pushes, now }), [value, repos, pushes, now])
+  const store = useMemo(
+    () => ({ ...value, repos, pushes, now, ready, buildRepos: value.repos }),
+    [value, repos, pushes, now, ready],
+  )
   return <LiveContext.Provider value={store}>{children}</LiveContext.Provider>
 }
 

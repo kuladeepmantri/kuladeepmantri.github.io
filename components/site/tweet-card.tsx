@@ -12,7 +12,8 @@ export function TweetCard() {
   const post = x?.posts[0]
   if (!post) return null
   return (
-    <a className="tweet" href={post.url} aria-label="My latest post on X">
+    <a className="tweet" href={post.url}>
+      <span className="sr-only">My latest post on X: </span>
       <span className="tweet-head">
         <Avatar size={28} />
         <span className="tweet-who">
@@ -21,7 +22,9 @@ export function TweetCard() {
             {x.verified && <Verified size={13} />}
           </span>
           <span className="tweet-meta">
-            @{X_HANDLE} · <RelTime iso={post.createdAt} />
+            <span className="tweet-handle">@{X_HANDLE}</span>
+            <span aria-hidden="true">·</span>
+            <RelTime iso={post.createdAt} />
           </span>
         </span>
         <XLogo />

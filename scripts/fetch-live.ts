@@ -2,18 +2,20 @@
  * Build-time live snapshot. Runs as predev and prebuild.
  *
  * Writes lib/generated/live.ts (imported by the site) and public/live.json
- * (served, and used as the cache between CI runs). Rules:
+ * (the published snapshot, which the next build reads back as its cache).
+ * Rules:
  *  - never throws: every section degrades to its previous value, then to null
  *  - zero runtime dependencies: global fetch only
- *  - GitHub needs GH_PAT or GITHUB_TOKEN; X needs X_BEARER_TOKEN
+ *  - GitHub needs GH_PAT or GITHUB_TOKEN (tried in that order); X needs
+ *    X_BEARER_TOKEN. Set X_FULL_REFRESH=1 to refetch X posts from scratch.
  */
 
 import { execSync } from 'node:child_process'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { SIGNALS, GITHUB_USER, X_HANDLE } from '../app/signals'
-import { TIMEZONE, WEBSITE_URL } from '../lib/constants'
-import type { LiveSnapshot, Push, RepoLive } from '../lib/live'
+import { WEBSITE_URL } from '../lib/constants'
+import { PUSHES_MAX, isSkippedRepo, type LiveSnapshot, type Push, type RepoLive } from '../lib/live'
 
 const ROOT = process.cwd()
 const OUT_TS = join(ROOT, 'lib/generated/live.ts')
@@ -36,9 +38,23 @@ function log(msg: string) {
   console.log(`[fetch-live] ${msg}`)
 }
 
+// A GitHub Actions annotation in CI, a plain log line elsewhere.
+function warn(msg: string) {
+  console.log(process.env.GITHUB_ACTIONS ? `::warning::${msg}` : `[fetch-live] warning: ${msg}`)
+}
+
+class HttpError extends Error {
+  constructor(
+    readonly status: number,
+    message: string,
+  ) {
+    super(message)
+  }
+}
+
 async function fetchJson(url: string, init: RequestInit = {}, ms = 10_000): Promise<unknown> {
   const res = await fetch(url, { ...init, signal: AbortSignal.timeout(ms) })
-  if (!res.ok) throw new Error(`${res.status} ${res.statusText} for ${url}`)
+  if (!res.ok) throw new HttpError(res.status, `${res.status} ${res.statusText} for ${url}`)
   return res.json()
 }
 
@@ -88,8 +104,9 @@ function ghCliToken(): string | undefined {
   if (process.env.CI) return undefined
   try {
     return (
-      execSync('gh auth token', { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim() ||
-      undefined
+      execSync('gh auth token', { stdio: ['ignore', 'pipe', 'ignore'] })
+        .toString()
+        .trim() || undefined
     )
   } catch {
     return undefined
@@ -98,41 +115,13 @@ function ghCliToken(): string | undefined {
 
 // ── GitHub ──
 
-const LEVEL: Record<string, 0 | 1 | 2 | 3 | 4> = {
-  NONE: 0,
-  FIRST_QUARTILE: 1,
-  SECOND_QUARTILE: 2,
-  THIRD_QUARTILE: 3,
-  FOURTH_QUARTILE: 4,
-}
-
 type GqlCommit = { oid: string; messageHeadline: string; committedDate: string; url: string }
 type GqlRepo = null | {
   isPrivate: boolean
   url: string
   pushedAt: string | null
-  primaryLanguage: { name: string } | null
-  defaultBranchRef: null | {
-    target: null | {
-      history?: { nodes: GqlCommit[] }
-      recent?: { totalCount: number }
-      year?: { totalCount: number; nodes: { committedDate: string }[] }
-    }
-  }
+  defaultBranchRef: null | { target: null | { history?: { nodes: GqlCommit[] } } }
 }
-
-const LOCAL_DAY = new Intl.DateTimeFormat('en-CA', { timeZone: TIMEZONE })
-
-// My commits per local calendar day, oldest first: [['2026-06-27', 23], ...].
-function daily(dates: string[]): [string, number][] {
-  const out = new Map<string, number>()
-  for (const d of dates) {
-    const day = LOCAL_DAY.format(new Date(d))
-    out.set(day, (out.get(day) ?? 0) + 1)
-  }
-  return [...out.entries()].sort((a, b) => (a[0] < b[0] ? -1 : 1))
-}
-const SITE_REPO = `${GITHUB_USER}/${GITHUB_USER}.github.io`.toLowerCase()
 
 type GqlPushed = {
   nameWithOwner: string
@@ -148,16 +137,8 @@ type GqlPushed = {
 
 type GqlUser = {
   name: string | null
-  avatarUrl: string
   bio: string | null
-  contributionsCollection: {
-    contributionCalendar: {
-      totalContributions: number
-      weeks: {
-        contributionDays: { date: string; contributionCount: number; contributionLevel: string }[]
-      }[]
-    }
-  }
+  contributionsCollection: { contributionCalendar: { totalContributions: number } }
   repositories: {
     nodes: { languages: { edges: { size: number; node: { name: string } }[] } }[]
   }
@@ -173,10 +154,10 @@ async function gql(token: string, query: string, variables: Record<string, unkno
       'User-Agent': 'kuladeepmantri.com build',
     },
     body: JSON.stringify({ query, variables }),
-  })) as { data?: Record<string, unknown>; errors?: { message: string }[] }
+  })) as { data?: Record<string, unknown>; errors?: { message: string; path?: unknown[] }[] }
 }
 
-async function fetchGithub(token: string): Promise<Github> {
+async function fetchGithub(token: string, prev: Github | null): Promise<Github> {
   // The node id lets the main query keep only commits I authored.
   const who = await gql(token, 'query($login: String!) { user(login: $login) { id } }', {
     login: GITHUB_USER,
@@ -185,7 +166,6 @@ async function fetchGithub(token: string): Promise<Github> {
   if (!uid) throw new Error('could not resolve the GitHub user id')
 
   const repos = [...new Set(SIGNALS.flatMap((s) => s.repos))]
-  const since = new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString()
   const aliases = repos
     .map((full, i) => {
       const [owner, name] = full.split('/')
@@ -193,11 +173,10 @@ async function fetchGithub(token: string): Promise<Github> {
     })
     .join('\n')
   const query = `
-query($login: String!, $since: GitTimestamp!, $yearAgo: GitTimestamp!, $uid: ID!) {
+query($login: String!, $uid: ID!) {
   user(login: $login) {
-    name avatarUrl bio
-    contributionsCollection { contributionCalendar { totalContributions
-      weeks { contributionDays { date contributionCount contributionLevel } } } }
+    name bio
+    contributionsCollection { contributionCalendar { totalContributions } }
     repositories(first: 100, ownerAffiliations: OWNER, isFork: false, privacy: PUBLIC) {
       nodes { languages(first: 5, orderBy: {field: SIZE, direction: DESC}) { edges { size node { name } } } }
     }
@@ -211,31 +190,22 @@ query($login: String!, $since: GitTimestamp!, $yearAgo: GitTimestamp!, $uid: ID!
   ${aliases}
 }
 fragment R on Repository {
-  isPrivate url pushedAt primaryLanguage { name }
+  isPrivate url pushedAt
   defaultBranchRef { target { ... on Commit {
     history(first: 3) { nodes { oid messageHeadline committedDate url } }
-    recent: history(since: $since) { totalCount }
-    year: history(since: $yearAgo, first: 100, author: {id: $uid}) { totalCount nodes { committedDate } }
   } } }
 }`
 
-  const yearAgo = new Date(Date.now() - 365 * 24 * 3600 * 1000).toISOString()
-  const res = await gql(token, query, { login: GITHUB_USER, since, yearAgo, uid })
+  const res = await gql(token, query, { login: GITHUB_USER, uid })
 
-  // Partial data is normal (a private repo errors, the rest still resolve).
-  if (res.errors?.length) log(`github: ${res.errors.length} partial error(s): ${res.errors[0].message}`)
+  // Partial data is normal (a repo the token cannot see errors, the rest resolve).
+  if (res.errors?.length)
+    log(`github: ${res.errors.length} partial error(s): ${res.errors[0].message}`)
   const data = res.data
   const user = data?.user as GqlUser | undefined
   if (!user) throw new Error('no user in GraphQL response')
 
   const cal = user.contributionsCollection.contributionCalendar
-  const weeks = cal.weeks.map((w) =>
-    w.contributionDays.map((d) => ({
-      date: d.date,
-      count: d.contributionCount,
-      level: LEVEL[d.contributionLevel] ?? 0,
-    })),
-  )
 
   const bytes = new Map<string, number>()
   for (const r of user.repositories.nodes)
@@ -249,9 +219,18 @@ fragment R on Repository {
   const repoOut: Record<string, RepoLive> = {}
   repos.forEach((full, i) => {
     const r = data?.[`r${i}`] as GqlRepo | undefined
-    if (!r || r.isPrivate) {
-      // Missing (no access) or private: never expose commit messages.
-      repoOut[full] = { isPrivate: true, url: '', pushedAt: null, commits30d: 0, recent: [] }
+    if (!r) {
+      // Not resolved this time (renamed, transferred, no access): keep what the
+      // last good build knew, or leave it out so the site says nothing about it.
+      const cached = prev?.repos[full]
+      if (cached) repoOut[full] = cached
+      warn(`github: ${full} did not resolve; ${cached ? 'kept cached data' : 'left out'}`)
+      return
+    }
+    if (r.isPrivate) {
+      // Never expose commit messages. Private repos should not be in SIGNALS.
+      repoOut[full] = { isPrivate: true, url: '', pushedAt: null, recent: [] }
+      warn(`github: ${full} is private but listed in SIGNALS, which makes its name public`)
       return
     }
     const target = r.defaultBranchRef?.target
@@ -259,10 +238,6 @@ fragment R on Repository {
       isPrivate: false,
       url: r.url,
       pushedAt: r.pushedAt,
-      commits30d: target?.recent?.totalCount ?? 0,
-      language: r.primaryLanguage?.name ?? null,
-      commitsYear: target?.year?.totalCount ?? 0,
-      days: daily((target?.year?.nodes ?? []).map((n) => n.committedDate)),
       recent: (target?.history?.nodes ?? []).map((c) => ({
         sha: c.oid,
         message: c.messageHeadline,
@@ -275,12 +250,21 @@ fragment R on Repository {
   // Only repos where my own latest commit is known, newest first. Private repos
   // contribute a timestamp and nothing else: live.json is public.
   const pushes: Push[] = user.pushed.nodes
-    .filter((r) => !r.isFork && r.nameWithOwner.toLowerCase() !== SITE_REPO)
+    .filter((r) => !r.isFork && !isSkippedRepo(r.nameWithOwner))
     .flatMap((r): Push[] => {
       const at = r.defaultBranchRef?.target?.mine?.nodes[0]?.committedDate
       if (!at) return []
       return r.isPrivate
-        ? [{ repo: null, isPrivate: true, pushedAt: at, url: null, description: null, language: null }]
+        ? [
+            {
+              repo: null,
+              isPrivate: true,
+              pushedAt: at,
+              url: null,
+              description: null,
+              language: null,
+            },
+          ]
         : [
             {
               repo: r.nameWithOwner,
@@ -293,12 +277,11 @@ fragment R on Repository {
           ]
     })
     .sort((a, b) => Date.parse(b.pushedAt) - Date.parse(a.pushedAt))
-    .slice(0, 12)
+    .slice(0, PUSHES_MAX)
 
   return {
-    user: { name: user.name ?? 'Kuladeep Mantri', avatarUrl: user.avatarUrl, bio: user.bio },
+    user: { name: user.name ?? 'Kuladeep Mantri', bio: user.bio },
     totalContributions: cal.totalContributions,
-    weeks,
     languages,
     repos: repoOut,
     pushes,
@@ -312,21 +295,24 @@ type XUser = {
     id: string
     name: string
     description: string
-    profile_image_url: string
     verified?: boolean
     verified_type?: string
   }
 }
 type XTweets = { data?: { id: string; text: string; created_at: string }[] }
 
-async function fetchX(token: string, prev: X | null): Promise<X> {
+const DAY_MS = 24 * 3600 * 1000
+
+// Hourly runs fetch only posts newer than the last one seen. Once a day (or
+// with X_FULL_REFRESH=1) the profile and the latest posts are fetched from
+// scratch and replace the cache, so a deleted or edited post drops out.
+async function fetchX(token: string, prev: X | null, forceFull: boolean): Promise<X> {
   const headers = { Authorization: `Bearer ${token}` }
   let profile: Omit<X, 'posts' | 'sinceId'>
-  const stale =
-    !prev || Date.now() - new Date(prev.profileFetchedAt).getTime() > 7 * 24 * 3600 * 1000
-  if (stale) {
+  const full = forceFull || !prev || Date.now() - Date.parse(prev.profileFetchedAt) > DAY_MS
+  if (full) {
     const u = (await fetchJson(
-      `https://api.x.com/2/users/by/username/${X_HANDLE}?user.fields=description,profile_image_url,name,verified,verified_type`,
+      `https://api.x.com/2/users/by/username/${X_HANDLE}?user.fields=description,name,verified,verified_type`,
       { headers },
     )) as XUser
     if (!u.data) throw new Error('no user in X response')
@@ -334,17 +320,14 @@ async function fetchX(token: string, prev: X | null): Promise<X> {
       userId: u.data.id,
       name: u.data.name,
       bio: u.data.description,
-      avatarUrl: u.data.profile_image_url,
       verified: !!u.data.verified || (!!u.data.verified_type && u.data.verified_type !== 'none'),
       profileFetchedAt: new Date().toISOString(),
     }
-    log('x: profile refreshed')
   } else {
     profile = {
       userId: prev.userId,
       name: prev.name,
       bio: prev.bio,
-      avatarUrl: prev.avatarUrl,
       verified: prev.verified,
       profileFetchedAt: prev.profileFetchedAt,
     }
@@ -355,11 +338,10 @@ async function fetchX(token: string, prev: X | null): Promise<X> {
     exclude: 'replies,retweets',
     'tweet.fields': 'created_at',
   })
-  if (prev?.sinceId) params.set('since_id', prev.sinceId)
-  const t = (await fetchJson(
-    `https://api.x.com/2/users/${profile.userId}/tweets?${params}`,
-    { headers },
-  )) as XTweets
+  if (!full && prev?.sinceId) params.set('since_id', prev.sinceId)
+  const t = (await fetchJson(`https://api.x.com/2/users/${profile.userId}/tweets?${params}`, {
+    headers,
+  })) as XTweets
   const fresh = (t.data ?? []).map((p) => ({
     id: p.id,
     text: p.text,
@@ -367,12 +349,47 @@ async function fetchX(token: string, prev: X | null): Promise<X> {
     url: `https://x.com/${X_HANDLE}/status/${p.id}`,
   }))
   const seen = new Set(fresh.map((p) => p.id))
-  const posts = [...fresh, ...(prev?.posts ?? []).filter((p) => !seen.has(p.id))].slice(0, 5)
-  log(`x: ${fresh.length} new post(s)`)
-  return { ...profile, posts, sinceId: posts[0]?.id ?? prev?.sinceId ?? null }
+  const posts = full
+    ? fresh
+    : [...fresh, ...(prev?.posts ?? []).filter((p) => !seen.has(p.id))].slice(0, 5)
+  log(full ? `x: full refresh, ${fresh.length} post(s)` : `x: ${fresh.length} new post(s)`)
+  return { ...profile, posts, sinceId: posts[0]?.id ?? (full ? null : (prev?.sinceId ?? null)) }
 }
 
 // ── main ──
+
+// Keep only the fields the site reads, so a cache written by an older version
+// of this script does not carry dead data (or needless diffs) forward.
+function slim(snap: LiveSnapshot | null): LiveSnapshot | null {
+  if (!snap) return null
+  const gh = snap.github
+  const x = snap.x
+  return {
+    builtAt: snap.builtAt,
+    sha: snap.sha,
+    github: gh && {
+      user: { name: gh.user?.name ?? 'Kuladeep Mantri', bio: gh.user?.bio ?? null },
+      totalContributions: gh.totalContributions ?? 0,
+      languages: gh.languages ?? [],
+      repos: Object.fromEntries(
+        Object.entries(gh.repos ?? {}).map(([k, r]) => [
+          k,
+          { isPrivate: r.isPrivate, url: r.url, pushedAt: r.pushedAt, recent: r.recent ?? [] },
+        ]),
+      ),
+      pushes: (gh.pushes ?? []).filter((p) => !p.repo || !isSkippedRepo(p.repo)),
+    },
+    x: x && {
+      userId: x.userId,
+      profileFetchedAt: x.profileFetchedAt,
+      bio: x.bio,
+      name: x.name,
+      verified: x.verified,
+      posts: x.posts ?? [],
+      sinceId: x.sinceId ?? null,
+    },
+  }
+}
 
 function write(snap: LiveSnapshot) {
   mkdirSync(join(ROOT, 'lib/generated'), { recursive: true })
@@ -386,36 +403,54 @@ function write(snap: LiveSnapshot) {
   writeFileSync(OUT_JSON, JSON.stringify(snap))
 }
 
+// Hoisted so the last-resort handler can still write the cached data.
+let prev: LiveSnapshot | null = null
+
 async function main() {
   loadEnvLocal()
-  const sha = buildSha()
-
-
-  const prev = await previousSnapshot()
+  prev = slim(await previousSnapshot())
   const snap: LiveSnapshot = {
     builtAt: new Date().toISOString(),
-    sha,
+    sha: buildSha(),
     github: prev?.github ?? null,
     x: prev?.x ?? null,
   }
 
-  const ghToken = process.env.GH_PAT || process.env.GITHUB_TOKEN || ghCliToken()
-  if (ghToken) {
+  // GH_PAT first, then the workflow's GITHUB_TOKEN, then a local gh login. A
+  // rejected token (401) falls through to the next one instead of freezing
+  // the data behind a warning nobody reads.
+  const tokens: [string, () => string | undefined][] = [
+    ['GH_PAT', () => process.env.GH_PAT],
+    ['GITHUB_TOKEN', () => process.env.GITHUB_TOKEN],
+    ['gh CLI', ghCliToken],
+  ]
+  let tried = false
+  for (const [name, get] of tokens) {
+    const token = get()
+    if (!token) continue
+    tried = true
     try {
-      snap.github = await fetchGithub(ghToken)
+      snap.github = await fetchGithub(token, prev?.github ?? null)
       const n = Object.values(snap.github.repos).filter((r) => !r.isPrivate).length
-      log(`github: ok, ${snap.github.totalContributions} contributions, ${n} public project repo(s)`)
+      log(
+        `github: ok via ${name}, ${snap.github.totalContributions} contributions, ${n} public project repo(s)`,
+      )
+      break
     } catch (e) {
+      if (e instanceof HttpError && e.status === 401) {
+        warn(`github: ${name} was rejected (401), trying the next token`)
+        continue
+      }
       log(`github: failed (${(e as Error).message}), ${snap.github ? 'kept cached' : 'no data'}`)
+      break
     }
-  } else {
-    log(`github: no token, ${snap.github ? 'kept cached' : 'no data'}`)
   }
+  if (!tried) log(`github: no token, ${snap.github ? 'kept cached' : 'no data'}`)
 
   const xToken = process.env.X_BEARER_TOKEN
   if (xToken) {
     try {
-      snap.x = await fetchX(xToken, snap.x)
+      snap.x = await fetchX(xToken, snap.x, process.env.X_FULL_REFRESH === '1')
       log(`x: ok, ${snap.x.posts.length} post(s)`)
     } catch (e) {
       log(`x: failed (${(e as Error).message}), ${snap.x ? 'kept cached' : 'no data'}`)
@@ -428,10 +463,15 @@ async function main() {
 }
 
 main().catch((e) => {
-  // Last resort: an empty snapshot so the build still succeeds.
-  log(`unexpected error (${(e as Error).message}), writing an empty snapshot`)
+  // Last resort: keep whatever the cache held so the build still succeeds.
+  log(`unexpected error (${(e as Error).message}), writing the cached snapshot`)
   try {
-    write({ builtAt: new Date().toISOString(), sha: buildSha(), github: null, x: null })
+    write({
+      builtAt: new Date().toISOString(),
+      sha: buildSha(),
+      github: prev?.github ?? null,
+      x: prev?.x ?? null,
+    })
   } catch {
     // nothing else to do
   }

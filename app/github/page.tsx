@@ -18,11 +18,13 @@ export default function GitHub() {
   return (
     <article>
       <PaneHead title="GitHub" />
-      <a className="who" href={`https://github.com/${GITHUB_USER}`}>
+      <a className="who" href={`https://github.com/${GITHUB_USER}`} rel="me">
         <Avatar size={48} />
         <div>
           <p className="who-name">Kuladeep Mantri</p>
-          <p className="muted">@{GITHUB_USER} ↗</p>
+          <p className="muted">
+            @{GITHUB_USER} <span aria-hidden="true">↗</span>
+          </p>
         </div>
       </a>
       {gh?.user.bio && <p>{gh.user.bio}</p>}
@@ -30,11 +32,11 @@ export default function GitHub() {
         <>
           <dl className="facts">
             <div>
-              <dt>Contributions, last year</dt>
-              <dd>{gh.totalContributions.toLocaleString('en-US')}</dd>
+              <dt>Contributions</dt>
+              <dd>{gh.totalContributions.toLocaleString('en-US')} in the last year</dd>
             </div>
           </dl>
-          <RecentPushes projects={projectRefs()} />
+          <RecentPushes projects={projectRefs(LIVE.github?.repos)} />
           {gh.languages.length > 0 && (
             <section>
               <h2 className="list-lab">Languages in public repos</h2>
