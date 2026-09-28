@@ -70,9 +70,9 @@ Contact); the Projects list, each name over its one-line `line`; the latest post
 from X as a card; a footer with the email address and the sound switch. The
 order answers who, where to go, and what I build before anything else.
 
-**Phones (under 640px).** Panes become full-width cards, `100vw - 3 * --cell`,
-starting a third of the way down so the scene shows above them, in a sideways
-scroll-snap deck. Opening a pane scrolls it into view; closing scrolls back to
+**Phones (under 640px).** Panes become full-width, full-height cards,
+`100vw - 3 * --cell`, clear of the notch and home indicator, in a sideways
+scroll-snap deck. The scene shows through the glass. Opening a pane scrolls it into view; closing scrolls back to
 home. Swipes that start on a card move the deck (panes only contain vertical
 overscroll). The scenery keeps running behind them.
 

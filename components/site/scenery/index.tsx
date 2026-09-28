@@ -82,8 +82,7 @@ export function Scenery() {
       const cell = phone ? 16 : 18
       root.style.setProperty('--cell', `${cell}px`)
       root.style.setProperty('--cols', String(Math.floor(W / cell)))
-      // On phones the panes sit low like a sheet, so the scene lives in the top third.
-      horizon = Math.round(H * (phone ? 0.3 : 0.64))
+      horizon = Math.round(H * (phone ? 0.62 : 0.64))
       sky?.resize(W, horizon)
       canvas.width = Math.round(W * dpr)
       canvas.height = Math.round(H * dpr)
