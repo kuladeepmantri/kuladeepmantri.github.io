@@ -15,7 +15,14 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { SIGNALS, GITHUB_USER, X_HANDLE } from '../app/signals'
 import { WEBSITE_URL } from '../lib/constants'
-import { PUSHES_MAX, isSkippedRepo, type LiveSnapshot, type Push, type RepoLive } from '../lib/live'
+import {
+  PUSHES_MAX,
+  isGithubUrl,
+  isSkippedRepo,
+  type LiveSnapshot,
+  type Push,
+  type RepoLive,
+} from '../lib/live'
 
 const ROOT = process.cwd()
 const OUT_TS = join(ROOT, 'lib/generated/live.ts')
@@ -236,13 +243,13 @@ fragment R on Repository {
     const target = r.defaultBranchRef?.target
     repoOut[full] = {
       isPrivate: false,
-      url: r.url,
+      url: isGithubUrl(r.url) ? r.url : `https://github.com/${full}`,
       pushedAt: r.pushedAt,
       recent: (target?.history?.nodes ?? []).map((c) => ({
         sha: c.oid,
         message: c.messageHeadline,
         date: c.committedDate,
-        url: c.url,
+        url: isGithubUrl(c.url) ? c.url : `https://github.com/${full}`,
       })),
     }
   })
@@ -270,7 +277,7 @@ fragment R on Repository {
               repo: r.nameWithOwner,
               isPrivate: false,
               pushedAt: at,
-              url: r.url,
+              url: isGithubUrl(r.url) ? r.url : `https://github.com/${r.nameWithOwner}`,
               description: r.description,
               language: r.primaryLanguage?.name ?? null,
             },
@@ -342,12 +349,15 @@ async function fetchX(token: string, prev: X | null, forceFull: boolean): Promis
   const t = (await fetchJson(`https://api.x.com/2/users/${profile.userId}/tweets?${params}`, {
     headers,
   })) as XTweets
-  const fresh = (t.data ?? []).map((p) => ({
-    id: p.id,
-    text: p.text,
-    createdAt: p.created_at,
-    url: `https://x.com/${X_HANDLE}/status/${p.id}`,
-  }))
+  // Post ids are numeric; anything else never becomes a link.
+  const fresh = (t.data ?? [])
+    .filter((p) => /^\d+$/.test(p.id))
+    .map((p) => ({
+      id: p.id,
+      text: p.text,
+      createdAt: p.created_at,
+      url: `https://x.com/${X_HANDLE}/status/${p.id}`,
+    }))
   const seen = new Set(fresh.map((p) => p.id))
   const posts = full
     ? fresh

@@ -29,7 +29,7 @@ const SKY: Record<string, string> = {
   kubereach: '#070b1a', rune: '#2a3e80', shipcrew: '#4a74b6', kintsugi: '#6c8bcc',
   auris: '#18223f', untilithappens: '#080d20', deid: '#1d2263', evalcore: '#2f7fe0',
 }
-const SKY_BOOT = `(function(){try{var m=${JSON.stringify(SKY)};var p=location.pathname.replace(/\\/index\\.html$/,'/').replace(/\\.html$/,'').replace(/\\/+$/,'')||'/';var k=p.indexOf('/apps/')===0?p.slice(6):({'/':'home','/now':'home','/apps':'home','/verify':'home','/about':'about','/github':'github','/x':'x','/contact':'contact'})[p]||'contact';var h=Object.prototype.hasOwnProperty.call(m,k);var c=h?m[k]:m.contact;var d=document.documentElement;d.style.setProperty('--bg',c);d.dataset.palette=h?k:'contact';var t=document.querySelector('meta[name=theme-color]');if(t)t.setAttribute('content',c);var r=function(){var v=parseFloat(getComputedStyle(d).getPropertyValue('--runway'))||0;if(v&&scrollY<v-1)scrollTo(0,v)};document.addEventListener('DOMContentLoaded',r);addEventListener('load',r);addEventListener('pageshow',r)}catch(e){}})()`
+const SKY_BOOT = `(function(){try{if(/^\\/\\//.test(location.pathname))history.replaceState(history.state,'',location.pathname.replace(/^\\/+/,'/')+location.search+location.hash);var m=${JSON.stringify(SKY)};var p=location.pathname.replace(/\\/index\\.html$/,'/').replace(/\\.html$/,'').replace(/\\/+$/,'')||'/';var k=p.indexOf('/apps/')===0?p.slice(6):({'/':'home','/now':'home','/apps':'home','/verify':'home','/about':'about','/github':'github','/x':'x','/contact':'contact'})[p]||'contact';var h=Object.prototype.hasOwnProperty.call(m,k);var c=h?m[k]:m.contact;var d=document.documentElement;d.style.setProperty('--bg',c);d.dataset.palette=h?k:'contact';var t=document.querySelector('meta[name=theme-color]');if(t)t.setAttribute('content',c);var r=function(){var v=parseFloat(getComputedStyle(d).getPropertyValue('--runway'))||0;if(v&&scrollY<v-1)scrollTo(0,v)};document.addEventListener('DOMContentLoaded',r);addEventListener('load',r);addEventListener('pageshow',r)}catch(e){}})()`
 
 // Structured data that ties the site to the same person's profiles. The deck
 // never renders home's page content, so this lives in the layout.
@@ -56,8 +56,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="en" className={sans.variable} suppressHydrationWarning>
       <head>
         <meta name="theme-color" content="#3b7fd6" />
-        {/* Before first paint: the page's sky colour for the browser chrome, and on iOS
-            the scroll onto the runway (globals.css) that lets the scene show behind it. */}
+        {/* Before Next.js starts: a path like //host/ becomes /host/ (Next reads it as another
+            origin and crashes), then the page's sky colour for the browser chrome, and on
+            iOS the scroll onto the runway (globals.css) that lets the scene show behind it. */}
         <script dangerouslySetInnerHTML={{ __html: SKY_BOOT }} />
         <noscript>
           <style>{'.live-t:not(.live-clock){opacity:1}.pane{background:var(--pane)}'}</style>
