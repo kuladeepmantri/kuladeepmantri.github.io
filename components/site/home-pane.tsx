@@ -111,13 +111,7 @@ export function HomePane({ projects, tweet }: { projects: ProjectRef[]; tweet: R
         <h2 className="lab">Projects</h2>
         <ul className="rows">
           {orderProjects(projects, buildRepos).map((p) => (
-            <Item
-              key={p.slug}
-              href={`/apps/${p.slug}`}
-              label={p.name}
-              line={p.line}
-              path={path}
-            />
+            <Item key={p.slug} href={`/apps/${p.slug}`} label={p.name} line={p.line} path={path} />
           ))}
         </ul>
       </nav>
@@ -182,14 +176,7 @@ function SoundToggle() {
   }, [])
   const on = preset !== 'off'
   return (
-    <button
-      ref={ref}
-      type="button"
-      className="sound"
-      aria-pressed={on}
-      aria-label={`${LABELS[preset]}. Change sound`}
-      onClick={() => cycle()}
-    >
+    <button ref={ref} type="button" className="sound" aria-pressed={on} onClick={() => cycle()}>
       <span>{LABELS[preset]}</span>
       <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
         <path d="M2.5 6h2.2L8 3.2v9.6L4.7 10H2.5z" fill="currentColor" />

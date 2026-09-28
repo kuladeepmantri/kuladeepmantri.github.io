@@ -14,3 +14,12 @@ export function postText(text: string): string {
       .replace(/\n{3,}/g, '\n\n')
   )
 }
+
+/**
+ * Posts with something to read. A post that is only a link (a video, an image, a
+ * quote) has no text left once the t.co link is dropped, so the card and the X
+ * pane skip it rather than show an empty post.
+ */
+export function readable<T extends { text: string }>(posts: T[]): T[] {
+  return posts.filter((p) => postText(p.text).length > 0)
+}

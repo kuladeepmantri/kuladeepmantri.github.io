@@ -1,25 +1,25 @@
-// Sound, made in the browser with Web Audio: no files. Off until the visitor
-// picks it; the choice is remembered.
+// Sound, made in the browser with Web Audio: no files. On by default; browsers
+// only allow audio after a gesture, so it starts at the visitor's first click,
+// tap, or key press. The switch turns it off, and the choice is remembered.
 //
-//   ambient  warm pad chords that change slowly, a few soft bell notes, and
-//            the lake underneath: calm, but always moving somewhere
-//   lake     just the water: swells, lapping at the shore, a little wind
-//
-// Everything is in D major. Bells and the ticks for hovering and opening panes
-// use the D major pentatonic scale, so interaction sounds like part of the music.
+// One piece, kept simple: soft piano-like notes wandering in short phrases over
+// a very quiet low drone, in a dark room. Everything is in D major. The drone
+// moves D, B, G, A; the notes, and the ticks for hovering and opening panes,
+// come from D major pentatonic, so interaction sounds like part of the music.
 
-export type Preset = 'off' | 'ambient' | 'lake'
-export const PRESETS: Preset[] = ['off', 'ambient', 'lake']
+export type Preset = 'off' | 'on'
+export const PRESETS: Preset[] = ['off', 'on']
 export const LABELS: Record<Preset, string> = {
   off: 'Sound off',
-  ambient: 'Sound: ambient',
-  lake: 'Sound: lake',
+  on: 'Sound on',
 }
 
 // D major pentatonic, D4 to E6.
 const SCALE = [
   293.66, 329.63, 369.99, 440, 493.88, 587.33, 659.25, 739.99, 880, 987.77, 1174.66, 1318.51,
 ]
+// Drone roots, an octave and a fifth each: D, B, G, A.
+const ROOTS = [73.42, 61.74, 49, 55]
 
 const KEY = 'km-sound'
 let ctx: AudioContext | null = null
@@ -49,12 +49,12 @@ function emit() {
   listeners.forEach((fn) => fn(preset))
 }
 
+/** The remembered choice. Nothing remembered means on; older presets count as on. */
 export function saved(): Preset {
   try {
-    const v = localStorage.getItem(KEY) as Preset | null
-    return v && PRESETS.includes(v) ? v : 'off'
+    return localStorage.getItem(KEY) === 'off' ? 'off' : 'on'
   } catch {
-    return 'off'
+    return 'on'
   }
 }
 
@@ -89,17 +89,21 @@ function ensure() {
   master = ctx.createGain()
   master.gain.value = 0
   master.connect(ctx.destination)
-  // A soft room: three seconds of decaying noise as the impulse response.
+  // A dark, wide room: four and a half seconds of softened, decaying noise per ear.
   room = ctx.createConvolver()
-  const len = ctx.sampleRate * 3
+  const len = Math.round(ctx.sampleRate * 4.5)
   const ir = ctx.createBuffer(2, len, ctx.sampleRate)
   for (let ch = 0; ch < 2; ch++) {
     const d = ir.getChannelData(ch)
-    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len) ** 3
+    let soft = 0
+    for (let i = 0; i < len; i++) {
+      soft = soft * 0.82 + (Math.random() * 2 - 1) * 0.18
+      d[i] = soft * (1 - i / len) ** 2.6
+    }
   }
   room.buffer = ir
   const wet = ctx.createGain()
-  wet.gain.value = 0.5
+  wet.gain.value = 0.9
   room.connect(wet).connect(master)
   document.addEventListener('visibilitychange', onVisibility)
   // pointerover runs before pointerenter, so tick('hover') can tell a mouse from a tap.
@@ -110,8 +114,8 @@ function ensure() {
   return ctx
 }
 
-// Hidden tabs go quiet. The preset is stopped, not just suspended: its timers keep running
-// while the clock is frozen and would pile chords up at the same instant on return.
+// Hidden tabs go quiet. The music is stopped, not just suspended: its timers keep running
+// while the clock is frozen and would pile notes up at the same instant on return.
 function onVisibility() {
   if (!ctx || !master || preset === 'off') return
   if (document.hidden) {
@@ -141,18 +145,16 @@ function disarm() {
 }
 
 /**
- * Bring back the remembered preset. Browsers only start audio after a gesture, so it starts
- * at the first click, tap, or key press, and the switch shows it meanwhile.
+ * Bring back the remembered choice (on, unless turned off before). Browsers only start
+ * audio after a gesture, so it starts at the first click, tap, or key press, and the
+ * switch shows it meanwhile.
  */
 export function restore(ignore: Element | null) {
   guard = ignore
-  if (req === 0 && preset === 'off') {
-    const want = saved()
-    if (want !== 'off') {
-      preset = want
-      waiting = true
-      emit()
-    }
+  if (req === 0 && preset === 'off' && saved() === 'on') {
+    preset = 'on'
+    waiting = true
+    emit()
   }
   if (waiting) arm()
   return () => {
@@ -161,226 +163,121 @@ export function restore(ignore: Element | null) {
   }
 }
 
-/** A few seconds of looping noise: brown (deep) or pink-ish (lighter). */
-function noise(ac: AudioContext, brown: boolean) {
-  const len = ac.sampleRate * 6
-  const buffer = ac.createBuffer(1, len, ac.sampleRate)
-  const d = buffer.getChannelData(0)
-  let last = 0
-  for (let i = 0; i < len; i++) {
-    const w = Math.random() * 2 - 1
-    last = brown ? (last + 0.02 * w) / 1.02 : 0.97 * last + 0.03 * w
-    d[i] = last * (brown ? 3.4 : 6)
-  }
-  const src = ac.createBufferSource()
-  src.buffer = buffer
-  src.loop = true
-  return src
-}
-
-function lake(ac: AudioContext, out: AudioNode) {
-  const nodes: AudioScheduledSourceNode[] = []
-  let alive = true
-  const timers: ReturnType<typeof setTimeout>[] = []
-
-  // Swells: deep water noise whose level rises and falls every few seconds.
-  const deep = noise(ac, true)
-  const lp = ac.createBiquadFilter()
-  lp.type = 'lowpass'
-  lp.frequency.value = 520
-  const swell = ac.createGain()
-  swell.gain.value = 0.05
-  deep.connect(lp).connect(swell).connect(out)
-  deep.start()
-  nodes.push(deep)
-  const nextSwell = () => {
-    if (!alive) return
-    const now = ac.currentTime
-    const peak = 0.08 + Math.random() * 0.07
-    const rise = 1.4 + Math.random() * 1.2
-    swell.gain.cancelScheduledValues(now)
-    swell.gain.setTargetAtTime(peak, now, rise / 3)
-    swell.gain.setTargetAtTime(0.035, now + rise, 1.3)
-    timers.push(setTimeout(nextSwell, (rise + 2.5 + Math.random() * 3) * 1000))
-  }
-  nextSwell()
-
-  // Lapping: short bright bursts where the water meets the shore.
-  const lap = noise(ac, false)
-  const bp = ac.createBiquadFilter()
-  bp.type = 'bandpass'
-  bp.frequency.value = 1100
-  bp.Q.value = 0.8
-  const lapGain = ac.createGain()
-  lapGain.gain.value = 0
-  lap.connect(bp).connect(lapGain).connect(out)
-  lap.start()
-  nodes.push(lap)
-  const nextLap = () => {
-    if (!alive) return
-    const now = ac.currentTime
-    bp.frequency.setValueAtTime(800 + Math.random() * 900, now)
-    lapGain.gain.setTargetAtTime(0.012 + Math.random() * 0.018, now, 0.05)
-    lapGain.gain.setTargetAtTime(0, now + 0.15 + Math.random() * 0.3, 0.12)
-    timers.push(setTimeout(nextLap, 600 + Math.random() * 2400))
-  }
-  nextLap()
-
-  // Wind: a faint band of noise whose pitch wanders.
-  const air = noise(ac, false)
-  const band = ac.createBiquadFilter()
-  band.type = 'bandpass'
-  band.frequency.value = 500
-  band.Q.value = 1.4
-  const airGain = ac.createGain()
-  airGain.gain.value = 0.012
-  const lfo = ac.createOscillator()
-  lfo.frequency.value = 0.04
-  const depth = ac.createGain()
-  depth.gain.value = 260
-  lfo.connect(depth).connect(band.frequency)
-  air.connect(band).connect(airGain).connect(out)
-  air.start()
-  lfo.start()
-  nodes.push(air, lfo)
-
-  return {
-    stop() {
-      alive = false
-      timers.forEach(clearTimeout)
-      nodes.forEach((n) => n.stop())
-    },
-  }
-}
-
-/** One soft, bell-like note: a sine with a quiet octave, into the room. */
-function note(freq: number, level: number, when = 0) {
+/**
+ * One piano-like note: a few harmonics that fade at different speeds (the higher ones
+ * sooner), through a filter that closes after the strike, into the room.
+ */
+function key(freq: number, level: number, when = 0, pan = 0) {
   if (!ctx || !master || !room) return
   const at = ctx.currentTime + when
-  const g = ctx.createGain()
-  g.gain.setValueAtTime(0, at)
-  g.gain.linearRampToValueAtTime(level, at + 0.012)
-  g.gain.exponentialRampToValueAtTime(0.0001, at + 2.4)
-  const a = ctx.createOscillator()
-  a.type = 'sine'
-  a.frequency.value = freq
-  const b = ctx.createOscillator()
-  b.type = 'sine'
-  b.frequency.value = freq * 2.01
-  const bg = ctx.createGain()
-  bg.gain.value = 0.18
-  a.connect(g)
-  b.connect(bg).connect(g)
-  g.connect(master)
-  g.connect(room)
-  a.start(at)
-  b.start(at)
-  a.stop(at + 2.5)
-  b.stop(at + 2.5)
+  const out = ctx.createGain()
+  out.gain.value = level
+  const lp = ctx.createBiquadFilter()
+  lp.type = 'lowpass'
+  lp.frequency.setValueAtTime(Math.min(7000, freq * 9), at)
+  lp.frequency.exponentialRampToValueAtTime(Math.max(600, freq * 2.2), at + 0.9)
+  const place = ctx.createStereoPanner()
+  place.pan.value = pan
+  lp.connect(out).connect(place)
+  place.connect(master)
+  place.connect(room)
+  const partials: [number, number, number][] = [
+    [1, 1, 3.6],
+    [2.001, 0.32, 2],
+    [3.003, 0.12, 1.2],
+    [4.01, 0.05, 0.7],
+  ]
+  for (const [mult, amp, decay] of partials) {
+    const o = ctx.createOscillator()
+    o.type = 'sine'
+    o.frequency.value = freq * mult
+    const g = ctx.createGain()
+    g.gain.setValueAtTime(0, at)
+    g.gain.linearRampToValueAtTime(amp, at + 0.005)
+    g.gain.exponentialRampToValueAtTime(0.0001, at + decay)
+    o.connect(g).connect(lp)
+    o.start(at)
+    o.stop(at + decay + 0.05)
+  }
 }
 
-// Dmaj9, Bm11, Gmaj7(#11), A6sus2: each voiced low and open.
-const CHORDS = [
-  [146.83, 220, 277.18, 329.63, 369.99],
-  [123.47, 185, 220, 293.66, 329.63],
-  [98, 146.83, 185, 246.94, 277.18],
-  [110, 164.81, 185, 246.94, 329.63],
-]
-
-/** One pad chord: each note two slightly detuned voices, filtered warm, faded in and out. */
-function chord(ac: AudioContext, out: AudioNode, notes: number[], hold: number) {
+/** A very quiet low drone on one root: the root and its fifth, sines, slow in and out. */
+function drone(ac: AudioContext, root: number, hold: number) {
+  if (!master || !room) return null
   const at = ac.currentTime
   const env = ac.createGain()
   env.gain.setValueAtTime(0, at)
-  env.gain.linearRampToValueAtTime(1, at + 3.5)
+  env.gain.linearRampToValueAtTime(1, at + 4)
   env.gain.setValueAtTime(1, at + hold)
-  env.gain.linearRampToValueAtTime(0, at + hold + 4.5)
-  const lp = ac.createBiquadFilter()
-  lp.type = 'lowpass'
-  lp.frequency.value = 820
-  lp.Q.value = 0.4
-  const swell = ac.createOscillator()
-  swell.frequency.value = 0.07
-  const depth = ac.createGain()
-  depth.gain.value = 260
-  swell.connect(depth).connect(lp.frequency)
-  swell.start(at)
-  swell.stop(at + hold + 5)
-  const oscs: OscillatorNode[] = [swell]
-  lp.connect(env)
-  env.connect(out)
-  if (room) env.connect(room)
-  notes.forEach((f, i) => {
-    for (const [type, detune, level] of [
-      ['triangle', -6, 0.5],
-      ['sawtooth', 5, 0.12],
-    ] as const) {
-      const o = ac.createOscillator()
-      o.type = type
-      o.frequency.value = f
-      o.detune.value = detune
-      const pan = ac.createStereoPanner()
-      pan.pan.value = (i / (notes.length - 1)) * 1.2 - 0.6
-      const v = ac.createGain()
-      v.gain.value = (level * 0.022) / (1 + i * 0.25)
-      o.connect(v).connect(pan).connect(lp)
-      o.start(at)
-      o.stop(at + hold + 5)
-      oscs.push(o)
-    }
+  env.gain.linearRampToValueAtTime(0, at + hold + 5)
+  env.connect(master)
+  env.connect(room)
+  const oscs = [root, root * 1.5, root * 2].map((f, i) => {
+    const o = ac.createOscillator()
+    o.type = 'sine'
+    o.frequency.value = f
+    o.detune.value = i === 1 ? 3 : 0
+    const g = ac.createGain()
+    g.gain.value = [0.022, 0.012, 0.008][i]
+    o.connect(g).connect(env)
+    o.start(at)
+    o.stop(at + hold + 5.5)
+    return o
   })
   return {
-    /** Fade out now instead of at the end of the hold. */
     release(t: number) {
-      const g = env.gain
-      // Firefox has no cancelAndHoldAtTime.
-      if (typeof g.cancelAndHoldAtTime === 'function') g.cancelAndHoldAtTime(t)
-      else {
-        g.cancelScheduledValues(t)
-        g.setValueAtTime(g.value, t)
-      }
-      g.setTargetAtTime(0, t, 0.3)
-      oscs.forEach((o) => o.stop(t + 1.5))
+      env.gain.cancelScheduledValues(t)
+      env.gain.setValueAtTime(env.gain.value, t)
+      env.gain.setTargetAtTime(0, t, 0.4)
+      oscs.forEach((o) => o.stop(t + 2))
     },
   }
 }
 
-function ambient(ac: AudioContext, out: AudioNode) {
-  const waterLevel = ac.createGain()
-  waterLevel.gain.value = 0.55
-  waterLevel.connect(out)
-  const water = lake(ac, waterLevel)
+/** The music: phrases of three to five notes, a pause, and the drone moving underneath. */
+function music(ac: AudioContext) {
   let alive = true
   let step = 0
-  // A chord lasts about 14s and a new one starts every 10s, so at most two sound at once.
-  let chords: ReturnType<typeof chord>[] = []
+  let at = 5 + Math.floor(Math.random() * 3) // a place in the scale, walked step by step
+  let drones: NonNullable<ReturnType<typeof drone>>[] = []
   const timers: ReturnType<typeof setTimeout>[] = []
-  const nextChord = () => {
+
+  const nextDrone = () => {
     if (!alive) return
-    chords = [...chords.slice(-1), chord(ac, out, CHORDS[step++ % CHORDS.length], 9)]
-    timers.push(setTimeout(nextChord, 10000))
+    const d = drone(ac, ROOTS[step++ % ROOTS.length], 11)
+    if (d) drones = [...drones.slice(-1), d]
+    timers.push(setTimeout(nextDrone, 14000))
   }
-  const nextBell = () => {
+
+  const phrase = () => {
     if (!alive) return
-    const i = 4 + Math.floor(Math.random() * 7)
-    note(SCALE[i], 0.022)
-    if (Math.random() < 0.3) note(SCALE[i - 2] ?? SCALE[i], 0.014, 0.6)
-    timers.push(setTimeout(nextBell, 2600 + Math.random() * 4200))
+    const notes = 3 + Math.floor(Math.random() * 3)
+    let when = 0
+    for (let n = 0; n < notes; n++) {
+      // Mostly small steps, sometimes a leap, kept inside the singing range.
+      const move =
+        Math.random() < 0.8 ? (Math.random() < 0.5 ? -1 : 1) : Math.random() < 0.5 ? -2 : 2
+      at = Math.max(3, Math.min(10, at + move))
+      const last = n === notes - 1
+      const level = 0.05 * (0.75 + 0.25 * Math.random()) * (last ? 0.85 : 1)
+      key(SCALE[at], level, when, (Math.random() - 0.5) * 0.5)
+      // Now and then a softer note a third or fifth below, for harmony.
+      if (Math.random() < 0.25) key(SCALE[Math.max(0, at - 2)], level * 0.5, when + 0.02, 0)
+      when += 0.55 + Math.random() * 0.45
+    }
+    timers.push(setTimeout(phrase, (when + 2.8 + Math.random() * 3.5) * 1000))
   }
-  nextChord()
-  timers.push(setTimeout(nextBell, 2500))
+
+  nextDrone()
+  timers.push(setTimeout(phrase, 1200))
   return {
     stop() {
       alive = false
       timers.forEach(clearTimeout)
-      chords.forEach((c) => c.release(ac.currentTime))
-      water.stop()
-      waterLevel.disconnect()
+      drones.forEach((d) => d.release(ac.currentTime))
     },
   }
 }
-
-const BUILD = { ambient, lake }
 
 export async function setPreset(next: Preset) {
   const id = ++req
@@ -426,29 +323,28 @@ export async function setPreset(next: Preset) {
     disarm()
   }
   const old = running
-  running = BUILD[next](ac, master!)
+  running = music(ac)
   setTimeout(() => old?.stop(), 50)
   master!.gain.cancelScheduledValues(ac.currentTime)
-  master!.gain.setTargetAtTime(1, ac.currentTime, 0.6)
+  master!.gain.setTargetAtTime(1, ac.currentTime, 0.8)
 }
 
-/** Start a preset that is waiting for the browser, or move to the next, wrapping to off. */
+/** The switch: on to off, off to on. */
 export function cycle() {
-  if (waiting) return setPreset(preset)
-  return setPreset(PRESETS[(PRESETS.indexOf(preset) + 1) % PRESETS.length])
+  return setPreset(preset === 'off' ? 'on' : 'off')
 }
 
-/** Notes from the same scale for interaction: up when opening, down when closing. */
+/** Single notes of the same piano for interaction: rising when opening, falling when closing. */
 export function tick(kind: 'open' | 'close' | 'hover' = 'open') {
   if (preset === 'off' || !ctx || ctx.state !== 'running') return
   if (kind === 'hover') {
     // Hover is a mouse affordance; a tap also fires pointerenter.
-    if (pointer === 'mouse') note(SCALE[6 + Math.floor(Math.random() * 4)], 0.008)
+    if (pointer === 'mouse') key(SCALE[7 + Math.floor(Math.random() * 3)], 0.014)
   } else if (kind === 'open') {
-    note(SCALE[5], 0.03)
-    note(SCALE[8], 0.024, 0.09)
+    key(SCALE[5], 0.045)
+    key(SCALE[8], 0.035, 0.1)
   } else {
-    note(SCALE[8], 0.024)
-    note(SCALE[5], 0.02, 0.09)
+    key(SCALE[8], 0.035)
+    key(SCALE[5], 0.03, 0.1)
   }
 }

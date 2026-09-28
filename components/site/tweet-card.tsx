@@ -1,16 +1,16 @@
 import { X_HANDLE } from '@/app/signals'
 import { LIVE } from '@/lib/generated/live'
-import { postText } from '@/lib/x-text'
+import { postText, readable } from '@/lib/x-text'
 import { Avatar } from './avatar'
 import { XLogo } from './icons'
 import { RelTime } from './rel-time'
 import { Verified } from './verified'
 
-/** My latest post on X, compact, in the home pane. Refreshed every build. */
+/** My latest post on X with text, compact, in the home pane. Refreshed every build. */
 export function TweetCard() {
   const x = LIVE.x
-  const post = x?.posts[0]
-  if (!post) return null
+  const post = readable(x?.posts ?? [])[0]
+  if (!x || !post) return null
   return (
     <a className="tweet" href={post.url}>
       <span className="sr-only">My latest post on X: </span>
