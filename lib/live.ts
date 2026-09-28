@@ -62,6 +62,11 @@ export function isSkippedRepo(repo: string): boolean {
  * What the snapshot says about a repo's visibility. 'unknown' means the build
  * has no data for it: say nothing about it rather than guess.
  */
+/** Links from GitHub data only ever point at GitHub itself. */
+export function isGithubUrl(u: unknown): u is string {
+  return typeof u === 'string' && u.startsWith('https://github.com/')
+}
+
 export function repoVisibility(
   repo: string,
   repos: Record<string, RepoLive> | undefined,

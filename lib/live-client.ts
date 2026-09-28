@@ -5,7 +5,14 @@
 // keeps the build snapshot, silently.
 
 import { GITHUB_USER } from '@/app/signals'
-import { PUSHES_MAX, isSkippedRepo, type Commit, type Push, type RepoLive } from './live'
+import {
+  PUSHES_MAX,
+  isGithubUrl,
+  isSkippedRepo,
+  type Commit,
+  type Push,
+  type RepoLive,
+} from './live'
 
 const TTL = 10 * 60_000
 // A push event's time is when it reached GitHub, a little after its commit.
@@ -85,7 +92,13 @@ async function getEvents(): Promise<PushEvent[] | null> {
 
 const isCommits = (v: unknown): v is Commit[] =>
   Array.isArray(v) &&
-  v.every((c) => typeof c?.sha === 'string' && typeof c?.message === 'string' && isTime(c?.date))
+  v.every(
+    (c) =>
+      typeof c?.sha === 'string' &&
+      typeof c?.message === 'string' &&
+      isTime(c?.date) &&
+      isGithubUrl(c?.url),
+  )
 
 /** The latest commits on a repo's default branch, cached per repo and push. */
 async function getCommits(repo: string, pushedAt: string): Promise<Commit[] | null> {
@@ -102,10 +115,7 @@ async function getCommits(repo: string, pushedAt: string): Promise<Commit[] | nu
             message: c.commit.message.split('\n')[0],
             date: [c.commit.committer?.date, c.commit.author?.date].find(isTime) ?? pushedAt,
             // Only ever link to GitHub itself.
-            url:
-              typeof c.html_url === 'string' && c.html_url.startsWith('https://github.com/')
-                ? c.html_url
-                : `https://github.com/${repo}`,
+            url: isGithubUrl(c.html_url) ? c.html_url : `https://github.com/${repo}`,
           }),
         )
     : null
