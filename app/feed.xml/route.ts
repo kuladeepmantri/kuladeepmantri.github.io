@@ -25,7 +25,8 @@ export function GET(): Response {
 
   const items = signals
     .map((s) => {
-      const url = `${WEBSITE_URL}/apps/${s.slug}`
+      // Each project is a row on the one page, anchored by its slug.
+      const url = `${WEBSITE_URL}/#${s.slug}`
       const pubDate = itemDate(s).toUTCString()
       return `    <item>
       <guid isPermaLink="false">${escapeXml(s.id)}</guid>

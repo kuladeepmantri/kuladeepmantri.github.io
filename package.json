@@ -9,7 +9,8 @@
     "build": "next build",
     "postbuild": "tsx scripts/csp.ts out",
     "start": "next start",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test": "tsx --test lib/*.test.ts"
   },
   "dependencies": {
     "next": "^15.5.26",
@@ -26,10 +27,13 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.4",
     "prettier": "^3.4.2",
-    "tsx": "^4.21.0",
+    "tsx": "^4.23.15",
     "typescript": "^5"
   },
   "engines": {
     "node": ">=22"
+  },
+  "overrides": {
+    "postcss": "^8.5.28"
   }
 }

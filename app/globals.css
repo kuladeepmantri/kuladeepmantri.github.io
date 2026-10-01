@@ -1,211 +1,114 @@
-/* A small reset: the parts of a CSS preflight this site relies on. It sits in
-   a layer, so every rule after it wins regardless of specificity. */
-@layer reset {
-  *,
-  ::before,
-  ::after,
-  ::backdrop {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-    border: 0 solid;
-  }
+/* kuladeepmantri.com. One column, one sans, live data. DESIGN.md describes
+   every value here; change both together. Light by default, dark from the
+   system setting unless the footer switch sets data-theme on <html>. */
 
-  html {
-    line-height: 1.5;
-    -webkit-text-size-adjust: 100%;
-    tab-size: 4;
-    -webkit-tap-highlight-color: transparent;
-  }
+/* ── Tokens ── */
 
-  body {
-    line-height: inherit;
-  }
+:root {
+  --bg: #fdfdfc;
+  --panel: #f6f6f3;
+  --ink: #21201c;
+  --mute: #63635e;
+  --line: rgba(33, 32, 28, 0.09);
+  --line2: rgba(33, 32, 28, 0.2);
+  --tab-on: #fff;
+  --hover: rgba(128, 128, 120, 0.07);
+  /* The faintest line that still marks a control: 3:1 against --panel. */
+  --edge: rgba(33, 32, 28, 0.55);
+  /* How far hover and focus surfaces reach past the column. */
+  --bleed: 16px;
+  --sans: var(--font-sans), 'Helvetica Neue', Arial, sans-serif;
+  --mono: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+  --ease: cubic-bezier(0.2, 0.7, 0, 1);
+  color-scheme: light;
+}
 
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6 {
-    font-size: inherit;
-    font-weight: inherit;
-  }
-
-  a {
-    color: inherit;
-    text-decoration: inherit;
-  }
-
-  b,
-  strong {
-    font-weight: bolder;
-  }
-
-  small {
-    font-size: 80%;
-  }
-
-  ol,
-  ul,
-  menu {
-    list-style: none;
-  }
-
-  img,
-  svg,
-  video,
-  canvas,
-  audio,
-  iframe,
-  embed,
-  object {
-    display: block;
-    vertical-align: middle;
-  }
-
-  img,
-  video {
-    max-width: 100%;
-    height: auto;
-  }
-
-  button,
-  input,
-  select,
-  textarea {
-    font: inherit;
-    font-feature-settings: inherit;
-    font-variation-settings: inherit;
-    letter-spacing: inherit;
-    color: inherit;
-    border-radius: 0;
-    background-color: transparent;
-    opacity: 1;
-  }
-
-  button {
-    appearance: button;
-  }
-
-  :-moz-focusring {
-    outline: auto;
-  }
-
-  [hidden]:where(:not([hidden='until-found'])) {
-    display: none !important;
+/* Dark follows the system unless the visitor picked a theme (data-theme on
+   <html>, set before first paint by app/layout.tsx). Keep both blocks equal. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: #161615;
+    --panel: #1c1c1b;
+    --ink: #ecebe7;
+    --mute: #9c9b95;
+    --line: rgba(236, 235, 231, 0.1);
+    --line2: rgba(236, 235, 231, 0.22);
+    --tab-on: #2a2a28;
+    --edge: rgba(236, 235, 231, 0.4);
+    color-scheme: dark;
   }
 }
 
-/*
- * The scenery (components/site/scenery) fills the window: a cloud sky over a
- * lake, printed as vertical lines, one place per page. Panes float on it as
- * frosted glass: the home pane, and one pane per opened page to its right.
- * One typeface, Geist. DESIGN.md describes the whole system.
- */
-
-:root {
-  --bg: #5d97df;
-  --pane: rgb(14 17 24 / 0.8);
-  --card: rgb(255 255 255 / 0.055);
-  --line: rgb(255 255 255 / 0.1);
-  --text: #e9ebf0;
-  --muted: #c0c5cf;
-  --faint: #adb3bf;
-  --accent: #b3b9ff;
-  --cell: 18px;
-  --gap: 12px;
-  --ease: cubic-bezier(0.22, 1, 0.36, 1);
-  --glide: cubic-bezier(0.16, 1, 0.3, 1);
-  --glide-in: cubic-bezier(0.5, 0, 0.75, 0);
+:root[data-theme='dark'] {
+  --bg: #161615;
+  --panel: #1c1c1b;
+  --ink: #ecebe7;
+  --mute: #9c9b95;
+  --line: rgba(236, 235, 231, 0.1);
+  --line2: rgba(236, 235, 231, 0.22);
+  --tab-on: #2a2a28;
+  --edge: rgba(236, 235, 231, 0.4);
   color-scheme: dark;
 }
 
-/* Each page's links take the colour of its background. */
-:root[data-palette='about'] {
-  --accent: #ffb7a6;
-}
-:root[data-palette='github'] {
-  --accent: #8ee6a8;
-}
-:root[data-palette='x'] {
-  --accent: #8ecdfa;
-}
-:root[data-palette='contact'] {
-  --accent: #e6cfae;
-}
-:root[data-palette='kubereach'] {
-  --accent: #9fbaff;
-}
-:root[data-palette='rune'] {
-  --accent: #ffb65c;
-}
-:root[data-palette='shipcrew'] {
-  --accent: #f2ae8b;
-}
-:root[data-palette='kintsugi'] {
-  --accent: #e8c65e;
-}
-:root[data-palette='auris'] {
-  --accent: #7ef0a2;
-}
-:root[data-palette='untilithappens'] {
-  --accent: #8ecfc0;
-}
-:root[data-palette='deid'] {
-  --accent: #cfcfcf;
-}
-:root[data-palette='evalcore'] {
-  --accent: #ff9fcf;
+/* ── Reset ── */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
-/* The page is one large viewport and never scrolls, except on iOS (below). */
-html,
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 body {
-  height: 100%;
-  height: 100lvh;
+  margin: 0;
   background: var(--bg);
-  overflow: hidden;
-}
-
-/* iOS Safari draws page pixels behind its status bar and floating toolbar only
-   where the document has content above and below the viewport, and only once
-   the page is scrolled. So on iOS the document gets a runway above the page,
-   the scenery bleeds up into it and down past the bottom (scenery/index.tsx),
-   and the page sits scrolled onto the runway (the snap, plus layout.tsx on
-   load). Elsewhere the browser shows --bg in those areas. */
-@supports (-webkit-touch-callout: none) {
-  @media (hover: none) and (pointer: coarse) {
-    :root {
-      --runway: 80px;
-    }
-
-    html {
-      height: auto;
-      padding-top: var(--runway);
-      overflow: hidden auto;
-      overscroll-behavior-y: none;
-      scroll-snap-type: y mandatory;
-      scrollbar-width: none;
-    }
-
-    body {
-      position: relative;
-      height: 100lvh;
-      overflow: visible;
-      scroll-snap-align: start;
-    }
-  }
-}
-
-body {
-  color: var(--text);
-  font-family: var(--font-sans), system-ui, sans-serif;
-  font-size: 0.90625rem;
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 16px;
   line-height: 1.65;
-  letter-spacing: -0.006em;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+h1,
+h2,
+h3,
+p,
+ol,
+ul,
+dl,
+dd {
+  margin: 0;
+}
+
+ol,
+ul {
+  padding: 0;
+  list-style: none;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+picture {
+  flex: none;
+}
+
+.glyph {
+  display: inline-block;
+  vertical-align: -0.125em;
+}
+
+button {
+  font: inherit;
+  color: inherit;
 }
 
 a {
@@ -213,933 +116,980 @@ a {
   text-decoration: none;
 }
 
-button {
-  font: inherit;
-  color: inherit;
-  cursor: pointer;
-}
-
 :focus-visible {
-  outline: 1.5px solid var(--accent);
-  outline-offset: 3px;
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
   border-radius: 4px;
-}
-
-::selection {
-  background: var(--accent);
-  color: var(--bg);
 }
 
 .sr-only {
   position: absolute;
   width: 1px;
   height: 1px;
+  padding: 0;
   margin: -1px;
   overflow: hidden;
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
+  border: 0;
 }
 
-/* The first Tab stop while a page is open; hidden until focused. */
-.skip {
-  position: absolute;
-  top: calc(var(--cell) + 12px);
-  left: calc(var(--cell) + 12px);
-  z-index: 2;
-  padding: 8px 14px;
-  border-radius: 10px;
-  background: rgb(14 17 24 / 0.94);
-  box-shadow: inset 0 0 0 1px var(--line);
-  color: var(--text);
-  pointer-events: auto;
+/* ── Type helpers ── */
+
+.mute {
+  color: var(--mute);
 }
 
-.skip:not(:focus) {
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
+.mono {
+  font-family: var(--mono);
+  font-size: 12.5px;
 }
 
-.ico {
-  flex-shrink: 0;
+.cap {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--mute);
 }
 
-/* ── Field ── */
-
-.field,
-.sky {
-  position: absolute;
-  top: calc(-1 * var(--runway, 0px));
-  left: 0;
-  z-index: 0;
-  display: block;
-}
-
-/* ── Deck ── */
-
-.stage {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  overflow-x: auto;
-  overflow-y: hidden;
-  scrollbar-width: none;
-  overscroll-behavior-x: contain;
-  pointer-events: none;
-}
-
-.stage::-webkit-scrollbar {
-  display: none;
-}
-
-.deck {
-  display: flex;
-  gap: var(--gap);
-  box-sizing: border-box;
-  height: 100%;
-  width: max-content;
-  padding: var(--cell) 0 0 var(--cell);
-}
-
-.pane {
-  flex: 0 0 auto;
-  box-sizing: border-box;
-  height: calc(100dvh - 2 * var(--cell));
-  overflow-y: auto;
-  /* Vertical scrolling stays in the pane; sideways swipes pass to the deck. */
-  overscroll-behavior: auto contain;
-  scrollbar-width: none;
-  padding: 30px 28px 24px;
-  border-radius: 18px;
-  background: var(--pane);
-  /* Frosted glass: the scenery shows through, blurred, behind the text. */
-  -webkit-backdrop-filter: blur(24px) saturate(1.8);
-  backdrop-filter: blur(24px) saturate(1.8);
-  box-shadow:
-    0 30px 80px -34px rgb(0 0 0 / 0.55),
-    inset 0 0 0 1px var(--line),
-    inset 0 1px 0 rgb(255 255 255 / 0.07);
-  pointer-events: auto;
-}
-
-.pane::-webkit-scrollbar {
-  display: none;
-}
-
-/* Without a blur, or when the visitor asks for less transparency, the glass
-   turns nearly solid so the scene can never compete with the text. */
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  :root {
-    --pane: rgb(14 17 24 / 0.92);
-  }
-}
-
-@media (prefers-reduced-transparency: reduce) {
-  :root {
-    --pane: rgb(14 17 24 / 0.94);
-  }
-}
-
-.pane-home {
-  width: 380px;
-}
-
-.pane-page {
-  width: 470px;
-}
-
-.deck-end {
-  flex: 0 0 var(--cell);
-}
-
-/* A pane slides out to the right from behind the one before it, fading in as
-   it goes; closing slides it back. Switching pages keeps the pane and remounts
-   its contents, so the new text drifts in. Everything moves left to right.
-   Durations match lib/motion.ts. */
-@keyframes slide-out {
-  from {
-    opacity: 0;
-    transform: translateX(-32px);
-    clip-path: inset(0 100% 0 0 round 18px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-    clip-path: inset(0 0 0 0 round 18px);
-  }
-}
-
-@keyframes slide-back {
-  from {
-    opacity: 1;
-    transform: none;
-  }
-  to {
-    opacity: 0;
-    transform: translateX(-32px);
-  }
-}
-
-@keyframes text-in {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-}
-
-@keyframes content-in {
-  from {
-    opacity: 0;
-    transform: translateX(-14px);
-  }
-}
-
-.pane-page[data-phase='in'] {
-  animation: slide-out 0.72s var(--glide) both;
-}
-
-.pane-page[data-phase='out'] {
-  animation: slide-back 0.44s var(--glide-in) both;
-}
-
-.home {
-  animation: text-in 0.6s var(--ease) 0.1s both;
-}
-
-.pane-content {
-  animation: content-in 0.56s var(--glide) both;
-}
-
-.pane[data-phase='in'] .pane-content {
-  animation-delay: 0.16s;
-}
-
-/* Once a pane is open its text is visible, whether or not the entrance
-   animation ever got a frame to start (a busy phone, a background tab). */
-.pane[data-phase='open'] .pane-content {
-  animation: none;
-}
-
-.pane[data-phase='out'] .pane-content {
-  opacity: 0;
-  transform: translateX(10px);
-  transition:
-    opacity 0.18s,
-    transform 0.18s;
-}
-
-/* ── Type ── */
-
-.pane p {
-  margin-top: 16px;
-}
-
-.name {
-  font-size: 0.96875rem;
-  font-weight: 600;
-  letter-spacing: -0.015em;
-}
-
-.muted {
-  color: var(--muted);
-}
-
-.lead {
-  font-size: 0.96875rem;
-  color: var(--text);
-}
-
-.pane article > p a,
-.pane .cells a,
-.tk {
-  color: var(--accent);
+.ul {
   text-decoration: underline;
   text-decoration-thickness: 1px;
-  text-underline-offset: 0.2em;
-  text-decoration-color: color-mix(in srgb, var(--accent) 40%, transparent);
-  transition:
-    color 0.6s,
-    text-decoration-color 0.2s;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--line2);
+  transition: text-decoration-color 0.15s;
 }
 
-.pane article > p a:hover,
-.pane .cells a:hover,
-.tk:hover {
-  text-decoration-color: var(--accent);
+.ul:hover {
+  text-decoration-color: currentColor;
 }
 
-.lab,
-.list-lab {
-  margin: 36px 0 10px;
-  font-size: 0.78125rem;
-  font-weight: 400;
-  color: var(--faint);
+.hov {
+  transition: background 0.15s;
 }
 
-.pane-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
+.hov:hover {
+  background: var(--hover);
 }
 
-/* One gap under every pane title, whatever comes first. */
-.pane .pane-head + * {
-  margin-top: 22px;
-}
-
-/* Focus lands on the title when a pane opens; a ring only for keyboard users. */
-.pane-head .name:focus:not(:focus-visible) {
-  outline: none;
-}
-
-.close {
-  display: grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  margin: -15px;
-  color: var(--muted);
-  transition: color 0.2s;
-}
-
-.close:hover {
-  color: var(--accent);
-}
-
-/* ── Home pane ── */
-
-.home {
-  display: flex;
-  flex-direction: column;
-  min-height: 100%;
-}
-
-.id .role {
-  margin-top: 8px;
-}
-
-.pane p.loc {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  margin-top: 2px;
-  color: var(--muted);
-}
-
-.loc .dot {
-  color: var(--faint);
-}
-
-.sentence.s2 {
-  margin-top: 22px;
-  color: var(--muted);
-}
-
-.sentence.s2 .tk {
-  color: var(--text);
-  text-decoration-color: rgb(255 255 255 / 0.22);
-}
-
-.sentence.s2 .tk:hover {
-  color: var(--accent);
-}
-
-/* Times from the build stay hidden until the browser clock replaces them. */
+/* Anything that shows a clock or a relative time. The prerendered HTML holds
+   build-time values, so these stay transparent until the browser clock takes
+   over (components/home/time.tsx). */
 .live-t {
   opacity: 0;
 }
 
 .live-t.is-ready {
   opacity: 1;
-  transition: opacity 0.4s;
 }
 
-/* Latest post */
-.tweet {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-top: 26px;
-  padding: 15px 16px 16px;
-  border-radius: 12px;
-  background: var(--card);
-  box-shadow: inset 0 0 0 1px var(--line);
-  transition: box-shadow 0.25s;
+/* ── Page ── */
+
+.intro,
+.slider,
+.projects,
+#elsewhere,
+.about,
+.footer {
+  animation: enter 0.7s var(--ease) both;
 }
 
-.tweet:hover {
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent);
+.slider {
+  animation-delay: 0.05s;
 }
 
-.tweet-head {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
+.projects {
+  animation-delay: 0.1s;
 }
 
-.tweet-head .ico {
-  margin-left: auto;
-  color: var(--muted);
+#elsewhere {
+  animation-delay: 0.15s;
 }
 
-.tweet-who {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  line-height: 1.35;
+.about {
+  animation-delay: 0.2s;
 }
 
-.tweet-name {
-  font-size: 0.84375rem;
-  font-weight: 600;
-  white-space: nowrap;
+.footer {
+  animation-delay: 0.25s;
 }
 
-/* On narrow cards the handle gives way; the time always shows. */
-.tweet-meta {
-  display: flex;
-  gap: 0.35em;
-  min-width: 0;
-  font-size: 0.78125rem;
-  color: var(--muted);
-  white-space: nowrap;
-}
-
-.tweet-handle {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.tweet-meta time {
-  flex-shrink: 0;
-}
-
-.tweet-text {
-  white-space: pre-line;
-  display: -webkit-box;
-  -webkit-line-clamp: 5;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  font-size: 0.875rem;
-  line-height: 1.55;
-  overflow-wrap: anywhere;
-}
-
-/* Projects */
-.rows,
-.tabs,
-.list,
-.commits,
-.posts,
-.langs {
-  list-style: none;
-  padding: 0;
-}
-
-.rows a {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  padding: 6px 0;
-  overflow: hidden;
-}
-
-.item-line {
-  font-size: 0.8125rem;
-  line-height: 1.4;
-  color: var(--muted);
-}
-
-.item-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--accent);
-  transition: color 0.6s;
-}
-
-.rows a:hover .item-label {
-  color: var(--text);
-  transition: color 0.15s;
-}
-
-/* A click draws a hairline under the row, out toward the pane that opens from it. */
-@keyframes trace {
-  0% {
-    transform: scaleX(0);
-    opacity: 1;
-  }
-  55% {
-    transform: scaleX(1);
-    opacity: 1;
-  }
-  100% {
-    transform: scaleX(1);
-    opacity: 0;
+@keyframes enter {
+  from {
+    opacity: 0.01;
+    transform: translateY(10px);
+    filter: blur(4px);
   }
 }
 
-.rows a[data-fire]::after,
-.tabs a[data-fire]::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 3px;
-  height: 1px;
-  background: var(--accent);
-  transform-origin: left;
-  animation: trace 0.6s var(--ease) both;
-  pointer-events: none;
+.col {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 128px 24px 0;
 }
 
-.tabs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px 22px;
-  margin-top: 34px;
+section {
+  margin-top: 80px;
 }
 
-.tabs a {
-  position: relative;
-  display: inline-flex;
-  color: var(--muted);
-  transition: color 0.15s;
+section[id],
+.row[id],
+.footer {
+  scroll-margin-top: 24px;
 }
 
-/* A 44px tall touch target around short labels like 'X', without moving them. */
-.tabs a::before {
-  content: '';
-  position: absolute;
-  inset: -10px -11px;
+h2 {
+  font-size: 16px;
+  font-weight: 500;
 }
 
-.tabs a .item-label {
-  color: inherit;
-}
-
-.tabs a:hover,
-.tabs a[aria-current='page'] {
-  color: var(--text);
-}
-
-.home-foot {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px 20px;
-  margin-top: auto;
-  padding-top: 36px;
-  font-size: 0.8125rem;
-  color: var(--faint);
-}
-
-.home-foot a {
-  color: var(--muted);
-  transition: color 0.15s;
-}
-
-.home-foot a:hover {
-  color: var(--accent);
-}
-
-.switches {
-  display: flex;
-  gap: 18px;
-  margin-left: auto;
-}
-
-/* 44px tall to the touch, the height of a line of text to the layout. */
-.sound,
-.motion {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 44px;
-  margin: -11px 0;
-  color: var(--muted);
-  transition: color 0.2s;
-}
-
-.sound:hover,
-.sound[aria-pressed='true'],
-.motion:hover,
-.motion[aria-checked='true'] {
-  color: var(--text);
-}
-
-/* ── Page panes ── */
-
-.list {
-  margin-top: 22px;
-}
-
-.list a {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 4px 0;
-  color: var(--accent);
-  transition: color 0.6s;
-}
-
-.list a:hover {
-  color: var(--text);
-  transition: color 0.15s;
-}
-
-.who {
+.intro {
   display: flex;
   align-items: center;
-  gap: 14px;
-  margin-top: 22px;
+  gap: 16px;
+  line-height: 1.45;
 }
 
-.who p,
-.about-hero p {
-  margin: 0;
-}
-
-.who-name {
-  font-weight: 600;
-}
-
-a.who:hover .muted {
-  color: var(--accent);
+.intro h1 {
+  font-size: 16px;
+  font-weight: 500;
 }
 
 .avatar {
-  display: block;
+  flex: none;
   border-radius: 50%;
   object-fit: cover;
-  background: #1a1c22;
 }
 
-.verified {
-  display: inline-block;
-  vertical-align: -2px;
-  margin-left: 4px;
-}
+/* ── Slider ── */
 
-.facts {
-  display: grid;
-  grid-template-columns: 104px minmax(0, 1fr);
-  gap: 10px 16px;
-  margin-top: 26px;
-}
-
-.facts > div,
-.cells > div {
-  min-width: 0;
-}
-
-.facts > div {
-  display: contents;
-}
-
-.facts dt,
-.cells dt {
-  font-size: 0.78125rem;
-  color: var(--faint);
-  padding-top: 1px;
-}
-
-.commits a,
-.row-quiet {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 16px;
-  padding: 4px 0;
-}
-
-.commit-msg {
-  min-width: 0;
+.slider {
+  position: relative;
+  margin-top: 48px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--panel);
   overflow: hidden;
-  text-overflow: ellipsis;
+}
+
+/* Every slide sits in the same grid cell, so the card is as tall as its
+   tallest slide and never changes height between slides. */
+.slides {
+  display: grid;
+  min-height: 230px;
+}
+
+.slide {
+  grid-area: 1 / 1;
+  display: flex;
+  min-width: 0;
+  transition:
+    opacity 0.6s ease,
+    transform 0.6s var(--ease),
+    filter 0.6s ease;
+}
+
+.slide.is-off {
+  opacity: 0;
+  transform: translateY(8px);
+  filter: blur(3px);
+  pointer-events: none;
+}
+
+.slide-link {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 22px 22px 62px;
+  border-radius: 17px;
+}
+
+.slide-link:focus-visible {
+  outline-offset: -3px;
+}
+
+.src {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--mute);
+}
+
+.src svg {
+  flex: none;
+}
+
+.src .when {
+  margin-left: auto;
   white-space: nowrap;
 }
 
-.commits a .commit-msg {
-  color: var(--accent);
-  transition: color 0.6s;
-}
-
-.commits a:hover .commit-msg {
-  color: var(--text);
-  transition: color 0.15s;
-}
-
-.row-quiet .commit-msg {
-  color: var(--muted);
-}
-
-.when {
-  flex-shrink: 0;
-  font-size: 0.8125rem;
-  color: var(--faint);
-}
-
-.when.fresh {
-  color: var(--accent);
-}
-
-.posts li + li {
-  margin-top: 4px;
-}
-
-.posts a {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 9px 0;
-}
-
 .post-text {
-  white-space: pre-line;
+  margin-top: 16px;
+  font-size: 18px;
+  line-height: 1.5;
+  letter-spacing: -0.01em;
+  text-wrap: pretty;
   overflow-wrap: anywhere;
-}
-
-.posts a:hover .post-text {
-  color: var(--accent);
-}
-
-.langs li {
-  display: grid;
-  grid-template-columns: 96px minmax(0, 1fr) 36px;
-  align-items: center;
-  gap: 12px;
-  padding: 4px 0;
-}
-
-.langs .bar {
-  height: 4px;
-  border-radius: 2px;
-  background: rgb(255 255 255 / 0.07);
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
   overflow: hidden;
 }
 
-.langs .bar i {
-  display: block;
-  height: 100%;
-  border-radius: 2px;
-  background: var(--accent);
-  transition: background-color 0.6s;
-}
-
-.langs .when {
-  text-align: right;
-}
-
-.email {
+.release-head {
+  margin-top: 16px;
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 6px 14px;
+  gap: 4px 10px;
 }
 
-.email a {
-  color: var(--accent);
-  text-decoration: underline;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 0.2em;
+.release-name {
+  overflow-wrap: anywhere;
+  font-size: 30px;
+  letter-spacing: -0.035em;
+  font-weight: 500;
+  line-height: 1.1;
 }
 
 .pill {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--mono);
+  font-size: 14px;
+  padding: 2px 8px;
+  border: 1px solid var(--line2);
+  border-radius: 999px;
+}
+
+.release-burst {
+  margin-top: 8px;
+  text-wrap: pretty;
+}
+
+.facts-row {
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 18px;
+}
+
+.facts-row > span {
   display: inline-flex;
   align-items: center;
-  min-height: 44px;
-  margin: -11px -8px;
-  padding: 0 8px;
-  font-size: 0.8125rem;
-  color: var(--muted);
-  transition: color 0.2s;
+  gap: 6px;
 }
 
-.pill:hover {
-  color: var(--text);
+.commit-msg {
+  margin-top: 16px;
+  font-size: 15.5px;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  overflow: hidden;
 }
 
-/* The location arrow takes the page's accent. */
-.loc-ico {
-  color: var(--accent);
-  transition: color 0.6s;
+.commit-meta {
+  margin-top: 10px;
+  overflow-wrap: anywhere;
+  text-wrap: pretty;
+}
+
+.chrome {
+  position: absolute;
+  left: 22px;
+  right: 22px;
+  bottom: 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.bars {
+  display: flex;
+  gap: 5px;
+  flex: 1;
+}
+
+/* 24px tall to tap, 2px to see. */
+.bar {
+  all: unset;
+  cursor: pointer;
+  flex: 1;
+  padding: 11px 0;
+}
+
+.trk {
+  display: block;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--edge);
+  overflow: hidden;
+}
+
+/* Progress scales instead of resizing, so it never costs a layout. */
+.fill {
+  display: block;
+  height: 2px;
+  background: var(--ink);
+  transform: scaleX(0);
+  transform-origin: left;
+}
+
+.fill.done {
+  transform: none;
+}
+
+.fill.run {
+  animation: fill 6s linear forwards;
+}
+
+/* Focus or hover in the slider pauses the bar, except on the pause button
+   itself: right after pressing Start, focus and the pointer are still on it. */
+.slider:focus-within:not(:has(.rotation:focus)) .fill.run,
+.fill.run.held {
+  animation-play-state: paused;
+}
+
+/* Hover pauses only where hover is real; a tap on a phone does not stick. */
+@media (hover: hover) {
+  .slider:hover:not(:has(.rotation:hover)) .fill.run {
+    animation-play-state: paused;
+  }
+}
+
+@keyframes fill {
+  to {
+    transform: none;
+  }
+}
+
+/* One slide: no controls, no room kept for them. */
+.single .slides {
+  min-height: 0;
+}
+
+.single .slide-link {
+  padding-bottom: 22px;
+}
+
+.count {
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.navs {
+  display: flex;
+  gap: 2px;
+}
+
+.nav {
+  all: unset;
+  cursor: pointer;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  color: var(--mute);
+}
+
+@media (hover: hover) {
+  .nav:hover {
+    background: var(--bg);
+    color: var(--ink);
+  }
+}
+
+.bar:focus-visible,
+.nav:focus-visible,
+.seg:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Narrow phones: the bars carry the position, so the counter makes room. */
+@media (max-width: 360px) {
+  .count {
+    display: none;
+  }
+}
+
+/* ── Projects: a ruled index ── */
+
+.projects h2 {
+  margin-bottom: 8px;
+}
+
+.row {
+  position: relative;
+  padding: 20px 0;
+  border-top: 1px solid var(--line);
+}
+
+.row:last-child {
+  border-bottom: 1px solid var(--line);
+}
+
+.row-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 2px 16px;
+}
+
+.row h3 {
+  overflow-wrap: anywhere;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.row p {
+  margin-top: 4px;
+  max-width: 34em;
+  font-size: 15px;
+  line-height: 1.55;
+  text-wrap: pretty;
+}
+
+/* The featured project: same type as every row, set on a soft band that
+   reaches as far past the column as every hover surface does. The clear
+   border is drawn in forced-colors mode. */
+.lead {
+  margin: 0 calc(-1 * var(--bleed)) 8px;
+  padding: 19px calc(var(--bleed) - 1px);
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: var(--panel);
+}
+
+.lead + .row {
+  border-top: 0;
+}
+
+.lead .row-link::after {
+  inset: 0;
+  border-radius: 12px;
+}
+
+/* The whole row opens its first link; the links in .meta sit above it. */
+.row-link::after {
+  content: '';
+  position: absolute;
+  inset: 0 calc(-1 * var(--bleed));
+  border-radius: 10px;
+}
+
+.row-link:focus-visible {
+  outline: none;
+}
+
+.row-link:focus-visible::after {
+  outline: 2px solid var(--ink);
+}
+
+.row:hover .row-link {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--line2);
+}
+
+.meta {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 14px;
+  color: var(--mute);
+}
+
+.facts-line .glyph {
+  margin-right: 0.35em;
+}
+
+.meta a {
+  position: relative;
+  z-index: 1;
+  /* 24px tall to tap without changing how the line looks. */
+  padding: 2px 0;
+  color: var(--ink);
+}
+
+/* The arrow sits after the label with a margin, not a space, so the link's
+   underline ends at the label. */
+.arrow .glyph,
+.ul > .glyph {
+  margin-left: 0.3em;
+}
+
+.arrow {
+  position: relative;
+  top: 0;
+  left: 0;
+  transition:
+    top 0.2s var(--ease),
+    left 0.2s var(--ease);
+}
+
+@media (hover: hover) {
+  a:hover > .arrow {
+    top: -1px;
+    left: 1px;
+  }
+}
+
+/* ── Elsewhere ── */
+
+.section-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px 16px;
+  margin-bottom: 12px;
+}
+
+/* The switch is taller than the heading; keep the heading on the 80px rhythm. */
+.section-head:has(.seglist) {
+  margin-top: -8px;
+}
+
+.seglist {
+  position: relative;
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 9px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+}
+
+.seg {
+  all: unset;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1.65;
+  padding: 5px 12px;
+  border-radius: 7px;
+  color: var(--mute);
+  transition: color 0.15s;
+}
+
+.seg[aria-selected='true'],
+.seg[aria-checked='true'] {
+  color: var(--ink);
+}
+
+@media (hover: hover) {
+  .seg:hover {
+    color: var(--ink);
+  }
+}
+
+/* The selected option's edge is what marks it: 3:1 against the switch. */
+.seglist:not(.measured) .seg[aria-selected='true'],
+.seglist:not(.measured) .seg[aria-checked='true'] {
+  box-shadow: inset 0 0 0 1px var(--edge);
+}
+
+.seg[aria-selected='true'],
+.seg[aria-checked='true'] {
+  background: var(--tab-on);
+}
+
+.seglist .seg {
+  position: relative;
+  z-index: 1;
+}
+
+.seglist.measured .seg[aria-selected='true'],
+.seglist.measured .seg[aria-checked='true'] {
+  background: none;
+}
+
+.tab-ind {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 0;
+  border-radius: 7px;
+  background: var(--tab-on);
+  box-shadow: inset 0 0 0 1px var(--edge);
+  transition:
+    transform 0.35s var(--ease),
+    width 0.35s var(--ease);
+}
+
+.tab-ind.still {
+  transition: none;
+}
+
+.panel {
+  animation: fadein 0.5s var(--ease);
+}
+
+@keyframes fadein {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.posts {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  /* The last post's padding is hover room, not space before About. */
+  margin: 0 calc(-1 * var(--bleed)) -16px;
+}
+
+.post {
+  display: block;
+  padding: 16px var(--bleed);
+  border-radius: 12px;
+}
+
+.post:focus-visible {
+  outline-offset: -2px;
+}
+
+.post-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.post-who {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 15px;
+  line-height: 1.3;
+}
+
+.post-name {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 500;
+}
+
+.post-name svg {
+  flex: none;
+}
+
+.post-body {
+  margin-top: 12px;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+  font-size: 15.5px;
+  line-height: 1.55;
+  /* A long post reads on X; twelve lines never cut a 280-character one. */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 12;
+  line-clamp: 12;
+  overflow: hidden;
+}
+
+.stats {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.stat {
+  padding: 18px 16px 18px 0;
+}
+
+.stat + .stat {
+  padding-left: 16px;
+  border-left: 1px solid var(--line);
+}
+
+.stat b {
+  display: block;
+  font-size: 28px;
+  letter-spacing: -0.035em;
+  font-weight: 500;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat span {
+  display: block;
+  margin-top: 6px;
+  font-size: 13.5px;
+  color: var(--mute);
+  line-height: 1.4;
+  text-wrap: pretty;
+}
+
+@media (max-width: 640px) {
+  .stats {
+    grid-auto-flow: row;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .stat:nth-child(odd) {
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  .stat:nth-child(n + 3) {
+    border-top: 1px solid var(--line);
+  }
+}
+
+.repos-head {
+  margin-top: 28px;
+  font-weight: 400;
+}
+
+.repos-head:first-child {
+  margin-top: 0;
+}
+
+.repos {
+  margin: 6px 0 -10px;
+}
+
+.item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  padding: 10px var(--bleed);
+  margin: 0 calc(-1 * var(--bleed));
+  border-radius: 8px;
+}
+
+.repo-name {
+  display: block;
+  font-size: 13.5px;
+  overflow-wrap: anywhere;
+}
+
+.repo-line {
+  display: block;
+  font-size: 14.5px;
+  text-wrap: pretty;
+}
+
+.lang {
+  padding-top: 2px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.ldot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--mute);
 }
 
 /* ── About ── */
 
-.about-hero {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-top: 26px;
+.about h2 {
+  margin-bottom: 14px;
 }
 
-.portrait {
-  flex-shrink: 0;
-  display: block;
-  width: 88px;
-  height: 88px;
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow:
-    0 10px 24px -12px rgb(0 0 0 / 0.6),
-    inset 0 0 0 1px var(--line);
+.about p + p {
+  margin-top: 16px;
 }
 
-.portrait img {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+.runin {
+  color: var(--ink);
+  font-weight: 500;
 }
 
-.about-lede {
-  font-size: 0.96875rem;
-  line-height: 1.7;
-}
-
-.pane .about-block p {
-  margin-top: 0;
-  color: var(--text);
-}
-
-.cells {
+.facts {
+  margin-top: 28px;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 20px 24px;
-  margin-top: 36px;
+  grid-template-columns: 96px minmax(0, 1fr);
+  font-size: 15px;
+  border-top: 1px solid var(--line);
 }
 
-.cells dd {
-  margin-top: 2px;
+.facts dt,
+.facts dd {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+  text-wrap: pretty;
 }
 
-.about .tabs {
-  margin-top: 0;
+.facts dt {
+  color: var(--mute);
 }
 
-.about .tabs a {
-  color: var(--accent);
+/* ── Footer ── */
+
+.footer {
+  margin-top: 112px;
+  border-top: 1px solid var(--line);
+  padding: 28px 0 40px;
 }
 
-.about .tabs a:hover {
-  color: var(--text);
+.fgrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1fr);
+  gap: 28px 24px;
 }
 
-/* ── Narrow windows: both panes don't fit, so the deck scrolls sideways ── */
-
-@media (max-width: 899px) {
-  .stage {
-    scroll-snap-type: x mandatory;
-    pointer-events: auto;
-  }
-
-  .pane {
-    scroll-snap-align: start;
-    scroll-margin-left: var(--cell);
-  }
+.fgrid .body {
+  margin-top: 8px;
+  font-size: 15px;
 }
 
-/* ── Phones: the panes become a sideways deck ── */
-
-@media (max-width: 639px) {
-  :root {
-    --cell: 16px;
-    --gap: 10px;
-  }
-
-  /* Full-height cards; the scene shows through the glass. The insets keep a
-     card clear of the notch and the home indicator. */
-  .deck {
-    padding-top: max(var(--cell), env(safe-area-inset-top));
-  }
-
-  .pane,
-  .pane-home,
-  .pane-page {
-    height: calc(
-      100dvh - max(var(--cell), env(safe-area-inset-top)) -
-        max(var(--cell), env(safe-area-inset-bottom))
-    );
-    width: calc(100vw - 3 * var(--cell));
-    padding: 26px 22px 20px;
-    /* A smaller radius keeps the blur cheap on phones and still hides the line art. */
-    -webkit-backdrop-filter: blur(16px) saturate(1.8);
-    backdrop-filter: blur(16px) saturate(1.8);
-    scroll-snap-align: start;
-    scroll-margin-left: var(--cell);
-  }
-
-  /* Ends the last pane exactly one gutter from the right edge, so the deck
-     can't be dragged past its snap point. */
-  .deck-end {
-    flex-basis: calc(var(--cell) * 2 - var(--gap));
-  }
+.email {
+  display: inline-block;
+  overflow-wrap: anywhere;
 }
 
-/* Short windows (landscape phones, high zoom): less padding, more text. */
-@media (max-height: 480px) {
-  .pane,
-  .pane-home,
-  .pane-page {
-    padding-top: 20px;
-    padding-bottom: 16px;
-  }
+.copy {
+  margin: 6px 0 0 -12px;
+  font-size: 13px;
 }
 
-/* Landscape phones: keep the panes clear of the notch or Dynamic Island on
-   either side. The insets are zero everywhere else. */
-@media (orientation: landscape) and (min-width: 640px) {
-  .deck {
-    padding-left: max(var(--cell), env(safe-area-inset-left));
+.links {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.time {
+  font-variant-numeric: tabular-nums;
+}
+
+.fbottom {
+  margin-top: 40px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 16px 24px;
+  font-size: 13px;
+}
+
+.theme:not(.measured) {
+  visibility: hidden;
+}
+
+.theme .seg {
+  font-size: 12.5px;
+  padding: 2px 10px;
+}
+
+@media (max-width: 560px) {
+  .fgrid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   }
 
-  .pane {
-    scroll-margin-left: max(var(--cell), env(safe-area-inset-left));
+  .fgrid > :first-child {
+    grid-column: 1 / -1;
   }
 
-  .deck-end {
-    flex-basis: max(var(--cell), env(safe-area-inset-right));
+  .fbottom {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .fbottom .theme {
+    grid-column: 1 / -1;
+    justify-self: start;
+    order: -1;
   }
 }
 
-/* Windows High Contrast and other forced colours: solid panes with an edge,
-   since the glass and its inset-shadow edge are both dropped. */
-@media (forced-colors: active) {
-  .pane {
-    background: Canvas;
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-    outline: 1px solid CanvasText;
-  }
+/* ── Not found ── */
 
-  .tweet {
-    border: 1px solid CanvasText;
-  }
+.lost h1 {
+  font-size: 16px;
+  font-weight: 500;
 }
 
-/* The system's reduced-motion setting, or the Motion switch set to off. */
+.lost p {
+  margin-top: 14px;
+}
+
+/* ── Preferences ── */
+
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation: none !important;
-    transition: none !important;
+  .slide,
+  .fill.run,
+  .panel,
+  .tab-ind,
+  .arrow,
+  .intro,
+  .slider,
+  .projects,
+  #elsewhere,
+  .about,
+  .footer {
+    transition: none;
+    animation: none;
+  }
+
+  .fill.run,
+  .bar[aria-current='true'] .fill {
+    transform: none;
+  }
+
+  a:hover > .arrow {
+    top: 0;
+    left: 0;
+  }
+
+  /* Nothing rotates, so there is nothing to pause. */
+  .rotation {
+    display: none;
   }
 }
 
-:root[data-still] *,
-:root[data-still] *::before,
-:root[data-still] *::after {
-  animation: none !important;
-  transition: none !important;
+@media (forced-colors: active) {
+  /* System colours: an outlined empty slot, filled solid as it runs. */
+  .trk {
+    background: Canvas;
+    outline: 1px solid GrayText;
+  }
+
+  .fill {
+    background: CanvasText;
+  }
+
+  .tab-ind {
+    border: 1px solid Highlight;
+  }
+
+  .seg[aria-selected='true'],
+  .seg[aria-checked='true'] {
+    color: Highlight;
+  }
+
+  .ldot {
+    background: GrayText;
+  }
 }

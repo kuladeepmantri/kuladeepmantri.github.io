@@ -1,18 +1,16 @@
 'use client'
 
 // One React context for everything time- or live-dependent in the browser:
-// the build snapshot's repo data, overrides from the browser refresh, and a
-// single `now` that ticks every 30 s for the whole page.
+// the build snapshot's repo data, newer commits from the browser refresh, and
+// a single `now` that ticks every 30 s for the whole page.
 
 import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useState } from 'react'
-import type { Push, RepoLive } from './live'
+import type { RepoLive } from './live'
 import { refresh } from './live-client'
 
-export type ClientLive = {
+type ClientLive = {
   builtAt: string
   repos: Record<string, RepoLive> | undefined
-  pushes: Push[] | undefined
-  lastPostAt: string | null
 }
 
 type Store = ClientLive & {
@@ -20,9 +18,6 @@ type Store = ClientLive & {
   // False until the browser clock has replaced the build time. Anything that
   // shows a clock or a relative time stays hidden (class live-t) until then.
   ready: boolean
-  // The build snapshot's repos, never refreshed. Orders lists that must not
-  // reshuffle under a visitor's pointer.
-  buildRepos: Record<string, RepoLive> | undefined
 }
 
 const LiveContext = createContext<Store | null>(null)
@@ -44,7 +39,6 @@ export function LiveProvider({
   const [now, setNow] = useState(() => Date.parse(value.builtAt))
   const [ready, setReady] = useState(false)
   const [repos, setRepos] = useState(value.repos)
-  const [pushes, setPushes] = useState(value.pushes)
 
   useIsoLayoutEffect(() => {
     setNow(Date.now())
@@ -54,12 +48,12 @@ export function LiveProvider({
   }, [])
 
   useEffect(() => {
-    if (!value.repos) return
+    const base = value.repos
+    if (!base) return
     const run = () =>
-      refresh(value.builtAt, value.repos!, value.pushes ?? [])
+      refresh(value.builtAt, base)
         .then((next) => {
-          if (next.repos) setRepos(next.repos)
-          if (next.pushes) setPushes(next.pushes)
+          if (next) setRepos(next)
         })
         .catch(() => {
           // keep the build snapshot
@@ -70,12 +64,9 @@ export function LiveProvider({
     }
     document.addEventListener('visibilitychange', onVisible)
     return () => document.removeEventListener('visibilitychange', onVisible)
-  }, [value.builtAt, value.repos, value.pushes])
+  }, [value.builtAt, value.repos])
 
-  const store = useMemo(
-    () => ({ ...value, repos, pushes, now, ready, buildRepos: value.repos }),
-    [value, repos, pushes, now, ready],
-  )
+  const store = useMemo(() => ({ ...value, repos, now, ready }), [value, repos, now, ready])
   return <LiveContext.Provider value={store}>{children}</LiveContext.Provider>
 }
 
@@ -83,8 +74,4 @@ export function useLive(): Store {
   const s = useContext(LiveContext)
   if (!s) throw new Error('useLive outside LiveProvider')
   return s
-}
-
-export function useNow(): number {
-  return useLive().now
 }

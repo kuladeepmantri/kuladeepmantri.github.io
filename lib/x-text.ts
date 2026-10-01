@@ -1,5 +1,5 @@
-// X returns post text HTML-escaped, with links shortened to t.co. The card
-// itself links to the post, so drop the t.co links and decode the entities.
+// X returns post text HTML-escaped, with links shortened to t.co. Every post on
+// the page links to itself on X, so drop the t.co links and decode the entities.
 export function postText(text: string): string {
   return (
     text
@@ -10,6 +10,8 @@ export function postText(text: string): string {
       .replace(/&lt;/g, '<')
       .replace(/&gt;/g, '>')
       .replace(/&amp;/g, '&')
+      // "@handle ." is typed that way so the mention ends; read it as "@handle.".
+      .replace(/(@\w{1,15}) (?=[.,!?;:](\s|$))/g, '$1')
       .trim()
       .replace(/\n{3,}/g, '\n\n')
   )
@@ -17,8 +19,8 @@ export function postText(text: string): string {
 
 /**
  * Posts with something to read. A post that is only a link (a video, an image, a
- * quote) has no text left once the t.co link is dropped, so the card and the X
- * pane skip it rather than show an empty post.
+ * quote) has no text left once the t.co link is dropped, so the slider and the X
+ * tab skip it rather than show an empty post.
  */
 export function readable<T extends { text: string }>(posts: T[]): T[] {
   return posts.filter((p) => postText(p.text).length > 0)

@@ -1,11 +1,11 @@
 import type { Metadata } from 'next'
 
-// One share image for every page: the site itself, 1200 by 630.
-export const OG_IMAGE = {
+// The share image: name, title, and portrait, 1200 by 630.
+const OG_IMAGE = {
   url: '/og.png',
   width: 1200,
   height: 630,
-  alt: 'Kuladeep Mantri, security engineer: the home pane over the site’s line-art scenery.',
+  alt: 'Kuladeep Mantri, Security Engineer in Michigan.',
 }
 
 const SITE = 'Kuladeep Mantri'
@@ -15,11 +15,6 @@ const SITE = 'Kuladeep Mantri'
 export const FEEDS = {
   'application/rss+xml': [{ url: '/feed.xml', title: `${SITE}: projects (RSS)` }],
   'application/feed+json': [{ url: '/api/signals.json', title: `${SITE}: projects (JSON Feed)` }],
-}
-
-/** Metadata for an old URL that now shows home (/now, /apps, /verify). */
-export const ALIAS_OF_HOME: Metadata = {
-  alternates: { canonical: '/', types: FEEDS },
 }
 
 /**
@@ -35,7 +30,7 @@ export function pageMeta({
   description: string
   path: string
 }): Metadata {
-  const full = title ? `${title} · ${SITE}` : `${SITE} · security engineer`
+  const full = title ? `${title} · ${SITE}` : `${SITE} · Security Engineer`
   return {
     ...(title ? { title } : {}),
     description,

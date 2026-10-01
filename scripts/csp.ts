@@ -18,12 +18,12 @@ const DIR = process.argv[2] ?? 'out'
 const BASE = [
   "default-src 'self'",
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data:",
+  "img-src 'self'",
   "font-src 'self'",
   // The browser refresh reads GitHub's public events API (lib/live-client.ts).
   "connect-src 'self' https://api.github.com",
   "object-src 'none'",
-  "base-uri 'self'",
+  "base-uri 'none'",
   "form-action 'none'",
   "frame-src 'none'",
   "worker-src 'none'",
@@ -53,13 +53,23 @@ function policy(html: string): string {
 
 let pages = 0
 for (const file of htmlFiles(DIR)) {
-  const html = readFileSync(file, 'utf8').replace(META, '')
+  // Idempotent: a policy or early redirect copy from an earlier run goes first.
+  const html = readFileSync(file, 'utf8')
+    .replace(META, '')
+    .replace(/<script id="moved-early">[\s\S]*?<\/script>/, '')
   const meta = `<meta http-equiv="Content-Security-Policy" content="${policy(html)}"/>`
+  // The 404 page's old-URL redirect (app/not-found.tsx) is copied right after
+  // the policy, ahead of the stylesheet, so it never waits for it. The
+  // original stays where React rendered it so hydration still matches; a
+  // second location.replace() to the same place is harmless, and both copies
+  // share one hash.
+  const original = html.match(/<script id="moved">[\s\S]*?<\/script>/)?.[0]
+  const moved = original ? original.replace('id="moved"', 'id="moved-early"') : ''
   // Right after the charset, before any script, so it governs all of them.
   const charset = html.match(/<meta charSet="utf-8"\/?>/i)
   const out = charset
-    ? html.replace(charset[0], charset[0] + meta)
-    : html.replace(/<head(\s[^>]*)?>/i, (m) => m + meta)
+    ? html.replace(charset[0], charset[0] + meta + moved)
+    : html.replace(/<head(\s[^>]*)?>/i, (m) => m + meta + moved)
   if (out === html) throw new Error(`csp: no <head> in ${file}`)
   writeFileSync(file, out)
   pages++
