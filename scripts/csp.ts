@@ -11,7 +11,7 @@
 
 import { createHash } from 'node:crypto'
 import { readFileSync, readdirSync, writeFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { join, relative, sep } from 'node:path'
 
 const DIR = process.argv[2] ?? 'out'
 
@@ -40,7 +40,7 @@ function htmlFiles(dir: string): string[] {
     .map((e) => join(e.parentPath, e.name))
 }
 
-function policy(html: string): string {
+function policy(html: string, review = false): string {
   const hashes = new Set<string>()
   for (const [, attrs = '', body] of html.matchAll(SCRIPT)) {
     if (/\ssrc=/i.test(attrs)) continue
@@ -48,7 +48,16 @@ function policy(html: string): string {
     if (!JS_TYPE.test(type)) continue // data blocks such as JSON-LD never run
     hashes.add(`'sha256-${createHash('sha256').update(body, 'utf8').digest('base64')}'`)
   }
-  return [BASE[0], `script-src 'self' ${[...hashes].join(' ')}`.trim(), ...BASE.slice(1)].join('; ')
+  // Kuladeep Mantri's standalone review needs its same-origin offline worker.
+  // Keep the portfolio policy unchanged outside the exported /review subtree.
+  const base = review
+    ? BASE.map((directive) => {
+        if (directive === "worker-src 'none'") return "worker-src 'self'"
+        if (directive.startsWith('connect-src ')) return "connect-src 'self'"
+        return directive
+      })
+    : BASE
+  return [base[0], `script-src 'self' ${[...hashes].join(' ')}`.trim(), ...base.slice(1)].join('; ')
 }
 
 let pages = 0
@@ -57,7 +66,8 @@ for (const file of htmlFiles(DIR)) {
   const html = readFileSync(file, 'utf8')
     .replace(META, '')
     .replace(/<script id="moved-early">[\s\S]*?<\/script>/, '')
-  const meta = `<meta http-equiv="Content-Security-Policy" content="${policy(html)}"/>`
+  const review = relative(DIR, file).split(sep)[0] === 'review'
+  const meta = `<meta http-equiv="Content-Security-Policy" content="${policy(html, review)}"/>`
   // The 404 page's old-URL redirect (app/not-found.tsx) is copied right after
   // the policy, ahead of the stylesheet, so it never waits for it. The
   // original stays where React rendered it so hydration still matches; a
