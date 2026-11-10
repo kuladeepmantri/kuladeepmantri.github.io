@@ -83,13 +83,17 @@
       <label for="contact">May we contact you again for a related study? <span class="muted">(optional)</span></label>
       <select id="contact"><option value="0">Prefer not to answer</option><option value="1">Yes</option><option value="2">No</option></select>
       <p class="small">Choosing Yes means Kuladeep Mantri may ask you through the chat where you send your code. You do not need to provide contact details.</p>
-      <p id="parts-note" role="status">Send every numbered part together in one message to Kuladeep Mantri using WhatsApp, iMessage, or your usual messaging app.</p>
+      <p id="parts-note" role="status">Last step: send your answers to Kuladeep.
+1. Tap the green button.
+2. Pick WhatsApp or Messages and send it to Kuladeep.
+That's it! The message is a long code; that code is all your answers, so just send it as is.</p>
       <button id="review-skipped" class="secondary" hidden>Review skipped picture questions</button>
-      <button id="share" class="primary">Send all parts together to Kuladeep Mantri</button>
-      <button id="copy" class="secondary">Copy all parts</button>
-      <label for="answer-code">All numbered answer parts</label>
+      <button id="share" class="primary">Send my answers</button>
+      <button id="copy" class="secondary" aria-describedby="copy-hint">Copy my answers</button>
+      <p id="copy-hint" class="small">If the green button doesn't work, tap Copy, then paste it in a message to Kuladeep</p>
+      <label for="answer-code">Your answer code</label>
       <textarea id="answer-code" readonly rows="1" spellcheck="false" autocomplete="off" aria-describedby="code-hint"></textarea>
-      <p id="code-hint" class="small">You can also press and hold the code, select all, then copy. Send every numbered code below together in one message, with no edits.</p>
+      <p id="code-hint" class="small">You can also press and hold the code, select all, then copy. Send the whole code, including every line, without edits.</p>
       <p id="share-status" class="small" role="status"></p>
       <button id="review-last" class="quiet">Back to my last answer</button>
       <p class="small">You can close this page and come back to resend.</p>

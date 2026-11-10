@@ -110,11 +110,11 @@
     $('share').hidden=$('copy').hidden=$('answer-code').hidden=!complete;
     $('review-skipped').hidden=complete;
     if(!complete){$('parts-note').textContent='Some required picture questions were skipped. Review skipped questions before sending your answers.';return;}
-    const codes=P.encode(state,build),count=codes.length;
+    const codes=P.encode(state,build);
     $('answer-code').value=codes.join('\n');
-    $('parts-note').textContent=`Your answers have ${count} numbered ${count===1?'part':'parts'}. Send all ${count} ${count===1?'part':'parts'} together in one message to Kuladeep Mantri.`;
-    $('share').textContent=`Send all ${count} ${count===1?'part':'parts'} together`;
-    $('copy').textContent=`Copy all ${count} ${count===1?'part':'parts'}`;
+    $('parts-note').textContent="Last step: send your answers to Kuladeep.\n1. Tap the green button.\n2. Pick WhatsApp or Messages and send it to Kuladeep.\nThat's it! The message is a long code; that code is all your answers, so just send it as is.";
+    $('share').textContent='Send my answers';
+    $('copy').textContent='Copy my answers';
     sizeCode(true);
   }
   function render() {
@@ -198,13 +198,13 @@
   $('close-help').addEventListener('click', () => $('help-dialog').close()); $('close-zoom').addEventListener('click', () => $('zoom-dialog').close());
   $('answer-code').addEventListener('click', () => $('answer-code').select());
   $('share').addEventListener('click', async () => {
-    if (!navigator.share) { $('share-status').textContent = 'Sharing is not available here. Copy every numbered code below and send them together.'; return; }
-    try { await navigator.share({text:$('answer-code').value}); $('share-status').textContent = 'Share sheet opened. Your codes stay saved here if you need them again.'; }
-    catch (error) { $('share-status').textContent = error.name === 'AbortError' ? 'Sharing canceled. Your answers are still saved.' : 'Sharing did not finish. Copy every numbered code below and send them together.'; }
+    if (!navigator.share) { $('share-status').textContent = 'If the green button does not work, tap Copy my answers, then paste it in a message to Kuladeep.'; return; }
+    try { await navigator.share({text:$('answer-code').value}); $('share-status').textContent = 'Your answers stay saved here if you need to send them again.'; }
+    catch (error) { $('share-status').textContent = error.name === 'AbortError' ? 'Sharing canceled. Your answers are still saved.' : 'Sharing did not finish. Tap Copy my answers, then paste it in a message to Kuladeep.'; }
   });
   $('copy').addEventListener('click', async () => {
-    try { if (!navigator.clipboard) throw new Error('Unavailable'); await navigator.clipboard.writeText($('answer-code').value); $('share-status').textContent = 'Copied. Paste all the numbered codes into your message to Kuladeep Mantri.'; }
-    catch { $('answer-code').focus(); $('answer-code').select(); $('answer-code').setSelectionRange(0,$('answer-code').value.length); $('share-status').textContent = 'The codes are selected. Press and hold them, then choose Copy.'; }
+    try { if (!navigator.clipboard) throw new Error('Unavailable'); await navigator.clipboard.writeText($('answer-code').value); $('share-status').textContent = 'Copied. Paste the whole code in a message to Kuladeep and send it as is.'; }
+    catch { $('answer-code').focus(); $('answer-code').select(); $('answer-code').setSelectionRange(0,$('answer-code').value.length); $('share-status').textContent = 'The whole code is selected. Press and hold it, then choose Copy.'; }
   });
   window.addEventListener('storage', event => {
     if (event.key !== storageKey || !state) return;
